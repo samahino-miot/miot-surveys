@@ -1,0 +1,74 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Admin user details, roles, and approval status.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "The user's UID from Firebase Auth" },
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "role": { "type": "string", "enum": ["admin", "superadmin", "editor"] },
+        "status": { "type": "string", "enum": ["pending", "active"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "name", "email", "role", "status", "createdAt"]
+    },
+    "Survey": {
+      "title": "Survey",
+      "description": "A survey definition.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "questions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "text": { "type": "string" },
+              "type": { "type": "string", "enum": ["text", "rating", "multiple_choice", "checkbox", "date", "time", "file_upload"] },
+              "options": { "type": "array", "items": { "type": "string" } },
+              "required": { "type": "boolean" }
+            },
+            "required": ["id", "text", "type", "required"]
+          }
+        },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "isActive": { "type": "boolean" }
+      },
+      "required": ["id", "title", "description", "questions", "createdAt", "isActive"]
+    },
+    "SurveyResponse": {
+      "title": "SurveyResponse",
+      "description": "A patient's response to a survey.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "surveyId": { "type": "string" },
+        "patientName": { "type": "string" },
+        "patientEmail": { "type": "string", "format": "email" },
+        "patientPlace": { "type": "string" },
+        "answers": { "type": "object" },
+        "submittedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "surveyId", "patientName", "patientEmail", "patientPlace", "answers", "submittedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Stores admin user profiles."
+    },
+    "/surveys/{surveyId}": {
+      "schema": { "$ref": "#/entities/Survey" },
+      "description": "Stores all surveys."
+    },
+    "/responses/{responseId}": {
+      "schema": { "$ref": "#/entities/SurveyResponse" },
+      "description": "Stores all patient responses to surveys."
+    }
+  }
+}

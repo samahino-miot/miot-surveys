@@ -1,0 +1,163 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: userId (from Firebase Auth)
+    // Fields:
+    //   - id: string (required)
+    //   - name: string (required, < 100 chars)
+    //   - email: string (required, valid email)
+    //   - role: string (required, 'admin', 'superadmin', 'editor')
+    //   - status: string (required, 'pending', 'active')
+    //   - createdAt: string (required, ISO date string)
+    //
+    // Collection: surveys
+    // Document ID: surveyId
+    // Fields:
+    //   - id: string (required)
+    //   - title: string (required, < 200 chars)
+    //   - description: string (required, < 1000 chars)
+    //   - questions: list (required, < 100 items)
+    //   - createdAt: string (required, ISO date string)
+    //   - isActive: boolean (required)
+    //
+    // Collection: responses
+    // Document ID: responseId
+    // Fields:
+    //   - id: string (required)
+    //   - surveyId: string (required)
+    //   - patientName: string (required, < 100 chars)
+    //   - patientEmail: string (required, valid email)
+    //   - patientPlace: string (required, < 100 chars)
+    //   - answers: map (required)
+    //   - submittedAt: string (required, ISO date string)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+        (getUserData().role in ['admin', 'superadmin'] && getUserData().status == 'active' ||
+        (request.auth.token.email == "webdeveloper@miotinternational.com" && request.auth.token.email_verified == true));
+    }
+
+    function isSuperAdmin() {
+      return isAuthenticated() && 
+        (getUserData().role == 'superadmin' && getUserData().status == 'active' ||
+        (request.auth.token.email == "webdeveloper@miotinternational.com" && request.auth.token.email_verified == true));
+    }
+
+    function isEditor() {
+      return isAuthenticated() && getUserData().role == 'editor' && getUserData().status == 'active';
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function isValidDateString(dateStr) {
+      return dateStr is string && dateStr.matches("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.*Z?$");
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidUser(data) {
+      return hasRequiredFields(['id', 'name', 'email', 'role', 'status', 'createdAt']) &&
+             hasOnlyAllowedFields(['id', 'name', 'email', 'role', 'status', 'createdAt']) &&
+             data.id is string && data.id.size() > 0 && data.id.size() < 100 &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             isValidEmail(data.email) &&
+             data.role in ['admin', 'superadmin', 'editor'] &&
+             data.status in ['pending', 'active'] &&
+             isValidDateString(data.createdAt);
+    }
+
+    function isValidSurvey(data) {
+      return hasRequiredFields(['id', 'title', 'description', 'questions', 'createdAt', 'isActive']) &&
+             hasOnlyAllowedFields(['id', 'title', 'description', 'questions', 'createdAt', 'isActive']) &&
+             data.id is string && data.id.size() > 0 && data.id.size() < 100 &&
+             data.title is string && data.title.size() > 0 && data.title.size() < 200 &&
+             data.description is string && data.description.size() < 1000 &&
+             data.questions is list && data.questions.size() < 100 &&
+             isValidDateString(data.createdAt) &&
+             data.isActive is bool;
+    }
+
+    function isValidResponse(data) {
+      return hasRequiredFields(['id', 'surveyId', 'patientName', 'patientEmail', 'patientPlace', 'answers', 'submittedAt']) &&
+             hasOnlyAllowedFields(['id', 'surveyId', 'patientName', 'patientEmail', 'patientPlace', 'answers', 'submittedAt']) &&
+             data.id is string && data.id.size() > 0 && data.id.size() < 100 &&
+             data.surveyId is string && data.surveyId.size() > 0 && data.surveyId.size() < 100 &&
+             data.patientName is string && data.patientName.size() > 0 && data.patientName.size() < 100 &&
+             isValidEmail(data.patientEmail) &&
+             data.patientPlace is string && data.patientPlace.size() < 100 &&
+             data.answers is map &&
+             isValidDateString(data.submittedAt);
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin() || isSuperAdmin());
+      
+      // A user can create their own pending profile, or a superadmin can create one
+      allow create: if isAuthenticated() && isValidUser(request.resource.data) && (
+        (isOwner(userId) && request.resource.data.id == userId && request.resource.data.role == 'admin' && request.resource.data.status == 'pending') ||
+        isSuperAdmin()
+      );
+
+      // A user can update their own profile (but not role/status), or a superadmin can update anything
+      allow update: if isAuthenticated() && isValidUser(request.resource.data) && (
+        (isOwner(userId) && request.resource.data.id == resource.data.id && request.resource.data.role == resource.data.role && request.resource.data.status == resource.data.status) ||
+        isSuperAdmin()
+      );
+
+      allow delete: if isSuperAdmin();
+    }
+
+    match /surveys/{surveyId} {
+      allow read: if true;
+      allow create: if (isAdmin() || isSuperAdmin() || isEditor()) && isValidSurvey(request.resource.data);
+      allow update: if (isAdmin() || isSuperAdmin() || isEditor()) && isValidSurvey(request.resource.data);
+      allow delete: if isAdmin() || isSuperAdmin();
+    }
+
+    match /responses/{responseId} {
+      allow read: if isAdmin() || isSuperAdmin() || isEditor();
+      allow create: if isValidResponse(request.resource.data);
+      allow update: if false; // Responses cannot be updated
+      allow delete: if isAdmin() || isSuperAdmin();
+    }
+  }
+}

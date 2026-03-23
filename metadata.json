@@ -1,0 +1,5 @@
+{
+  "name": "MIOT International Survey App",
+  "description": "A comprehensive survey application for MIOT International hospital to gather patient feedback and analyze results via an admin dashboard.",
+  "requestFramePermissions": []
+}
