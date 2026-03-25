@@ -75,13 +75,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+    let unsubscribeDoc: (() => void) | undefined;
+
+    const unsubscribeAuth = auth.onAuthStateChanged((user) => {
       setCurrentUser(user);
+      
+      // Clean up previous document listener if it exists
+      if (unsubscribeDoc) {
+        unsubscribeDoc();
+        unsubscribeDoc = undefined;
+      }
       
       if (user) {
         // Listen to the user document in Firestore to get role/status
         const userDocRef = doc(db, 'users', user.uid);
-        const unsubscribeDoc = onSnapshot(userDocRef, (docSnap) => {
+        unsubscribeDoc = onSnapshot(userDocRef, (docSnap) => {
           if (docSnap.exists()) {
             setAdminUser(docSnap.data() as User);
           } else {
@@ -91,17 +99,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }, (error) => {
           setAdminUser(null);
           setLoading(false);
-          handleFirestoreError(error, OperationType.GET, `users/${user.uid}`);
+          // Only log error if the user is still authenticated (ignore sign-out race conditions)
+          if (auth.currentUser) {
+            handleFirestoreError(error, OperationType.GET, `users/${user.uid}`);
+          }
         });
-        
-        return () => unsubscribeDoc();
       } else {
         setAdminUser(null);
         setLoading(false);
       }
     });
 
-    return unsubscribe;
+    return () => {
+      unsubscribeAuth();
+      if (unsubscribeDoc) {
+        unsubscribeDoc();
+      }
+    };
   }, []);
 
   return (

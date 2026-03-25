@@ -1,21 +1,22 @@
-import { useSurveys, useResponses } from '../hooks/useFirestore';
+import { useResponses } from '../hooks/useFirestore';
 import { Users, FileText, Activity } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export default function AdminDashboard() {
-  const { surveys, loading: surveysLoading } = useSurveys();
   const { responses, loading: responsesLoading } = useResponses();
 
-  if (surveysLoading || responsesLoading) {
+  if (responsesLoading) {
     return <div className="flex items-center justify-center min-h-[60vh]">Loading...</div>;
   }
 
   const recentResponses = [...responses].sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()).slice(0, 5);
 
-  const responsesBySurvey = surveys.map(s => ({
-    name: s.title.length > 20 ? s.title.substring(0, 20) + '...' : s.title,
-    responses: responses.filter(r => r.surveyId === s.id).length
-  }));
+  const responsesBySurvey = [
+    {
+      name: 'MIOT Registration',
+      responses: responses.length
+    }
+  ];
 
   return (
     <div className="space-y-8">
@@ -31,7 +32,7 @@ export default function AdminDashboard() {
           </div>
           <div>
             <p className="text-sm font-medium text-slate-500">Total Surveys</p>
-            <p className="text-2xl font-bold text-slate-900">{surveys.length}</p>
+            <p className="text-2xl font-bold text-slate-900">1</p>
           </div>
         </div>
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-4">
@@ -49,7 +50,7 @@ export default function AdminDashboard() {
           </div>
           <div>
             <p className="text-sm font-medium text-slate-500">Active Surveys</p>
-            <p className="text-2xl font-bold text-slate-900">{surveys.filter(s => s.isActive).length}</p>
+            <p className="text-2xl font-bold text-slate-900">1</p>
           </div>
         </div>
       </div>
@@ -77,12 +78,12 @@ export default function AdminDashboard() {
               <p className="text-slate-500 text-center py-8">No responses yet.</p>
             ) : (
               recentResponses.map(response => {
-                const survey = surveys.find(s => s.id === response.surveyId);
+                const answers = response.answers || {};
                 return (
                   <div key={response.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border border-slate-100 bg-slate-50">
                     <div>
-                      <p className="font-medium text-slate-900">{survey?.title || 'Unknown Survey'}</p>
-                      <p className="text-sm text-slate-600 mt-1">From: {response.patientName || 'Anonymous'}</p>
+                      <p className="font-medium text-slate-900">MIOT International Patient Registration Survey</p>
+                      <p className="text-sm text-slate-600 mt-1">From: {answers.patientName || 'Anonymous'}</p>
                       <p className="text-xs text-slate-500 mt-0.5">{new Date(response.submittedAt).toLocaleString()}</p>
                     </div>
                     <div className="text-sm font-medium text-teal-600 bg-teal-50 px-3 py-1 rounded-full self-start sm:self-auto">

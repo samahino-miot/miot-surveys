@@ -1,21 +1,7 @@
-import { useState, useEffect } from 'react';
 import { Link } from 'react-router';
-import { Survey } from '../store';
-import { useSurveys } from '../hooks/useFirestore';
-import { ClipboardList, ChevronRight } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 
 export default function PatientHome() {
-  const { surveys, loading } = useSurveys(true);
-  const [activeSurveys, setActiveSurveys] = useState<Survey[]>([]);
-
-  useEffect(() => {
-    setActiveSurveys(surveys);
-  }, [surveys]);
-
-  if (loading) {
-    return <div className="flex items-center justify-center min-h-[60vh]">Loading...</div>;
-  }
-
   return (
     <div className="max-w-3xl mx-auto">
       <div className="text-center mb-12">
@@ -27,29 +13,18 @@ export default function PatientHome() {
       </div>
 
       <div className="space-y-4">
-        {activeSurveys.length === 0 ? (
-          <div className="text-center p-12 bg-white rounded-2xl shadow-sm border border-slate-200">
-            <ClipboardList className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-slate-900">No active surveys</h3>
-            <p className="text-slate-500">There are currently no surveys available to take.</p>
+        <Link 
+          to={`/survey/miot-registration-survey`}
+          className="block bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200 hover:border-teal-500 hover:shadow-md transition-all group"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-xl font-semibold text-slate-900 mb-2 group-hover:text-teal-700 transition-colors">MIOT International Patient Registration Survey</h3>
+              <p className="text-slate-600">Please fill out the following details to register.</p>
+            </div>
+            <ChevronRight className="h-6 w-6 text-slate-400 group-hover:text-teal-500 transition-colors" />
           </div>
-        ) : (
-          activeSurveys.map(survey => (
-            <Link 
-              key={survey.id} 
-              to={`/survey/${survey.id}`}
-              className="block bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200 hover:border-teal-500 hover:shadow-md transition-all group"
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-xl font-semibold text-slate-900 mb-2 group-hover:text-teal-700 transition-colors">{survey.title}</h3>
-                  <p className="text-slate-600">{survey.description}</p>
-                </div>
-                <ChevronRight className="h-6 w-6 text-slate-400 group-hover:text-teal-500 transition-colors" />
-              </div>
-            </Link>
-          ))
-        )}
+        </Link>
       </div>
     </div>
   );

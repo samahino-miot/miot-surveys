@@ -1,98 +1,88 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router';
-import { saveResponse, Survey, SurveyResponse } from '../store';
-import { useSurveys } from '../hooks/useFirestore';
-import { Upload, CheckCircle2, AlertCircle, ArrowRight, ArrowLeft, Check } from 'lucide-react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router';
+import { CheckCircle2, AlertCircle, ArrowRight, ArrowLeft, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '../firebase';
 
 export default function TakeSurvey() {
-  const { id } = useParams();
   const navigate = useNavigate();
-  const { surveys, loading } = useSurveys(true);
-  const [survey, setSurvey] = useState<Survey | null>(null);
-  const [answers, setAnswers] = useState<Record<string, any>>({});
-  const answersRef = useRef(answers);
   
-  useEffect(() => {
-    answersRef.current = answers;
-  }, [answers]);
+  const [formData, setFormData] = useState({
+    patientName: '',
+    attendantName: '',
+    relationToPatient: '',
+    age: '',
+    gender: '',
+    mrNo: '',
+    city: '',
+    state: '',
+    country: '',
+    purposeOfVisit: '',
+    department: '',
+    consultingDuration: '',
+    howDidYouKnow: [] as string[],
+    howDidYouKnowOther: '',
+    whatInfluenced: [] as string[],
+    whatInfluencedOther: ''
+  });
 
-  const [patientName, setPatientName] = useState('');
-  const [attendantName, setAttendantName] = useState('');
-  const [relationToPatient, setRelationToPatient] = useState('');
-  const [age, setAge] = useState('');
-  const [gender, setGender] = useState('');
-  const [mrNo, setMrNo] = useState('');
-  const [city, setCity] = useState('');
-  const [state, setState] = useState('');
-  const [country, setCountry] = useState('');
+  const [currentStep, setCurrentStep] = useState(0);
+  const [direction, setDirection] = useState(1);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
-  
-  // Wizard state
-  const [currentStep, setCurrentStep] = useState(0); // 0 = details, 1 to N = questions
-  const [direction, setDirection] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (id && surveys.length > 0) {
-      const s = surveys.find(s => s.id === id);
-      if (s) setSurvey(s);
-    }
-  }, [id, surveys]);
+  const totalSteps = 3;
+  const progressPercentage = Math.round((currentStep / totalSteps) * 100);
 
-  const handleAnswerChange = (questionId: string, value: any) => {
-    setAnswers(prev => ({ ...prev, [questionId]: value }));
-  };
-
-  const handleCheckboxChange = (questionId: string, option: string, checked: boolean) => {
-    setAnswers(prev => {
-      const current = (prev[questionId] as string[]) || [];
-      if (checked) {
-        return { ...prev, [questionId]: [...current, option] };
+  const handleCheckboxChange = (field: 'howDidYouKnow' | 'whatInfluenced', value: string) => {
+    setFormData(prev => {
+      const current = prev[field];
+      if (current.includes(value)) {
+        return { ...prev, [field]: current.filter(item => item !== value) };
       } else {
-        return { ...prev, [questionId]: current.filter(o => o !== option) };
+        return { ...prev, [field]: [...current, value] };
       }
     });
   };
 
-  const handleFileUploadAnswer = (questionId: string, file: File | undefined) => {
-    if (!file) return;
-    handleAnswerChange(questionId, `[File Uploaded] ${file.name}`);
-  };
-
-  const visibleQuestions = survey?.questions.filter(q => {
-    if (!q.condition) return true;
-    const dependsOnAnswer = answers[q.condition.dependsOnId];
-    if (Array.isArray(dependsOnAnswer)) {
-      return dependsOnAnswer.includes(q.condition.equals as string);
-    }
-    return dependsOnAnswer === q.condition.equals;
-  }) || [];
-
-  const visibleQuestionsRef = useRef(visibleQuestions);
-  useEffect(() => {
-    visibleQuestionsRef.current = visibleQuestions;
-  }, [visibleQuestions]);
-
   const nextStep = () => {
     setError('');
     if (currentStep === 0) {
-      if (!patientName.trim() || !age.trim() || !gender.trim() || !city.trim() || !state.trim() || !country.trim()) {
-        setError('Please fill in all required fields to continue.');
+      if (!formData.patientName.trim() || !formData.age.trim() || !formData.gender.trim() || !formData.city.trim() || !formData.state.trim() || !formData.country.trim()) {
+        setError('Please fill in all required fields (*) to continue.');
         return;
       }
-    } else {
-      const q = visibleQuestionsRef.current[currentStep - 1];
-      if (q && q.required) {
-        const val = answersRef.current[q.id];
-        if (val === undefined || val === null || val === '' || (Array.isArray(val) && val.length === 0)) {
-          setError('This question is required. Please provide an answer.');
-          return;
-        }
+    } else if (currentStep === 1) {
+      if (!formData.purposeOfVisit.trim()) {
+        setError('Please select the purpose of your visit.');
+        return;
+      }
+    } else if (currentStep === 2) {
+      if (!formData.consultingDuration) {
+        setError('Please select how long you have been consulting.');
+        return;
+      }
+      if (formData.howDidYouKnow.length === 0) {
+        setError('Please select at least one option for how you knew about MIOT.');
+        return;
+      }
+      if (formData.howDidYouKnow.includes('Others') && !formData.howDidYouKnowOther.trim()) {
+        setError('Please specify the other source for how you knew about MIOT.');
+        return;
+      }
+      if (formData.whatInfluenced.length === 0) {
+        setError('Please select at least one option for what influenced your decision.');
+        return;
+      }
+      if (formData.whatInfluenced.includes('Others') && !formData.whatInfluencedOther.trim()) {
+        setError('Please specify the other influence.');
+        return;
       }
     }
-    
-    if (currentStep < visibleQuestionsRef.current.length) {
+
+    if (currentStep < totalSteps - 1) {
       setDirection(1);
       setCurrentStep(prev => prev + 1);
     } else {
@@ -108,55 +98,24 @@ export default function TakeSurvey() {
     }
   };
 
-  // Auto-advance for single choice questions
-  const handleAutoAdvance = (questionId: string, value: any) => {
-    handleAnswerChange(questionId, value);
-    setTimeout(() => {
-      nextStep();
-    }, 400); // Short delay so they see the selection
-  };
-
   const handleSubmit = async () => {
-    if (!survey) return;
-
-    // Filter out answers for questions that are no longer visible due to conditions
-    const visibleAnswers: Record<string, any> = {};
-    visibleQuestionsRef.current.forEach(q => {
-      if (answersRef.current[q.id] !== undefined) {
-        visibleAnswers[q.id] = answersRef.current[q.id];
-      }
-    });
-
-    const response: SurveyResponse = {
-      id: `r_${Date.now()}`,
-      surveyId: survey.id,
-      patientName,
-      attendantName,
-      relationToPatient,
-      age,
-      gender,
-      mrNo,
-      city,
-      state,
-      country,
-      answers: visibleAnswers,
-      submittedAt: new Date().toISOString()
-    };
-
+    setIsSubmitting(true);
+    setError('');
     try {
-      await saveResponse(response);
+      await addDoc(collection(db, 'responses'), {
+        surveyId: 'miot-registration-survey',
+        surveyTitle: 'MIOT International Patient Registration Survey',
+        answers: formData,
+        submittedAt: serverTimestamp()
+      });
       setSubmitted(true);
     } catch (err) {
-      setError('Failed to submit survey. Please try again.');
       console.error(err);
+      setError('Failed to submit survey. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
-
-  if (loading) return <div className="min-h-screen flex items-center justify-center text-slate-500">Loading survey...</div>;
-  if (!survey) return <div className="min-h-screen flex items-center justify-center text-slate-500">Survey not found.</div>;
-
-  const totalSteps = visibleQuestions.length;
-  const progressPercentage = Math.round((currentStep / totalSteps) * 100);
 
   if (submitted) {
     return (
@@ -205,13 +164,13 @@ export default function TakeSurvey() {
     <div className="max-w-3xl mx-auto min-h-[80vh] flex flex-col">
       {/* Header & Progress */}
       <div className="mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">{survey.title}</h1>
-        {currentStep === 0 && <p className="text-slate-600 text-lg mb-6">{survey.description}</p>}
+        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">MIOT International Patient Registration Survey</h1>
+        {currentStep === 0 && <p className="text-slate-600 text-lg mb-6">Please fill out the following details to register.</p>}
         
         <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
           <div className="flex justify-between items-center mb-2">
             <span className="text-sm font-medium text-slate-700">
-              {currentStep === 0 ? 'Patient Details' : `Question ${currentStep} of ${totalSteps}`}
+              {currentStep === 0 ? 'Patient Details' : currentStep === 1 ? 'Visit Details' : 'Consultation & Awareness'}
             </span>
             <span className="text-sm font-bold text-teal-600">{progressPercentage}% Completed</span>
           </div>
@@ -254,12 +213,12 @@ export default function TakeSurvey() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Patient Name <span className="text-red-500">*</span>
+                    1. Patient Name <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
-                    value={patientName}
-                    onChange={(e) => setPatientName(e.target.value)}
+                    value={formData.patientName}
+                    onChange={(e) => setFormData({...formData, patientName: e.target.value})}
                     placeholder="Enter patient name"
                     className="w-full p-2.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all bg-slate-50 focus:bg-white"
                   />
@@ -267,12 +226,12 @@ export default function TakeSurvey() {
 
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Attendant Name
+                    2. Attendant Name
                   </label>
                   <input
                     type="text"
-                    value={attendantName}
-                    onChange={(e) => setAttendantName(e.target.value)}
+                    value={formData.attendantName}
+                    onChange={(e) => setFormData({...formData, attendantName: e.target.value})}
                     placeholder="Enter attendant name"
                     className="w-full p-2.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all bg-slate-50 focus:bg-white"
                   />
@@ -280,12 +239,12 @@ export default function TakeSurvey() {
 
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Relation to patient
+                    3. Relation to patient
                   </label>
                   <input
                     type="text"
-                    value={relationToPatient}
-                    onChange={(e) => setRelationToPatient(e.target.value)}
+                    value={formData.relationToPatient}
+                    onChange={(e) => setFormData({...formData, relationToPatient: e.target.value})}
                     placeholder="e.g. Son, Daughter"
                     className="w-full p-2.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all bg-slate-50 focus:bg-white"
                   />
@@ -293,12 +252,12 @@ export default function TakeSurvey() {
 
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Age <span className="text-red-500">*</span>
+                    4. Age <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
-                    value={age}
-                    onChange={(e) => setAge(e.target.value)}
+                    value={formData.age}
+                    onChange={(e) => setFormData({...formData, age: e.target.value})}
                     placeholder="Enter age"
                     className="w-full p-2.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all bg-slate-50 focus:bg-white"
                   />
@@ -306,11 +265,11 @@ export default function TakeSurvey() {
 
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Gender <span className="text-red-500">*</span>
+                    5. Gender <span className="text-red-500">*</span>
                   </label>
                   <select
-                    value={gender}
-                    onChange={(e) => setGender(e.target.value)}
+                    value={formData.gender}
+                    onChange={(e) => setFormData({...formData, gender: e.target.value})}
                     className="w-full p-2.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all bg-slate-50 focus:bg-white"
                   >
                     <option value="">Select Gender</option>
@@ -322,12 +281,12 @@ export default function TakeSurvey() {
 
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Mr. No
+                    6. Mr. No
                   </label>
                   <input
                     type="text"
-                    value={mrNo}
-                    onChange={(e) => setMrNo(e.target.value)}
+                    value={formData.mrNo}
+                    onChange={(e) => setFormData({...formData, mrNo: e.target.value})}
                     placeholder="Enter Mr. No"
                     className="w-full p-2.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all bg-slate-50 focus:bg-white"
                   />
@@ -335,12 +294,12 @@ export default function TakeSurvey() {
 
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
-                    City <span className="text-red-500">*</span>
+                    7. City <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
-                    value={city}
-                    onChange={(e) => setCity(e.target.value)}
+                    value={formData.city}
+                    onChange={(e) => setFormData({...formData, city: e.target.value})}
                     placeholder="Enter City"
                     className="w-full p-2.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all bg-slate-50 focus:bg-white"
                   />
@@ -348,12 +307,12 @@ export default function TakeSurvey() {
 
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
-                    State <span className="text-red-500">*</span>
+                    8. State <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
-                    value={state}
-                    onChange={(e) => setState(e.target.value)}
+                    value={formData.state}
+                    onChange={(e) => setFormData({...formData, state: e.target.value})}
                     placeholder="Enter State"
                     className="w-full p-2.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all bg-slate-50 focus:bg-white"
                   />
@@ -361,12 +320,12 @@ export default function TakeSurvey() {
 
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Country <span className="text-red-500">*</span>
+                    9. Country <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
-                    value={country}
-                    onChange={(e) => setCountry(e.target.value)}
+                    value={formData.country}
+                    onChange={(e) => setFormData({...formData, country: e.target.value})}
                     placeholder="Enter Country"
                     className="w-full p-2.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all bg-slate-50 focus:bg-white"
                     onKeyDown={(e) => e.key === 'Enter' && nextStep()}
@@ -374,164 +333,216 @@ export default function TakeSurvey() {
                 </div>
               </div>
             </motion.div>
-          ) : (
+          ) : currentStep === 1 ? (
             <motion.div
-              key={`step-${currentStep}`}
+              key="step-1"
               custom={direction}
               variants={variants}
               initial="enter"
               animate="center"
               exit="exit"
               transition={{ duration: 0.3, ease: "easeInOut" }}
-              className="p-6 sm:p-10"
+              className="p-6 sm:p-10 space-y-6"
             >
-              {(() => {
-                const q = visibleQuestions[currentStep - 1];
-                if (!q) return null;
-                return (
-                  <div className="space-y-8">
-                    <h2 className="text-2xl sm:text-3xl font-medium text-slate-900 leading-tight">
-                      {q.text}
-                      {q.required && <span className="text-red-500 ml-2 text-xl">*</span>}
-                    </h2>
-
-                    {q.type === 'text' && (
-                      <textarea
-                        className="w-full p-4 text-lg border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all bg-slate-50 focus:bg-white"
-                        rows={5}
-                        value={answers[q.id] || ''}
-                        onChange={(e) => handleAnswerChange(q.id, e.target.value)}
-                        placeholder="Type your answer here..."
-                        autoFocus
-                      />
-                    )}
-
-                    {q.type === 'rating' && (
-                      <div className="flex flex-wrap gap-3 sm:gap-6 justify-center py-4">
-                        {[1, 2, 3, 4, 5].map(rating => (
-                          <button
-                            key={rating}
-                            type="button"
-                            onClick={() => handleAutoAdvance(q.id, rating)}
-                            className={`h-16 w-16 sm:h-20 sm:w-20 rounded-2xl font-bold text-2xl sm:text-3xl transition-all flex items-center justify-center ${
-                              answers[q.id] === rating 
-                                ? 'bg-teal-600 text-white shadow-lg scale-105 ring-4 ring-teal-600/20' 
-                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:scale-105'
-                            }`}
-                          >
-                            {rating}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-
-                    {q.type === 'multiple_choice' && (
-                      <div className="space-y-3">
-                        {q.options?.map(option => {
-                          const isSelected = answers[q.id] === option;
-                          return (
-                            <button
-                              key={option}
-                              type="button"
-                              onClick={() => handleAutoAdvance(q.id, option)}
-                              className={`w-full text-left p-5 rounded-xl border-2 transition-all flex items-center justify-between ${
-                                isSelected 
-                                  ? 'border-teal-600 bg-teal-50 text-teal-900' 
-                                  : 'border-slate-200 hover:border-teal-300 hover:bg-slate-50 text-slate-700'
-                              }`}
-                            >
-                              <span className="text-lg">{option}</span>
-                              {isSelected && <Check className="h-6 w-6 text-teal-600" />}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-
-                    {q.type === 'checkbox' && (
-                      <div className="space-y-3">
-                        {q.options?.map(option => {
-                          const isSelected = ((answers[q.id] as string[]) || []).includes(option);
-                          return (
-                            <label 
-                              key={option} 
-                              className={`flex items-center gap-4 p-5 rounded-xl border-2 cursor-pointer transition-all ${
-                                isSelected 
-                                  ? 'border-teal-600 bg-teal-50' 
-                                  : 'border-slate-200 hover:border-teal-300 hover:bg-slate-50'
-                              }`}
-                            >
-                              <div className={`h-6 w-6 rounded border flex items-center justify-center transition-colors ${
-                                isSelected ? 'bg-teal-600 border-teal-600' : 'border-slate-400 bg-white'
-                              }`}>
-                                {isSelected && <Check className="h-4 w-4 text-white" />}
-                              </div>
-                              <input
-                                type="checkbox"
-                                checked={isSelected}
-                                onChange={(e) => handleCheckboxChange(q.id, option, e.target.checked)}
-                                className="hidden"
-                              />
-                              <span className={`text-lg ${isSelected ? 'text-teal-900 font-medium' : 'text-slate-700'}`}>
-                                {option}
-                              </span>
-                            </label>
-                          );
-                        })}
-                      </div>
-                    )}
-
-                    {q.type === 'date' && (
-                      <input
-                        type="date"
-                        value={answers[q.id] || ''}
-                        onChange={(e) => handleAnswerChange(q.id, e.target.value)}
-                        className="w-full p-4 text-lg border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all bg-slate-50 focus:bg-white"
-                      />
-                    )}
-
-                    {q.type === 'time' && (
-                      <input
-                        type="time"
-                        value={answers[q.id] || ''}
-                        onChange={(e) => handleAnswerChange(q.id, e.target.value)}
-                        className="w-full p-4 text-lg border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all bg-slate-50 focus:bg-white"
-                      />
-                    )}
-
-                    {q.type === 'file_upload' && (
-                      <div className="w-full">
+              <h2 className="text-2xl font-bold text-slate-900 mb-6">Visit Details</h2>
+              
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-3">
+                    10. Purpose of this visit: <span className="text-red-500">*</span>
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {['OP Consultation', 'Review', 'Second opinion', 'Admission', 'MHC', 'Only Investigations'].map(option => (
+                      <label 
+                        key={option} 
+                        className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                          formData.purposeOfVisit === option 
+                            ? 'border-teal-600 bg-teal-50' 
+                            : 'border-slate-200 hover:border-teal-300 hover:bg-slate-50'
+                        }`}
+                      >
+                        <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                          formData.purposeOfVisit === option ? 'border-teal-600' : 'border-slate-400'
+                        }`}>
+                          {formData.purposeOfVisit === option && <div className="h-2.5 w-2.5 rounded-full bg-teal-600" />}
+                        </div>
                         <input
-                          type="file"
-                          id={`file-${q.id}`}
-                          onChange={(e) => handleFileUploadAnswer(q.id, e.target.files?.[0])}
+                          type="radio"
+                          name="purposeOfVisit"
+                          value={option}
+                          checked={formData.purposeOfVisit === option}
+                          onChange={(e) => setFormData({...formData, purposeOfVisit: e.target.value})}
                           className="hidden"
                         />
-                        <label
-                          htmlFor={`file-${q.id}`}
-                          className="cursor-pointer flex flex-col items-center justify-center gap-4 p-12 border-2 border-dashed border-slate-300 rounded-2xl hover:bg-slate-50 hover:border-teal-400 transition-all text-slate-700"
-                        >
-                          <div className="h-16 w-16 rounded-full bg-teal-50 flex items-center justify-center">
-                            <Upload className="h-8 w-8 text-teal-600" />
-                          </div>
-                          <div className="text-center">
-                            <span className="text-lg font-medium block mb-1">
-                              {answers[q.id] ? 'Change File' : 'Upload Document'}
-                            </span>
-                            <span className="text-slate-500 text-sm">Tap to browse your files</span>
-                          </div>
-                        </label>
-                        {answers[q.id] && (
-                          <div className="mt-4 p-4 bg-teal-50 rounded-xl flex items-center gap-3 text-teal-800 border border-teal-100">
-                            <CheckCircle2 className="h-5 w-5 text-teal-600" />
-                            <span className="font-medium truncate">{answers[q.id].replace('[File Uploaded] ', '')}</span>
-                          </div>
-                        )}
-                      </div>
-                    )}
+                        <span className={`font-medium ${formData.purposeOfVisit === option ? 'text-teal-900' : 'text-slate-700'}`}>
+                          {option}
+                        </span>
+                      </label>
+                    ))}
                   </div>
-                );
-              })()}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    For which Department:
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.department}
+                    onChange={(e) => setFormData({...formData, department: e.target.value})}
+                    placeholder="e.g. Cardiology, Orthopedics"
+                    className="w-full p-4 text-lg border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all bg-slate-50 focus:bg-white"
+                    onKeyDown={(e) => e.key === 'Enter' && nextStep()}
+                  />
+                </div>
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="step-2"
+              custom={direction}
+              variants={variants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{ duration: 0.3, ease: "easeInOut" }}
+              className="p-6 sm:p-10 space-y-10"
+            >
+              <h2 className="text-2xl font-bold text-slate-900 mb-6">Consultation & Awareness</h2>
+              
+              <div className="space-y-8">
+                {/* Q11 */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-3">
+                    11. How long have you been consulting in MIOT? <span className="text-red-500">*</span>
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {['1st Visit', '<1 month', '1 month – 5yrs', '>5yrs'].map(option => (
+                      <label 
+                        key={option} 
+                        className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                          formData.consultingDuration === option 
+                            ? 'border-teal-600 bg-teal-50' 
+                            : 'border-slate-200 hover:border-teal-300 hover:bg-slate-50'
+                        }`}
+                      >
+                        <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                          formData.consultingDuration === option ? 'border-teal-600' : 'border-slate-400'
+                        }`}>
+                          {formData.consultingDuration === option && <div className="h-2.5 w-2.5 rounded-full bg-teal-600" />}
+                        </div>
+                        <input
+                          type="radio"
+                          name="consultingDuration"
+                          value={option}
+                          checked={formData.consultingDuration === option}
+                          onChange={(e) => setFormData({...formData, consultingDuration: e.target.value})}
+                          className="hidden"
+                        />
+                        <span className={`font-medium ${formData.consultingDuration === option ? 'text-teal-900' : 'text-slate-700'}`}>
+                          {option}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Q12 */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-3">
+                    12. How did you know about MIOT? <span className="text-red-500">*</span>
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                    {['Newspaper', 'Magazine', 'Television', 'Radio', 'Theatre Ads', 'Newspaper Inserts', 'Apartment posters', 'Friends', 'Relatives', 'Colleagues', 'Outdoor Hoardings/ Bus Shelters', 'Corporate Tie-up', 'Outreach Clinics', 'Referred by Doctor', 'Digital (Website/Google/Social Media)', 'Others'].map(option => {
+                      const isSelected = formData.howDidYouKnow.includes(option);
+                      return (
+                        <label 
+                          key={option} 
+                          className={`flex items-start gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${
+                            isSelected 
+                              ? 'border-teal-600 bg-teal-50' 
+                              : 'border-slate-200 hover:border-teal-300 hover:bg-slate-50'
+                          }`}
+                        >
+                          <div className={`mt-0.5 h-5 w-5 shrink-0 rounded border-2 flex items-center justify-center transition-colors ${
+                            isSelected ? 'bg-teal-600 border-teal-600' : 'border-slate-400 bg-white'
+                          }`}>
+                            {isSelected && <Check className="h-4 w-4 text-white" />}
+                          </div>
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => handleCheckboxChange('howDidYouKnow', option)}
+                            className="hidden"
+                          />
+                          <span className={`text-sm font-medium ${isSelected ? 'text-teal-900' : 'text-slate-700'}`}>
+                            {option}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                  {formData.howDidYouKnow.includes('Others') && (
+                    <div className="mt-4">
+                      <input
+                        type="text"
+                        placeholder="Please specify other source"
+                        value={formData.howDidYouKnowOther}
+                        onChange={(e) => setFormData({...formData, howDidYouKnowOther: e.target.value})}
+                        className="w-full p-3 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all bg-slate-50 focus:bg-white"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Q13 */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-3">
+                    13. Who/What influenced your decision to choose MIOT? <span className="text-red-500">*</span>
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                    {['Newspaper', 'Magazine', 'Television', 'Radio', 'Newspaper Inserts', 'Apartment posters', 'Neighbourhood', 'Friends', 'Relatives', 'Colleague', 'Outdoor Hoardings/ Bus Shelters', 'Corporate tie-up', 'Theatre Ads', 'Outreach clinics', 'Referred by Doctor', 'Treating Doctor', 'Emergency', 'Digital (Website/Google/Social Media)', 'Brand Name', 'Others'].map(option => {
+                      const isSelected = formData.whatInfluenced.includes(option);
+                      return (
+                        <label 
+                          key={option} 
+                          className={`flex items-start gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${
+                            isSelected 
+                              ? 'border-teal-600 bg-teal-50' 
+                              : 'border-slate-200 hover:border-teal-300 hover:bg-slate-50'
+                          }`}
+                        >
+                          <div className={`mt-0.5 h-5 w-5 shrink-0 rounded border-2 flex items-center justify-center transition-colors ${
+                            isSelected ? 'bg-teal-600 border-teal-600' : 'border-slate-400 bg-white'
+                          }`}>
+                            {isSelected && <Check className="h-4 w-4 text-white" />}
+                          </div>
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => handleCheckboxChange('whatInfluenced', option)}
+                            className="hidden"
+                          />
+                          <span className={`text-sm font-medium ${isSelected ? 'text-teal-900' : 'text-slate-700'}`}>
+                            {option}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                  {formData.whatInfluenced.includes('Others') && (
+                    <div className="mt-4">
+                      <input
+                        type="text"
+                        placeholder="Please specify other influence"
+                        value={formData.whatInfluencedOther}
+                        onChange={(e) => setFormData({...formData, whatInfluencedOther: e.target.value})}
+                        className="w-full p-3 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all bg-slate-50 focus:bg-white"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -541,9 +552,9 @@ export default function TakeSurvey() {
       <div className="mt-6 flex items-center justify-between">
         <button
           onClick={prevStep}
-          disabled={currentStep === 0}
+          disabled={currentStep === 0 || isSubmitting}
           className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-colors ${
-            currentStep === 0 
+            currentStep === 0 || isSubmitting
               ? 'text-slate-300 cursor-not-allowed' 
               : 'text-slate-600 hover:bg-slate-200 bg-slate-100'
           }`}
@@ -554,10 +565,13 @@ export default function TakeSurvey() {
 
         <button
           onClick={nextStep}
-          className="flex items-center gap-2 px-8 py-3 bg-teal-600 text-white font-semibold rounded-xl hover:bg-teal-700 shadow-sm transition-all hover:scale-105 active:scale-95"
+          disabled={isSubmitting}
+          className={`flex items-center gap-2 px-8 py-3 bg-teal-600 text-white font-semibold rounded-xl hover:bg-teal-700 shadow-sm transition-all hover:scale-105 active:scale-95 ${
+            isSubmitting ? 'opacity-70 cursor-not-allowed' : ''
+          }`}
         >
-          {currentStep === totalSteps ? 'Submit Survey' : 'Next'}
-          {currentStep !== totalSteps && <ArrowRight className="h-5 w-5" />}
+          {isSubmitting ? 'Submitting...' : currentStep === totalSteps - 1 ? 'Submit Survey' : 'Next'}
+          {!isSubmitting && currentStep !== totalSteps - 1 && <ArrowRight className="h-5 w-5" />}
         </button>
       </div>
     </div>

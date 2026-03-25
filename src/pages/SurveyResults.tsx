@@ -1,7 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useParams, Link } from 'react-router';
-import { Survey, SurveyResponse } from '../store';
-import { useSurveys, useResponses } from '../hooks/useFirestore';
+import { useResponses } from '../hooks/useFirestore';
 import { ArrowLeft, Download, FileText, ChevronLeft, ChevronRight, FileSpreadsheet } from 'lucide-react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import jsPDF from 'jspdf';
@@ -10,26 +9,30 @@ import * as XLSX from 'xlsx';
 
 const COLORS = ['#2e56a6', '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981'];
 
+const hardcodedSurvey = {
+  id: 'miot-registration-survey',
+  title: 'MIOT International Patient Registration Survey',
+  description: 'Please fill out the following details to register.',
+  questions: [
+    { id: 'purposeOfVisit', text: 'Purpose of this visit', type: 'multiple_choice', options: ['OP Consultation', 'Review', 'Second opinion', 'Admission', 'MHC', 'Only Investigations'] },
+    { id: 'department', text: 'For which Department', type: 'text' },
+    { id: 'consultingDuration', text: 'How long have you been consulting in MIOT?', type: 'multiple_choice', options: ['1st Visit', '<1 month', '1 month – 5yrs', '>5yrs'] },
+    { id: 'howDidYouKnow', text: 'How did you know about MIOT?', type: 'checkbox', options: ['Newspaper', 'Magazine', 'Television', 'Radio', 'Theatre Ads', 'Newspaper Inserts', 'Apartment posters', 'Friends', 'Relatives', 'Colleagues', 'Outdoor Hoardings/ Bus Shelters', 'Corporate Tie-up', 'Outreach Clinics', 'Referred by Doctor', 'Digital (Website/Google/Social Media)', 'Others'] },
+    { id: 'whatInfluenced', text: 'Who/What influenced your decision to choose MIOT?', type: 'checkbox', options: ['Newspaper', 'Magazine', 'Television', 'Radio', 'Newspaper Inserts', 'Apartment posters', 'Neighbourhood', 'Friends', 'Relatives', 'Colleague', 'Outdoor Hoardings/ Bus Shelters', 'Corporate tie-up', 'Theatre Ads', 'Outreach clinics', 'Referred by Doctor', 'Treating Doctor', 'Emergency', 'Digital (Website/Google/Social Media)', 'Brand Name', 'Others'] }
+  ]
+};
+
 export default function SurveyResults() {
   const { id } = useParams();
-  const { surveys, loading: surveysLoading } = useSurveys();
   const { responses, loading: responsesLoading } = useResponses(id || '');
   
-  const [survey, setSurvey] = useState<Survey | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 10;
 
-  useEffect(() => {
-    if (id && surveys.length > 0) {
-      const s = surveys.find(s => s.id === id);
-      if (s) {
-        setSurvey(s);
-      }
-    }
-  }, [id, surveys]);
+  const survey = hardcodedSurvey;
 
-  if (surveysLoading || responsesLoading) return <div className="text-center py-12">Loading...</div>;
-  if (!survey) return <div className="text-center py-12">Survey not found.</div>;
+  if (responsesLoading) return <div className="text-center py-12">Loading...</div>;
+  if (id !== 'miot-registration-survey') return <div className="text-center py-12">Survey not found.</div>;
 
   const reversedResponses = [...responses].reverse();
   const totalPages = Math.max(1, Math.ceil(reversedResponses.length / rowsPerPage));
@@ -46,11 +49,16 @@ export default function SurveyResults() {
     
     // Rows
     const rows = responses.map(r => {
-      const row = [r.id, new Date(r.submittedAt).toLocaleString(), r.patientName || 'N/A', r.attendantName || 'N/A', r.relationToPatient || 'N/A', r.age || 'N/A', r.gender || 'N/A', r.mrNo || 'N/A', r.city || 'N/A', r.state || 'N/A', r.country || 'N/A'];
+      const answers = r.answers || {};
+      const row = [r.id, new Date(r.submittedAt).toLocaleString(), answers.patientName || 'N/A', answers.attendantName || 'N/A', answers.relationToPatient || 'N/A', answers.age || 'N/A', answers.gender || 'N/A', answers.mrNo || 'N/A', answers.city || 'N/A', answers.state || 'N/A', answers.country || 'N/A'];
       survey.questions.forEach(q => {
-        const val = r.answers[q.id];
+        const val = answers[q.id];
         if (Array.isArray(val)) {
-          row.push(val.join('; '));
+          let str = val.join('; ');
+          if (val.includes('Others') && answers[`${q.id}Other`]) {
+            str += ` (${answers[`${q.id}Other`]})`;
+          }
+          row.push(str);
         } else {
           row.push(String(val || ''));
         }
@@ -82,11 +90,16 @@ export default function SurveyResults() {
 
     const headers = [['Date', 'Patient Name', 'Age', 'Gender', 'City', ...survey.questions.map(q => q.text.substring(0, 30) + (q.text.length > 30 ? '...' : ''))]];
     const data = responses.map(r => {
-      const row = [new Date(r.submittedAt).toLocaleDateString(), r.patientName || 'N/A', r.age || 'N/A', r.gender || 'N/A', r.city || 'N/A'];
+      const answers = r.answers || {};
+      const row = [new Date(r.submittedAt).toLocaleDateString(), answers.patientName || 'N/A', answers.age || 'N/A', answers.gender || 'N/A', answers.city || 'N/A'];
       survey.questions.forEach(q => {
-        const val = r.answers[q.id];
+        const val = answers[q.id];
         if (Array.isArray(val)) {
-          row.push(val.join(', '));
+          let str = val.join(', ');
+          if (val.includes('Others') && answers[`${q.id}Other`]) {
+            str += ` (${answers[`${q.id}Other`]})`;
+          }
+          row.push(str);
         } else {
           row.push(String(val || '-'));
         }
@@ -113,11 +126,16 @@ export default function SurveyResults() {
     
     // Rows
     const rows = responses.map(r => {
-      const row = [r.id, new Date(r.submittedAt).toLocaleString(), r.patientName || 'N/A', r.attendantName || 'N/A', r.relationToPatient || 'N/A', r.age || 'N/A', r.gender || 'N/A', r.mrNo || 'N/A', r.city || 'N/A', r.state || 'N/A', r.country || 'N/A'];
+      const answers = r.answers || {};
+      const row = [r.id, new Date(r.submittedAt).toLocaleString(), answers.patientName || 'N/A', answers.attendantName || 'N/A', answers.relationToPatient || 'N/A', answers.age || 'N/A', answers.gender || 'N/A', answers.mrNo || 'N/A', answers.city || 'N/A', answers.state || 'N/A', answers.country || 'N/A'];
       survey.questions.forEach(q => {
-        const val = r.answers[q.id];
+        const val = answers[q.id];
         if (Array.isArray(val)) {
-          row.push(val.join('; '));
+          let str = val.join('; ');
+          if (val.includes('Others') && answers[`${q.id}Other`]) {
+            str += ` (${answers[`${q.id}Other`]})`;
+          }
+          row.push(str);
         } else {
           row.push(String(val || ''));
         }
@@ -134,67 +152,6 @@ export default function SurveyResults() {
   const renderChart = (q: any) => {
     if (responses.length === 0) return <p className="text-slate-500 italic">No responses yet.</p>;
 
-    if (q.type === 'rating') {
-      const counts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-      let totalRating = 0;
-      let responseCount = 0;
-
-      responses.forEach(r => {
-        const val = r.answers[q.id] as number;
-        if (val) {
-          counts[val as keyof typeof counts]++;
-          totalRating += val;
-          responseCount++;
-        }
-      });
-      
-      const average = responseCount > 0 ? (totalRating / responseCount).toFixed(1) : '0.0';
-      const data = Object.entries(counts).map(([rating, count]) => ({ 
-        rating: `${rating} Stars`, 
-        count,
-        percentage: responseCount > 0 ? ((count / responseCount) * 100).toFixed(1) : '0.0'
-      }));
-
-      const CustomTooltip = ({ active, payload, label }: any) => {
-        if (active && payload && payload.length) {
-          return (
-            <div className="bg-white p-3 border border-slate-200 shadow-lg rounded-xl">
-              <p className="font-medium text-slate-900 mb-1">{label}</p>
-              <p className="text-sm text-slate-600">Count: <span className="font-medium text-slate-900">{payload[0].value}</span></p>
-              <p className="text-sm text-slate-600">Share: <span className="font-medium text-slate-900">{payload[0].payload.percentage}%</span></p>
-            </div>
-          );
-        }
-        return null;
-      };
-
-      return (
-        <div className="space-y-6">
-          <div className="flex items-center justify-between bg-slate-50 p-4 rounded-xl border border-slate-100">
-            <div>
-              <p className="text-sm text-slate-500 font-medium mb-1">Average Rating</p>
-              <p className="text-3xl font-bold text-slate-900">{average} <span className="text-lg font-normal text-slate-500">/ 5</span></p>
-            </div>
-            <div className="text-right">
-              <p className="text-sm text-slate-500 font-medium mb-1">Total Responses</p>
-              <p className="text-3xl font-bold text-slate-900">{responseCount}</p>
-            </div>
-          </div>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                <XAxis dataKey="rating" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} allowDecimals={false} />
-                <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f1f5f9' }} />
-                <Bar dataKey="count" fill="#2e56a6" radius={[4, 4, 0, 0]} barSize={40} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      );
-    }
-
     if (q.type === 'multiple_choice' || q.type === 'checkbox') {
       const counts: Record<string, number> = {};
       q.options?.forEach((opt: string) => counts[opt] = 0);
@@ -202,13 +159,24 @@ export default function SurveyResults() {
       let responseCount = 0;
 
       responses.forEach(r => {
-        const val = r.answers[q.id];
+        const answers = r.answers || {};
+        const val = answers[q.id];
         if (Array.isArray(val) && val.length > 0) {
           responseCount++;
-          val.forEach(v => { if (counts[v] !== undefined) counts[v]++; });
+          val.forEach(v => { 
+            if (counts[v] !== undefined) {
+              counts[v]++; 
+            } else {
+              counts[v] = 1;
+            }
+          });
         } else if (val && !Array.isArray(val)) {
           responseCount++;
-          if (counts[val as string] !== undefined) counts[val as string]++;
+          if (counts[val as string] !== undefined) {
+            counts[val as string]++;
+          } else {
+            counts[val as string] = 1;
+          }
         }
       });
 
@@ -272,8 +240,8 @@ export default function SurveyResults() {
       );
     }
 
-    if (q.type === 'text' || q.type === 'date' || q.type === 'time' || q.type === 'file_upload') {
-      const textResponses = responses.map(r => r.answers[q.id]).filter(Boolean);
+    if (q.type === 'text') {
+      const textResponses = responses.map(r => (r.answers || {})[q.id]).filter(Boolean);
       return (
         <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
           {textResponses.length === 0 ? (
@@ -281,14 +249,7 @@ export default function SurveyResults() {
           ) : (
             textResponses.map((text, i) => (
               <div key={i} className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-slate-700 text-sm">
-                {q.type === 'file_upload' ? (
-                  <span className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-slate-400" />
-                    {text}
-                  </span>
-                ) : (
-                  `"${text}"`
-                )}
+                "{text}"
               </div>
             ))
           )}
@@ -359,8 +320,8 @@ export default function SurveyResults() {
               <tr>
                 <th className="px-4 py-3 sm:px-6 sm:py-4">Date</th>
                 <th className="px-4 py-3 sm:px-6 sm:py-4">Name</th>
-                <th className="px-4 py-3 sm:px-6 sm:py-4">Email</th>
-                <th className="px-4 py-3 sm:px-6 sm:py-4">Place</th>
+                <th className="px-4 py-3 sm:px-6 sm:py-4">Age</th>
+                <th className="px-4 py-3 sm:px-6 sm:py-4">City</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -369,14 +330,17 @@ export default function SurveyResults() {
                   <td colSpan={4} className="px-4 py-8 text-center text-slate-500">No responses yet</td>
                 </tr>
               ) : (
-                paginatedResponses.map(r => (
-                  <tr key={r.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-4 py-3 sm:px-6 sm:py-4 whitespace-nowrap">{new Date(r.submittedAt).toLocaleDateString()}</td>
-                    <td className="px-4 py-3 sm:px-6 sm:py-4 font-medium text-slate-900">{r.patientName || 'N/A'}</td>
-                    <td className="px-4 py-3 sm:px-6 sm:py-4">{r.patientEmail || 'N/A'}</td>
-                    <td className="px-4 py-3 sm:px-6 sm:py-4">{r.patientPlace || 'N/A'}</td>
-                  </tr>
-                ))
+                paginatedResponses.map(r => {
+                  const answers = r.answers || {};
+                  return (
+                    <tr key={r.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-4 py-3 sm:px-6 sm:py-4 whitespace-nowrap">{new Date(r.submittedAt).toLocaleDateString()}</td>
+                      <td className="px-4 py-3 sm:px-6 sm:py-4 font-medium text-slate-900">{answers.patientName || 'N/A'}</td>
+                      <td className="px-4 py-3 sm:px-6 sm:py-4">{answers.age || 'N/A'}</td>
+                      <td className="px-4 py-3 sm:px-6 sm:py-4">{answers.city || 'N/A'}</td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>

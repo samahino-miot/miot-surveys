@@ -89,6 +89,8 @@ export interface SurveyResponse {
   city: string;
   state: string;
   country: string;
+  purposeOfVisit: string;
+  department: string;
   answers: Record<string, string | string[] | number>;
   submittedAt: string;
 }

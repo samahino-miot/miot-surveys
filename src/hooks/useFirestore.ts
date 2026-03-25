@@ -70,7 +70,9 @@ export const useSurveys = (activeOnly: boolean = false) => {
       setLoading(false);
     }, (error) => {
       setLoading(false);
-      handleFirestoreError(error, OperationType.LIST, 'surveys');
+      if (auth.currentUser) {
+        handleFirestoreError(error, OperationType.LIST, 'surveys');
+      }
     });
 
     return unsubscribe;
@@ -95,7 +97,9 @@ export const useResponses = (surveyId?: string) => {
       setLoading(false);
     }, (error) => {
       setLoading(false);
-      handleFirestoreError(error, OperationType.LIST, 'responses');
+      if (auth.currentUser) {
+        handleFirestoreError(error, OperationType.LIST, 'responses');
+      }
     });
 
     return unsubscribe;
@@ -115,7 +119,9 @@ export const useUsers = () => {
       setLoading(false);
     }, (error) => {
       setLoading(false);
-      handleFirestoreError(error, OperationType.LIST, 'users');
+      if (auth.currentUser) {
+        handleFirestoreError(error, OperationType.LIST, 'users');
+      }
     });
 
     return unsubscribe;
