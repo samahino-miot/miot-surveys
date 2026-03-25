@@ -54,12 +54,18 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
 
 export type QuestionType = 'text' | 'rating' | 'multiple_choice' | 'checkbox' | 'date' | 'time' | 'file_upload';
 
+export interface QuestionCondition {
+  dependsOnId: string;
+  equals: string | number | boolean;
+}
+
 export interface Question {
   id: string;
   text: string;
   type: QuestionType;
   options?: string[]; // For multiple_choice and checkbox
   required: boolean;
+  condition?: QuestionCondition;
 }
 
 export interface Survey {
@@ -75,8 +81,14 @@ export interface SurveyResponse {
   id: string;
   surveyId: string;
   patientName: string;
-  patientEmail: string;
-  patientPlace: string;
+  attendantName: string;
+  relationToPatient: string;
+  age: string;
+  gender: string;
+  mrNo: string;
+  city: string;
+  state: string;
+  country: string;
   answers: Record<string, string | string[] | number>;
   submittedAt: string;
 }

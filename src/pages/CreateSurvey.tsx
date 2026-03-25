@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router';
-import { saveSurvey, Survey, Question, QuestionType } from '../store';
+import { saveSurvey, Survey, Question, QuestionType, QuestionCondition } from '../store';
 import { useSurveys } from '../hooks/useFirestore';
 import { generateSurveyFromText, generateSurveyFromFile } from '../lib/gemini';
 import { Plus, Trash2, GripVertical, Upload, Sparkles, Loader2, Eye, X } from 'lucide-react';
@@ -70,21 +70,28 @@ function SortableQuestion({
       
       <div className="flex-1 space-y-4">
         <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1 flex items-start gap-2">
-            <div 
-              {...attributes} 
-              {...listeners} 
-              className="pt-3 text-slate-400 cursor-grab active:cursor-grabbing sm:hidden focus:outline-none"
-            >
-              <GripVertical className="h-5 w-5" />
+          <div className="flex-1 flex flex-col gap-2">
+            <div className="flex items-start gap-2">
+              <div 
+                {...attributes} 
+                {...listeners} 
+                className="pt-3 text-slate-400 cursor-grab active:cursor-grabbing sm:hidden focus:outline-none"
+              >
+                <GripVertical className="h-5 w-5" />
+              </div>
+              <input
+                type="text"
+                value={q.text}
+                onChange={(e) => handleUpdateQuestion(qIndex, { text: e.target.value })}
+                placeholder="Question text"
+                className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none font-medium"
+              />
             </div>
-            <input
-              type="text"
-              value={q.text}
-              onChange={(e) => handleUpdateQuestion(qIndex, { text: e.target.value })}
-              placeholder="Question text"
-              className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none font-medium"
-            />
+            {q.condition && (
+              <div className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-amber-100 text-amber-800 self-start">
+                Conditional: Shows if previous question equals "{q.condition.equals}"
+              </div>
+            )}
           </div>
           <div className="w-full sm:w-48 shrink-0">
             <select
@@ -198,6 +205,66 @@ export default function CreateSurvey() {
       }
     }
   }, [id, surveys]);
+
+  const loadMiotTemplate = () => {
+    setTitle('MIOT Patient Feedback Survey');
+    setDescription('Please help us improve our services by providing your valuable feedback.');
+    
+    const now = Date.now();
+    const q16Id = `q_16_${now}`;
+    
+    setQuestions([
+      { id: `q_2_${now}_1`, text: 'Attendant Name', type: 'text', required: false },
+      { id: `q_3_${now}_2`, text: 'Relation to patient', type: 'text', required: false },
+      { id: `q_4_${now}_3`, text: 'Age', type: 'text', required: true },
+      { id: `q_5_${now}_4`, text: 'Gender', type: 'multiple_choice', options: ['Male', 'Female', 'Other'], required: true },
+      { id: `q_6_${now}_5`, text: 'Mr. No', type: 'text', required: false },
+      { id: `q_10_${now}_6`, text: 'Purpose of this visit', type: 'multiple_choice', options: ['OP Consultation', 'Review', 'Second opinion', 'Admission', 'MHC', 'Only Investigations'], required: true },
+      { id: `q_10a_${now}_7`, text: 'For which Department?', type: 'text', required: false },
+      { id: `q_11_${now}_8`, text: 'How long have you been consulting in MIOT? (Brand Stickiness)', type: 'multiple_choice', options: ['1st Visit', '<1 month', '1 month – 5yrs', '>5yrs'], required: true },
+      { id: `q_12_${now}_9`, text: 'How did you know about MIOT? (Which media works better?)', type: 'checkbox', options: ['Newspaper', 'Magazine', 'Television', 'Radio', 'Theatre Ads', 'Newspaper Inserts', 'Apartment posters', 'Friends', 'Relatives', 'Colleagues', 'Outdoor Hoardings/ Bus Shelters', 'Corporate Tie-up', 'Outreach Clinics', 'Referred by Doctor', 'Digital (Website/Google/Social Media)', 'Others'], required: true },
+      { id: `q_13_${now}_10`, text: 'Who/What influenced your decision to choose MIOT? (Impact)', type: 'checkbox', options: ['Newspaper', 'Magazine', 'Television', 'Radio', 'Newspaper Inserts', 'Apartment posters', 'Neighbourhood', 'Friends', 'Relatives', 'Colleague', 'Outdoor Hoardings/ Bus Shelters', 'Corporate tie-up', 'Theatre Ads', 'Outreach clinics', 'Referred by Doctor', 'Treating Doctor', 'Emergency', 'Digital (Website/Google/Social Media)', 'Brand Name', 'Others'], required: true },
+      
+      // Q14 Matrix split into individual ratings
+      { id: `q_14_1_1_${now}_11`, text: 'Cure: Highly Qualified Doctors & experienced nurses', type: 'rating', required: true },
+      { id: `q_14_1_2_${now}_12`, text: 'Cure: Infrastructure', type: 'rating', required: true },
+      { id: `q_14_1_3_${now}_13`, text: 'Cure: Latest Technology & Equipment', type: 'rating', required: true },
+      { id: `q_14_1_4_${now}_14`, text: 'Cure: Accuracy of diagnosis and treatment', type: 'rating', required: true },
+      { id: `q_14_1_5_${now}_15`, text: 'Cure: Success rates and patient outcomes', type: 'rating', required: true },
+      
+      { id: `q_14_2_1_${now}_16`, text: 'Care: Compassion of Doctor', type: 'rating', required: true },
+      { id: `q_14_2_2_${now}_17`, text: 'Care: Cleanliness and hygiene', type: 'rating', required: true },
+      { id: `q_14_2_3_${now}_18`, text: 'Care: Staff behaviour (politeness, empathy, respect)', type: 'rating', required: true },
+      { id: `q_14_2_4_${now}_19`, text: 'Care: Waiting time for consultation or procedures', type: 'rating', required: true },
+      { id: `q_14_2_5_${now}_20`, text: 'Care: Ease of admission and discharge', type: 'rating', required: true },
+      { id: `q_14_2_6_${now}_21`, text: 'Care: Clear explanation of billing', type: 'rating', required: true },
+      { id: `q_14_2_7_${now}_22`, text: 'Care: Availability of insurance support', type: 'rating', required: true },
+      
+      { id: `q_14_3_${now}_23`, text: 'Cost:', type: 'multiple_choice', options: ['Exorbitant', 'On the higher side', 'Industry standards', 'Moderate', 'Low'], required: true },
+      
+      { id: `q_14_4_1_${now}_24`, text: 'Communication: Doctors explaining conditions clearly', type: 'rating', required: true },
+      { id: `q_14_4_2_${now}_25`, text: 'Communication: Staff responsiveness to questions', type: 'rating', required: true },
+      { id: `q_14_4_3_${now}_26`, text: 'Communication: Transparency about treatment options, costs and risks', type: 'rating', required: true },
+      
+      { id: `q_14_5_1_${now}_27`, text: 'Comfort: Spacious waiting areas/ rooms', type: 'rating', required: true },
+      { id: `q_14_5_2_${now}_28`, text: 'Comfort: Clean and neat Rooms', type: 'rating', required: true },
+      { id: `q_14_5_3_${now}_29`, text: 'Comfort: Other Services', type: 'rating', required: true },
+      { id: `q_14_5_4_${now}_30`, text: 'Comfort: No hospital feel', type: 'rating', required: true },
+      { id: `q_14_5_5_${now}_31`, text: 'Comfort: Balanced diet & Hygienic food', type: 'rating', required: true },
+      
+      { id: `q_14_6_1_${now}_32`, text: 'Convenience: Within Heart of the city', type: 'rating', required: true },
+      { id: `q_14_6_2_${now}_33`, text: 'Convenience: Near to residence', type: 'rating', required: true },
+      { id: `q_14_6_3_${now}_34`, text: 'Convenience: Easy Mobility', type: 'rating', required: true },
+      { id: `q_14_6_4_${now}_35`, text: 'Convenience: Ambulance service', type: 'rating', required: true },
+      { id: `q_14_6_5_${now}_36`, text: 'Convenience: Parking facilities', type: 'rating', required: true },
+      
+      { id: `q_15_${now}_37`, text: 'What specialities do you associate with MIOT? Just note top 5 in the order they spell', type: 'text', required: false },
+      
+      { id: q16Id, text: 'I will return to MIOT for further treatment (Trust)', type: 'multiple_choice', options: ['Yes', 'No'], required: true },
+      { id: `q_16_yes_${now}_38`, text: 'If YES, because of:', type: 'checkbox', options: ['Treating Doctors', 'Treatment Outcome', 'Hassle free experience from appointment booking to consultation/discharge', 'Transparency in treatment, bills, etc', 'Responsible & Experienced support staff', 'Others'], required: false, condition: { dependsOnId: q16Id, equals: 'Yes' } },
+      { id: `q_16_no_${now}_39`, text: 'If NO, pls specify:', type: 'text', required: false, condition: { dependsOnId: q16Id, equals: 'No' } },
+    ]);
+  };
 
   const handleAddQuestion = () => {
     setQuestions([
@@ -335,7 +402,13 @@ export default function CreateSurvey() {
           <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">{id ? 'Edit Survey' : 'Create New Survey'}</h1>
           <p className="text-slate-600 mt-1">Design your survey manually or use AI to generate from a document.</p>
         </div>
-        <div className="flex gap-3 w-full sm:w-auto">
+        <div className="flex gap-3 w-full sm:w-auto flex-wrap">
+          <button
+            onClick={loadMiotTemplate}
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 text-indigo-600 font-medium bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-colors"
+          >
+            Load MIOT Template
+          </button>
           <button
             onClick={() => setIsPreview(true)}
             className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 text-teal-600 font-medium bg-teal-50 hover:bg-teal-100 rounded-xl transition-colors"
@@ -515,10 +588,17 @@ export default function CreateSurvey() {
 
                 {questions.map((q, index) => (
                   <div key={q.id} className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200">
-                    <label className="block text-lg font-medium text-slate-900 mb-4">
-                      {index + 1}. {q.text || 'Untitled Question'}
-                      {q.required && <span className="text-red-500 ml-1">*</span>}
-                    </label>
+                    <div className="flex flex-col gap-2 mb-4">
+                      <label className="block text-lg font-medium text-slate-900">
+                        {index + 1}. {q.text || 'Untitled Question'}
+                        {q.required && <span className="text-red-500 ml-1">*</span>}
+                      </label>
+                      {q.condition && (
+                        <div className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-amber-100 text-amber-800 self-start">
+                          Conditional: Shows if previous question equals "{q.condition.equals}"
+                        </div>
+                      )}
+                    </div>
 
                     {q.type === 'text' && (
                       <textarea

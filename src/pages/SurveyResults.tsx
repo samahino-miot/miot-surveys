@@ -42,11 +42,11 @@ export default function SurveyResults() {
     if (responses.length === 0) return;
 
     // Headers
-    const headers = ['Response ID', 'Date', 'Patient Name', 'Patient Email', 'Patient Place', ...survey.questions.map(q => q.text)];
+    const headers = ['Response ID', 'Date', 'Patient Name', 'Attendant Name', 'Relation', 'Age', 'Gender', 'Mr. No', 'City', 'State', 'Country', ...survey.questions.map(q => q.text)];
     
     // Rows
     const rows = responses.map(r => {
-      const row = [r.id, new Date(r.submittedAt).toLocaleString(), r.patientName || 'N/A', r.patientEmail || 'N/A', r.patientPlace || 'N/A'];
+      const row = [r.id, new Date(r.submittedAt).toLocaleString(), r.patientName || 'N/A', r.attendantName || 'N/A', r.relationToPatient || 'N/A', r.age || 'N/A', r.gender || 'N/A', r.mrNo || 'N/A', r.city || 'N/A', r.state || 'N/A', r.country || 'N/A'];
       survey.questions.forEach(q => {
         const val = r.answers[q.id];
         if (Array.isArray(val)) {
@@ -80,9 +80,9 @@ export default function SurveyResults() {
     doc.text(`Total Responses: ${responses.length}`, 14, 30);
     doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 36);
 
-    const headers = [['Date', 'Patient Name', 'Email', 'Place', ...survey.questions.map(q => q.text.substring(0, 30) + (q.text.length > 30 ? '...' : ''))]];
+    const headers = [['Date', 'Patient Name', 'Age', 'Gender', 'City', ...survey.questions.map(q => q.text.substring(0, 30) + (q.text.length > 30 ? '...' : ''))]];
     const data = responses.map(r => {
-      const row = [new Date(r.submittedAt).toLocaleDateString(), r.patientName || 'N/A', r.patientEmail || 'N/A', r.patientPlace || 'N/A'];
+      const row = [new Date(r.submittedAt).toLocaleDateString(), r.patientName || 'N/A', r.age || 'N/A', r.gender || 'N/A', r.city || 'N/A'];
       survey.questions.forEach(q => {
         const val = r.answers[q.id];
         if (Array.isArray(val)) {
@@ -109,11 +109,11 @@ export default function SurveyResults() {
     if (responses.length === 0) return;
 
     // Headers
-    const headers = ['Response ID', 'Date', 'Patient Name', 'Patient Email', 'Patient Place', ...survey.questions.map(q => q.text)];
+    const headers = ['Response ID', 'Date', 'Patient Name', 'Attendant Name', 'Relation', 'Age', 'Gender', 'Mr. No', 'City', 'State', 'Country', ...survey.questions.map(q => q.text)];
     
     // Rows
     const rows = responses.map(r => {
-      const row = [r.id, new Date(r.submittedAt).toLocaleString(), r.patientName || 'N/A', r.patientEmail || 'N/A', r.patientPlace || 'N/A'];
+      const row = [r.id, new Date(r.submittedAt).toLocaleString(), r.patientName || 'N/A', r.attendantName || 'N/A', r.relationToPatient || 'N/A', r.age || 'N/A', r.gender || 'N/A', r.mrNo || 'N/A', r.city || 'N/A', r.state || 'N/A', r.country || 'N/A'];
       survey.questions.forEach(q => {
         const val = r.answers[q.id];
         if (Array.isArray(val)) {
