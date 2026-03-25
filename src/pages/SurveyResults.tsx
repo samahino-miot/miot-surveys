@@ -18,7 +18,39 @@ const hardcodedSurvey = {
     { id: 'department', text: 'For which Department', type: 'text' },
     { id: 'consultingDuration', text: 'How long have you been consulting in MIOT?', type: 'multiple_choice', options: ['1st Visit', '<1 month', '1 month – 5yrs', '>5yrs'] },
     { id: 'howDidYouKnow', text: 'How did you know about MIOT?', type: 'checkbox', options: ['Newspaper', 'Magazine', 'Television', 'Radio', 'Theatre Ads', 'Newspaper Inserts', 'Apartment posters', 'Friends', 'Relatives', 'Colleagues', 'Outdoor Hoardings/ Bus Shelters', 'Corporate Tie-up', 'Outreach Clinics', 'Referred by Doctor', 'Digital (Website/Google/Social Media)', 'Others'] },
-    { id: 'whatInfluenced', text: 'Who/What influenced your decision to choose MIOT?', type: 'checkbox', options: ['Newspaper', 'Magazine', 'Television', 'Radio', 'Newspaper Inserts', 'Apartment posters', 'Neighbourhood', 'Friends', 'Relatives', 'Colleague', 'Outdoor Hoardings/ Bus Shelters', 'Corporate tie-up', 'Theatre Ads', 'Outreach clinics', 'Referred by Doctor', 'Treating Doctor', 'Emergency', 'Digital (Website/Google/Social Media)', 'Brand Name', 'Others'] }
+    { id: 'whatInfluenced', text: 'Who/What influenced your decision to choose MIOT?', type: 'checkbox', options: ['Newspaper', 'Magazine', 'Television', 'Radio', 'Newspaper Inserts', 'Apartment posters', 'Neighbourhood', 'Friends', 'Relatives', 'Colleague', 'Outdoor Hoardings/ Bus Shelters', 'Corporate tie-up', 'Theatre Ads', 'Outreach clinics', 'Referred by Doctor', 'Treating Doctor', 'Emergency', 'Digital (Website/Google/Social Media)', 'Brand Name', 'Others'] },
+    
+    { id: 'evalCure_doctors', text: 'Cure: Highly Qualified Doctors & experienced nurses', type: 'rating' },
+    { id: 'evalCure_infrastructure', text: 'Cure: Infrastructure', type: 'rating' },
+    { id: 'evalCure_technology', text: 'Cure: Latest Technology & Equipment', type: 'rating' },
+    { id: 'evalCure_accuracy', text: 'Cure: Accuracy of diagnosis and treatment', type: 'rating' },
+    { id: 'evalCure_successRates', text: 'Cure: Success rates and patient outcomes', type: 'rating' },
+    
+    { id: 'evalCare_compassion', text: 'Care: Compassion of Doctor', type: 'rating' },
+    { id: 'evalCare_cleanliness', text: 'Care: Cleanliness and hygiene', type: 'rating' },
+    { id: 'evalCare_staffBehaviour', text: 'Care: Staff behaviour', type: 'rating' },
+    { id: 'evalCare_waitingTime', text: 'Care: Waiting time for consultation or procedures', type: 'rating' },
+    { id: 'evalCare_admission', text: 'Care: Ease of admission and discharge', type: 'rating' },
+    { id: 'evalCare_billing', text: 'Care: Clear explanation of billing', type: 'rating' },
+    { id: 'evalCare_insurance', text: 'Care: Availability of insurance support', type: 'rating' },
+
+    { id: 'evalCost', text: 'Cost', type: 'multiple_choice', options: ['Exorbitant', 'On the higher side', 'Industry standards', 'Moderate', 'Low'] },
+
+    { id: 'evalComm_doctorsExplaining', text: 'Communication: Doctors explaining conditions clearly', type: 'rating' },
+    { id: 'evalComm_staffResponsiveness', text: 'Communication: Staff responsiveness to questions', type: 'rating' },
+    { id: 'evalComm_transparency', text: 'Communication: Transparency about treatment options, costs and risks', type: 'rating' },
+
+    { id: 'evalComfort_spacious', text: 'Comfort: Spacious waiting areas/ rooms', type: 'rating' },
+    { id: 'evalComfort_cleanRooms', text: 'Comfort: Clean and neat Rooms', type: 'rating' },
+    { id: 'evalComfort_otherServices', text: 'Comfort: Other Services', type: 'rating' },
+    { id: 'evalComfort_noHospitalFeel', text: 'Comfort: No hospital feel', type: 'rating' },
+    { id: 'evalComfort_diet', text: 'Comfort: Balanced diet & Hygienic food', type: 'rating' },
+
+    { id: 'evalConv_cityHeart', text: 'Convenience: Within Heart of the city', type: 'rating' },
+    { id: 'evalConv_nearResidence', text: 'Convenience: Near to residence', type: 'rating' },
+    { id: 'evalConv_mobility', text: 'Convenience: Easy Mobility', type: 'rating' },
+    { id: 'evalConv_ambulance', text: 'Convenience: Ambulance service', type: 'rating' },
+    { id: 'evalConv_parking', text: 'Convenience: Parking facilities', type: 'rating' }
   ]
 };
 
@@ -253,6 +285,50 @@ export default function SurveyResults() {
               </div>
             ))
           )}
+        </div>
+      );
+    }
+
+    if (q.type === 'rating') {
+      const counts: Record<string, number> = { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 };
+      let responseCount = 0;
+      let sum = 0;
+
+      responses.forEach(r => {
+        const val = (r.answers || {})[q.id];
+        if (val && typeof val === 'number') {
+          counts[val.toString()]++;
+          responseCount++;
+          sum += val;
+        }
+      });
+
+      const data = Object.entries(counts).map(([name, value]) => ({ name, value }));
+      const average = responseCount > 0 ? (sum / responseCount).toFixed(1) : '0.0';
+
+      return (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between bg-slate-50 p-4 rounded-xl border border-slate-100">
+            <div>
+              <p className="text-sm text-slate-500 font-medium mb-1">Total Ratings</p>
+              <p className="text-3xl font-bold text-slate-900">{responseCount}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-sm text-slate-500 font-medium mb-1">Average Rating</p>
+              <p className="text-3xl font-bold text-teal-600">{average} <span className="text-lg text-slate-400">/ 5</span></p>
+            </div>
+          </div>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={data} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
+                <Tooltip cursor={{ fill: '#f1f5f9' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                <Bar dataKey="value" fill="#0d9488" radius={[4, 4, 0, 0]} barSize={40} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       );
     }

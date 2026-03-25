@@ -5,6 +5,28 @@ import { motion, AnimatePresence } from 'motion/react';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 
+const RatingRow = ({ label, value, onChange }: { label: string, value: number, onChange: (val: number) => void }) => (
+  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-3 border-b border-slate-200/60 last:border-0">
+    <span className="text-slate-700 font-medium flex-1">{label}</span>
+    <div className="flex gap-2 shrink-0">
+      {[1, 2, 3, 4, 5].map(rating => (
+        <button
+          key={rating}
+          type="button"
+          onClick={() => onChange(rating)}
+          className={`h-10 w-10 rounded-lg font-bold text-sm transition-all flex items-center justify-center ${
+            value === rating 
+              ? 'bg-teal-600 text-white shadow-md ring-2 ring-teal-600/20' 
+              : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+          }`}
+        >
+          {rating}
+        </button>
+      ))}
+    </div>
+  </div>
+);
+
 export default function TakeSurvey() {
   const navigate = useNavigate();
   
@@ -24,7 +46,39 @@ export default function TakeSurvey() {
     howDidYouKnow: [] as string[],
     howDidYouKnowOther: '',
     whatInfluenced: [] as string[],
-    whatInfluencedOther: ''
+    whatInfluencedOther: '',
+    
+    evalCure_doctors: 0,
+    evalCure_infrastructure: 0,
+    evalCure_technology: 0,
+    evalCure_accuracy: 0,
+    evalCure_successRates: 0,
+    
+    evalCare_compassion: 0,
+    evalCare_cleanliness: 0,
+    evalCare_staffBehaviour: 0,
+    evalCare_waitingTime: 0,
+    evalCare_admission: 0,
+    evalCare_billing: 0,
+    evalCare_insurance: 0,
+
+    evalCost: '',
+
+    evalComm_doctorsExplaining: 0,
+    evalComm_staffResponsiveness: 0,
+    evalComm_transparency: 0,
+
+    evalComfort_spacious: 0,
+    evalComfort_cleanRooms: 0,
+    evalComfort_otherServices: 0,
+    evalComfort_noHospitalFeel: 0,
+    evalComfort_diet: 0,
+
+    evalConv_cityHeart: 0,
+    evalConv_nearResidence: 0,
+    evalConv_mobility: 0,
+    evalConv_ambulance: 0,
+    evalConv_parking: 0,
   });
 
   const [currentStep, setCurrentStep] = useState(0);
@@ -33,7 +87,7 @@ export default function TakeSurvey() {
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const totalSteps = 3;
+  const totalSteps = 4;
   const progressPercentage = Math.round((currentStep / totalSteps) * 100);
 
   const handleCheckboxChange = (field: 'howDidYouKnow' | 'whatInfluenced', value: string) => {
@@ -78,6 +132,20 @@ export default function TakeSurvey() {
       }
       if (formData.whatInfluenced.includes('Others') && !formData.whatInfluencedOther.trim()) {
         setError('Please specify the other influence.');
+        return;
+      }
+    } else if (currentStep === 3) {
+      const requiredRatings = [
+        'evalCure_doctors', 'evalCure_infrastructure', 'evalCure_technology', 'evalCure_accuracy', 'evalCure_successRates',
+        'evalCare_compassion', 'evalCare_cleanliness', 'evalCare_staffBehaviour', 'evalCare_waitingTime', 'evalCare_admission', 'evalCare_billing', 'evalCare_insurance',
+        'evalComm_doctorsExplaining', 'evalComm_staffResponsiveness', 'evalComm_transparency',
+        'evalComfort_spacious', 'evalComfort_cleanRooms', 'evalComfort_otherServices', 'evalComfort_noHospitalFeel', 'evalComfort_diet',
+        'evalConv_cityHeart', 'evalConv_nearResidence', 'evalConv_mobility', 'evalConv_ambulance', 'evalConv_parking'
+      ];
+      
+      const missingRating = requiredRatings.some(key => formData[key as keyof typeof formData] === 0);
+      if (missingRating || !formData.evalCost) {
+        setError('Please complete all ratings and selections on this page.');
         return;
       }
     }
@@ -170,7 +238,7 @@ export default function TakeSurvey() {
         <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
           <div className="flex justify-between items-center mb-2">
             <span className="text-sm font-medium text-slate-700">
-              {currentStep === 0 ? 'Patient Details' : currentStep === 1 ? 'Visit Details' : 'Consultation & Awareness'}
+              {currentStep === 0 ? 'Patient Details' : currentStep === 1 ? 'Visit Details' : currentStep === 2 ? 'Consultation & Awareness' : 'Evaluation'}
             </span>
             <span className="text-sm font-bold text-teal-600">{progressPercentage}% Completed</span>
           </div>
@@ -397,7 +465,7 @@ export default function TakeSurvey() {
                 </div>
               </div>
             </motion.div>
-          ) : (
+          ) : currentStep === 2 ? (
             <motion.div
               key="step-2"
               custom={direction}
@@ -543,6 +611,117 @@ export default function TakeSurvey() {
                   )}
                 </div>
               </div>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="step-3"
+              custom={direction}
+              variants={variants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{ duration: 0.3, ease: "easeInOut" }}
+              className="p-6 sm:p-10 space-y-8"
+            >
+              <div>
+                <h2 className="text-2xl font-bold text-slate-900 mb-2">14. How do you evaluate MIOT based on your perception?</h2>
+                <p className="text-slate-600 mb-6">Rating on the scale of 1 to 5 (Factors that influence the patient's loyalty for the brand)</p>
+              </div>
+
+              {/* Cure */}
+              <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200">
+                <h3 className="text-lg font-bold text-slate-900 mb-4 text-teal-700">1. Cure</h3>
+                <div className="space-y-1">
+                  <RatingRow label="Highly Qualified Doctors & experienced nurses" value={formData.evalCure_doctors} onChange={(v) => setFormData({...formData, evalCure_doctors: v})} />
+                  <RatingRow label="Infrastructure" value={formData.evalCure_infrastructure} onChange={(v) => setFormData({...formData, evalCure_infrastructure: v})} />
+                  <RatingRow label="Latest Technology & Equipment" value={formData.evalCure_technology} onChange={(v) => setFormData({...formData, evalCure_technology: v})} />
+                  <RatingRow label="Accuracy of diagnosis and treatment" value={formData.evalCure_accuracy} onChange={(v) => setFormData({...formData, evalCure_accuracy: v})} />
+                  <RatingRow label="Success rates and patient outcomes" value={formData.evalCure_successRates} onChange={(v) => setFormData({...formData, evalCure_successRates: v})} />
+                </div>
+              </div>
+
+              {/* Care */}
+              <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200">
+                <h3 className="text-lg font-bold text-slate-900 mb-4 text-teal-700">2. Care</h3>
+                <div className="space-y-1">
+                  <RatingRow label="Compassion of Doctor" value={formData.evalCare_compassion} onChange={(v) => setFormData({...formData, evalCare_compassion: v})} />
+                  <RatingRow label="Cleanliness and hygiene" value={formData.evalCare_cleanliness} onChange={(v) => setFormData({...formData, evalCare_cleanliness: v})} />
+                  <RatingRow label="Staff behaviour (politeness, empathy, respect)" value={formData.evalCare_staffBehaviour} onChange={(v) => setFormData({...formData, evalCare_staffBehaviour: v})} />
+                  <RatingRow label="Waiting time for consultation or procedures" value={formData.evalCare_waitingTime} onChange={(v) => setFormData({...formData, evalCare_waitingTime: v})} />
+                  <RatingRow label="Ease of admission and discharge" value={formData.evalCare_admission} onChange={(v) => setFormData({...formData, evalCare_admission: v})} />
+                  <RatingRow label="Clear explanation of billing" value={formData.evalCare_billing} onChange={(v) => setFormData({...formData, evalCare_billing: v})} />
+                  <RatingRow label="Availability of insurance support" value={formData.evalCare_insurance} onChange={(v) => setFormData({...formData, evalCare_insurance: v})} />
+                </div>
+              </div>
+
+              {/* Cost */}
+              <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200">
+                <h3 className="text-lg font-bold text-slate-900 mb-4 text-teal-700">3. Cost</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                  {['Exorbitant', 'On the higher side', 'Industry standards', 'Moderate', 'Low'].map(option => (
+                    <label 
+                      key={option} 
+                      className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${
+                        formData.evalCost === option 
+                          ? 'border-teal-600 bg-teal-50' 
+                          : 'border-slate-200 hover:border-teal-300 hover:bg-white bg-white'
+                      }`}
+                    >
+                      <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                        formData.evalCost === option ? 'border-teal-600' : 'border-slate-400'
+                      }`}>
+                        {formData.evalCost === option && <div className="h-2.5 w-2.5 rounded-full bg-teal-600" />}
+                      </div>
+                      <input
+                        type="radio"
+                        name="evalCost"
+                        value={option}
+                        checked={formData.evalCost === option}
+                        onChange={(e) => setFormData({...formData, evalCost: e.target.value})}
+                        className="hidden"
+                      />
+                      <span className={`font-medium text-sm ${formData.evalCost === option ? 'text-teal-900' : 'text-slate-700'}`}>
+                        {option}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Communication */}
+              <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200">
+                <h3 className="text-lg font-bold text-slate-900 mb-4 text-teal-700">4. Communication</h3>
+                <div className="space-y-1">
+                  <RatingRow label="Doctors explaining conditions clearly" value={formData.evalComm_doctorsExplaining} onChange={(v) => setFormData({...formData, evalComm_doctorsExplaining: v})} />
+                  <RatingRow label="Staff responsiveness to questions" value={formData.evalComm_staffResponsiveness} onChange={(v) => setFormData({...formData, evalComm_staffResponsiveness: v})} />
+                  <RatingRow label="Transparency about treatment options, costs and risks" value={formData.evalComm_transparency} onChange={(v) => setFormData({...formData, evalComm_transparency: v})} />
+                </div>
+              </div>
+
+              {/* Comfort */}
+              <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200">
+                <h3 className="text-lg font-bold text-slate-900 mb-4 text-teal-700">5. Comfort</h3>
+                <div className="space-y-1">
+                  <RatingRow label="Spacious waiting areas/ rooms" value={formData.evalComfort_spacious} onChange={(v) => setFormData({...formData, evalComfort_spacious: v})} />
+                  <RatingRow label="Clean and neat Rooms" value={formData.evalComfort_cleanRooms} onChange={(v) => setFormData({...formData, evalComfort_cleanRooms: v})} />
+                  <RatingRow label="Other Services" value={formData.evalComfort_otherServices} onChange={(v) => setFormData({...formData, evalComfort_otherServices: v})} />
+                  <RatingRow label="No hospital feel" value={formData.evalComfort_noHospitalFeel} onChange={(v) => setFormData({...formData, evalComfort_noHospitalFeel: v})} />
+                  <RatingRow label="Balanced diet & Hygienic food" value={formData.evalComfort_diet} onChange={(v) => setFormData({...formData, evalComfort_diet: v})} />
+                </div>
+              </div>
+
+              {/* Convenience */}
+              <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200">
+                <h3 className="text-lg font-bold text-slate-900 mb-4 text-teal-700">6. Convenience</h3>
+                <div className="space-y-1">
+                  <RatingRow label="Within Heart of the city" value={formData.evalConv_cityHeart} onChange={(v) => setFormData({...formData, evalConv_cityHeart: v})} />
+                  <RatingRow label="Near to residence" value={formData.evalConv_nearResidence} onChange={(v) => setFormData({...formData, evalConv_nearResidence: v})} />
+                  <RatingRow label="Easy Mobility" value={formData.evalConv_mobility} onChange={(v) => setFormData({...formData, evalConv_mobility: v})} />
+                  <RatingRow label="Ambulance service" value={formData.evalConv_ambulance} onChange={(v) => setFormData({...formData, evalConv_ambulance: v})} />
+                  <RatingRow label="Parking facilities" value={formData.evalConv_parking} onChange={(v) => setFormData({...formData, evalConv_parking: v})} />
+                </div>
+              </div>
+
             </motion.div>
           )}
         </AnimatePresence>
