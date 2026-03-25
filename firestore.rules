@@ -51,23 +51,27 @@ service cloud.firestore {
     }
 
     function getUserData() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+      let userDoc = isAuthenticated() ? get(/databases/$(database)/documents/users/$(request.auth.uid)) : null;
+      return userDoc != null ? userDoc.data : null;
     }
 
     function isAdmin() {
+      let data = getUserData();
       return isAuthenticated() && 
-        (getUserData().role in ['admin', 'superadmin'] && getUserData().status == 'active' ||
+        ((data != null && data.role in ['admin', 'superadmin'] && data.status == 'active') ||
         (request.auth.token.email == "webdeveloper@miotinternational.com" && request.auth.token.email_verified == true));
     }
 
     function isSuperAdmin() {
+      let data = getUserData();
       return isAuthenticated() && 
-        (getUserData().role == 'superadmin' && getUserData().status == 'active' ||
+        ((data != null && data.role == 'superadmin' && data.status == 'active') ||
         (request.auth.token.email == "webdeveloper@miotinternational.com" && request.auth.token.email_verified == true));
     }
 
     function isEditor() {
-      return isAuthenticated() && getUserData().role == 'editor' && getUserData().status == 'active';
+      let data = getUserData();
+      return isAuthenticated() && data != null && data.role == 'editor' && data.status == 'active';
     }
 
     function hasRequiredFields(fields) {
@@ -147,7 +151,8 @@ service cloud.firestore {
     }
 
     match /surveys/{surveyId} {
-      allow read: if true;
+      allow read: if resource.data.isActive == true;
+      allow read: if isAdmin() || isSuperAdmin() || isEditor();
       allow create: if (isAdmin() || isSuperAdmin() || isEditor()) && isValidSurvey(request.resource.data);
       allow update: if (isAdmin() || isSuperAdmin() || isEditor()) && isValidSurvey(request.resource.data);
       allow delete: if isAdmin() || isSuperAdmin();

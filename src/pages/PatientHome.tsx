@@ -5,11 +5,11 @@ import { useSurveys } from '../hooks/useFirestore';
 import { ClipboardList, ChevronRight } from 'lucide-react';
 
 export default function PatientHome() {
-  const { surveys, loading } = useSurveys();
+  const { surveys, loading } = useSurveys(true);
   const [activeSurveys, setActiveSurveys] = useState<Survey[]>([]);
 
   useEffect(() => {
-    setActiveSurveys(surveys.filter(s => s.isActive));
+    setActiveSurveys(surveys);
   }, [surveys]);
 
   if (loading) {

@@ -1,7 +1,18 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { Question } from "../store";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+let ai: GoogleGenAI | null = null;
+
+const getAI = () => {
+  if (!ai) {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error("GEMINI_API_KEY environment variable is missing.");
+    }
+    ai = new GoogleGenAI({ apiKey });
+  }
+  return ai;
+};
 
 const surveyConfig = {
   systemInstruction: "You are an expert survey creator for a hospital. Generate a structured survey with a title, description, and a list of questions. Questions can be 'text', 'rating', 'multiple_choice', or 'checkbox'. For multiple choice and checkbox, provide 'options'.",
@@ -34,7 +45,7 @@ const surveyConfig = {
 };
 
 export const generateSurveyFromText = async (text: string): Promise<{ title: string; description: string; questions: Omit<Question, 'id'>[] }> => {
-  const response = await ai.models.generateContent({
+  const response = await getAI().models.generateContent({
     model: "gemini-3-flash-preview",
     contents: `Analyze the following text from a hospital document and generate a survey based on it. The hospital is MIOT International. Extract relevant topics to ask patients about.
     
@@ -51,7 +62,7 @@ export const generateSurveyFromText = async (text: string): Promise<{ title: str
 };
 
 export const generateSurveyFromFile = async (base64Data: string, mimeType: string): Promise<{ title: string; description: string; questions: Omit<Question, 'id'>[] }> => {
-  const response = await ai.models.generateContent({
+  const response = await getAI().models.generateContent({
     model: "gemini-3-flash-preview",
     contents: {
       parts: [

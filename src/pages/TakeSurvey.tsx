@@ -7,7 +7,7 @@ import { Upload, CheckCircle2, AlertCircle } from 'lucide-react';
 export default function TakeSurvey() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { surveys, loading } = useSurveys();
+  const { surveys, loading } = useSurveys(true);
   const [survey, setSurvey] = useState<Survey | null>(null);
   const [answers, setAnswers] = useState<Record<string, any>>({});
   const [patientName, setPatientName] = useState('');
