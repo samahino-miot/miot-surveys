@@ -250,7 +250,7 @@ export default function CreateSurvey() {
         if (fileInputRef.current) fileInputRef.current.value = '';
       };
 
-      if (file.type === 'application/pdf') {
+      if (file.type === 'application/pdf' || file.type.startsWith('image/')) {
         reader.onload = async (event) => {
           try {
             const base64String = (event.target?.result as string).split(',')[1];
@@ -259,8 +259,9 @@ export default function CreateSurvey() {
             setTitle(generated.title);
             setDescription(generated.description);
             setQuestions(generated.questions.map((q, i) => ({ ...q, id: `q_gen_${Date.now()}_${i}` })));
-          } catch (err) {
-            setError('Failed to generate survey from PDF. Please ensure the file is valid and try again.');
+          } catch (err: any) {
+            const errorMsg = err?.message || 'Failed to generate survey from file. Please ensure the file is valid and try again.';
+            setError(errorMsg.includes('GEMINI_API_KEY') ? 'API Key missing: Please add GEMINI_API_KEY to Vercel and redeploy.' : errorMsg);
             console.error(err);
           } finally {
             setIsGenerating(false);
@@ -268,7 +269,7 @@ export default function CreateSurvey() {
           }
         };
         reader.readAsDataURL(file);
-      } else {
+      } else if (file.type.startsWith('text/') || file.type === 'application/json' || file.name.endsWith('.csv') || file.name.endsWith('.md')) {
         reader.onload = async (event) => {
           try {
             const text = event.target?.result as string;
@@ -277,8 +278,9 @@ export default function CreateSurvey() {
             setTitle(generated.title);
             setDescription(generated.description);
             setQuestions(generated.questions.map((q, i) => ({ ...q, id: `q_gen_${Date.now()}_${i}` })));
-          } catch (err) {
-            setError('Failed to generate survey from document. Please try a plain text file or enter manually.');
+          } catch (err: any) {
+            const errorMsg = err?.message || 'Failed to generate survey from document. Please try a plain text file or enter manually.';
+            setError(errorMsg.includes('GEMINI_API_KEY') ? 'API Key missing: Please add GEMINI_API_KEY to Vercel and redeploy.' : errorMsg);
             console.error(err);
           } finally {
             setIsGenerating(false);
@@ -286,6 +288,10 @@ export default function CreateSurvey() {
           }
         };
         reader.readAsText(file);
+      } else {
+        setError('Unsupported file type. Please upload a PDF, Image, or Text file (.txt, .csv, .md). Word documents (.docx) are not supported directly.');
+        setIsGenerating(false);
+        if (fileInputRef.current) fileInputRef.current.value = '';
       }
     } catch (err) {
       setError('An unexpected error occurred while processing the file.');
