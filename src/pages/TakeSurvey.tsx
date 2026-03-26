@@ -323,13 +323,13 @@ export default function TakeSurvey() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
-                    1. Mr. No
+                    1. MR No
                   </label>
                   <input
                     type="text"
                     value={formData.mrNo}
                     onChange={(e) => setFormData({...formData, mrNo: e.target.value})}
-                    placeholder="Enter Mr. No"
+                    placeholder="Enter MR No"
                     className="w-full p-2.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all bg-slate-50 focus:bg-white"
                   />
                 </div>

@@ -114,7 +114,7 @@ export default function SurveyResults() {
     if (responses.length === 0) return;
 
     // Headers
-    const headers = ['Response ID', 'Date', 'Patient Name', 'Attendant Name', 'Relation', 'Age', 'Gender', 'Mr. No', 'City', 'State', 'Country', ...survey.questions.map(q => q.text)];
+    const headers = ['Response ID', 'Date', 'Patient Name', 'Attendant Name', 'Relation', 'Age', 'Gender', 'MR No', 'City', 'State', 'Country', ...survey.questions.map(q => q.text)];
     
     // Rows
     const rows = sortedResponses.map(r => {
@@ -191,7 +191,7 @@ export default function SurveyResults() {
     if (responses.length === 0) return;
 
     // Headers
-    const headers = ['Response ID', 'Date', 'Patient Name', 'Attendant Name', 'Relation', 'Age', 'Gender', 'Mr. No', 'City', 'State', 'Country', ...survey.questions.map(q => q.text)];
+    const headers = ['Response ID', 'Date', 'Patient Name', 'Attendant Name', 'Relation', 'Age', 'Gender', 'MR No', 'City', 'State', 'Country', ...survey.questions.map(q => q.text)];
     
     // Rows
     const rows = sortedResponses.map(r => {
