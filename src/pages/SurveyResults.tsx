@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useParams, Link } from 'react-router';
-import { useResponses } from '../hooks/useFirestore';
-import { ArrowLeft, Download, FileText, ChevronLeft, ChevronRight, FileSpreadsheet } from 'lucide-react';
+import { useResponses, useSurveys } from '../hooks/useFirestore';
+import { ArrowLeft, Download, FileText, ChevronLeft, ChevronRight, FileSpreadsheet, Trash2 } from 'lucide-react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
+import { deleteResponse } from '../store';
 
 const COLORS = ['#2e56a6', '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981'];
 
@@ -50,21 +51,30 @@ const hardcodedSurvey = {
     { id: 'evalConv_nearResidence', text: 'Convenience: Near to residence', type: 'rating' },
     { id: 'evalConv_mobility', text: 'Convenience: Easy Mobility', type: 'rating' },
     { id: 'evalConv_ambulance', text: 'Convenience: Ambulance service', type: 'rating' },
-    { id: 'evalConv_parking', text: 'Convenience: Parking facilities', type: 'rating' }
+    { id: 'evalConv_parking', text: 'Convenience: Parking facilities', type: 'rating' },
+    
+    { id: 'specialitiesAssociated', text: 'What specialities do you associate with MIOT?', type: 'text' },
+    { id: 'willReturn', text: 'I will return to MIOT for further treatment', type: 'multiple_choice', options: ['Yes', 'No'] },
+    { id: 'returnYesReasons', text: 'If YES, because of', type: 'checkbox', options: ['Treating Doctors', 'Treatment Outcome', 'Hassle free experience from appointment booking to consultation/discharge', 'Transparency in treatment, bills, etc', 'Responsible & Experienced support staff', 'Others, if any'] },
+    { id: 'returnNoReason', text: 'If NO, please specify', type: 'text' }
   ]
 };
 
 export default function SurveyResults() {
   const { id } = useParams();
   const { responses, loading: responsesLoading } = useResponses(id || '');
+  const { surveys, loading: surveysLoading } = useSurveys(false);
   
   const [currentPage, setCurrentPage] = useState(1);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const rowsPerPage = 10;
 
-  const survey = hardcodedSurvey;
+  if (responsesLoading || surveysLoading) return <div className="text-center py-12">Loading...</div>;
+  
+  const dbSurvey = surveys.find(s => s.id === id);
+  const survey = dbSurvey || (id === 'miot-registration-survey' ? hardcodedSurvey : null);
 
-  if (responsesLoading) return <div className="text-center py-12">Loading...</div>;
-  if (id !== 'miot-registration-survey') return <div className="text-center py-12">Survey not found.</div>;
+  if (!survey) return <div className="text-center py-12">Survey not found.</div>;
 
   const reversedResponses = [...responses].reverse();
   const totalPages = Math.max(1, Math.ceil(reversedResponses.length / rowsPerPage));
@@ -72,6 +82,20 @@ export default function SurveyResults() {
     (currentPage - 1) * rowsPerPage,
     currentPage * rowsPerPage
   );
+
+  const handleDelete = async (responseId: string) => {
+    if (window.confirm('Are you sure you want to delete this response? This action cannot be undone and will permanently remove this data from the results.')) {
+      setIsDeleting(responseId);
+      try {
+        await deleteResponse(responseId);
+      } catch (error) {
+        console.error('Failed to delete response:', error);
+        alert('Failed to delete response. Please try again.');
+      } finally {
+        setIsDeleting(null);
+      }
+    }
+  };
 
   const exportCSV = () => {
     if (responses.length === 0) return;
@@ -398,12 +422,13 @@ export default function SurveyResults() {
                 <th className="px-4 py-3 sm:px-6 sm:py-4">Name</th>
                 <th className="px-4 py-3 sm:px-6 sm:py-4">Age</th>
                 <th className="px-4 py-3 sm:px-6 sm:py-4">City</th>
+                <th className="px-4 py-3 sm:px-6 sm:py-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {responses.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-4 py-8 text-center text-slate-500">No responses yet</td>
+                  <td colSpan={5} className="px-4 py-8 text-center text-slate-500">No responses yet</td>
                 </tr>
               ) : (
                 paginatedResponses.map(r => {
@@ -414,6 +439,16 @@ export default function SurveyResults() {
                       <td className="px-4 py-3 sm:px-6 sm:py-4 font-medium text-slate-900">{answers.patientName || 'N/A'}</td>
                       <td className="px-4 py-3 sm:px-6 sm:py-4">{answers.age || 'N/A'}</td>
                       <td className="px-4 py-3 sm:px-6 sm:py-4">{answers.city || 'N/A'}</td>
+                      <td className="px-4 py-3 sm:px-6 sm:py-4 text-right">
+                        <button
+                          onClick={() => handleDelete(r.id)}
+                          disabled={isDeleting === r.id}
+                          className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                          title="Delete response"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </td>
                     </tr>
                   );
                 })

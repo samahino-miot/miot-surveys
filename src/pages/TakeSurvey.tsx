@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate, useParams } from 'react-router';
 import { CheckCircle2, AlertCircle, ArrowRight, ArrowLeft, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
+import { useSurveys } from '../hooks/useFirestore';
 
 const RatingRow = ({ label, value, onChange }: { label: string, value: number, onChange: (val: number) => void }) => (
   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-3 border-b border-slate-200/60 last:border-0">
@@ -29,6 +30,10 @@ const RatingRow = ({ label, value, onChange }: { label: string, value: number, o
 
 export default function TakeSurvey() {
   const navigate = useNavigate();
+  const { id } = useParams();
+  const surveyId = id || 'miot-registration-survey';
+  
+  const { surveys, loading: surveysLoading } = useSurveys(false);
   
   const [formData, setFormData] = useState({
     patientName: '',
@@ -79,6 +84,12 @@ export default function TakeSurvey() {
     evalConv_mobility: 0,
     evalConv_ambulance: 0,
     evalConv_parking: 0,
+    
+    specialitiesAssociated: '',
+    willReturn: '',
+    returnYesReasons: [] as string[],
+    returnYesOther: '',
+    returnNoReason: ''
   });
 
   const [currentStep, setCurrentStep] = useState(0);
@@ -87,10 +98,35 @@ export default function TakeSurvey() {
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const totalSteps = 4;
+  const totalSteps = 5;
   const progressPercentage = Math.round((currentStep / totalSteps) * 100);
 
-  const handleCheckboxChange = (field: 'howDidYouKnow' | 'whatInfluenced', value: string) => {
+  if (surveysLoading) {
+    return <div className="flex items-center justify-center min-h-[60vh]">Loading...</div>;
+  }
+
+  const dbSurvey = surveys.find(s => s.id === surveyId);
+  const isActive = dbSurvey ? dbSurvey.isActive : true; // Default to true if not in DB
+
+  if (!isActive) {
+    return (
+      <div className="min-h-[80vh] flex items-center justify-center px-4">
+        <div className="max-w-lg w-full text-center py-16 px-8 bg-white rounded-3xl shadow-sm border border-slate-200">
+          <AlertCircle className="h-16 w-16 text-slate-400 mx-auto mb-6" />
+          <h2 className="text-2xl font-bold text-slate-900 mb-4">Survey Unavailable</h2>
+          <p className="text-slate-600 mb-8">This survey is currently not active and cannot accept new responses.</p>
+          <button 
+            onClick={() => navigate('/')}
+            className="px-6 py-3 bg-slate-100 text-slate-700 font-medium rounded-xl hover:bg-slate-200 transition-colors"
+          >
+            Return to Home
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const handleCheckboxChange = (field: 'howDidYouKnow' | 'whatInfluenced' | 'returnYesReasons', value: string) => {
     setFormData(prev => {
       const current = prev[field];
       if (current.includes(value)) {
@@ -148,6 +184,30 @@ export default function TakeSurvey() {
         setError('Please complete all ratings and selections on this page.');
         return;
       }
+    } else if (currentStep === 4) {
+      if (!formData.specialitiesAssociated.trim()) {
+        setError('Please specify the specialities associated with MIOT.');
+        return;
+      }
+      if (!formData.willReturn) {
+        setError('Please select whether you will return to MIOT.');
+        return;
+      }
+      if (formData.willReturn === 'Yes') {
+        if (formData.returnYesReasons.length === 0) {
+          setError('Please select at least one reason for returning.');
+          return;
+        }
+        if (formData.returnYesReasons.includes('Others, if any') && !formData.returnYesOther.trim()) {
+          setError('Please specify the other reason for returning.');
+          return;
+        }
+      } else if (formData.willReturn === 'No') {
+        if (!formData.returnNoReason.trim()) {
+          setError('Please specify the reason for not returning.');
+          return;
+        }
+      }
     }
 
     if (currentStep < totalSteps - 1) {
@@ -171,8 +231,8 @@ export default function TakeSurvey() {
     setError('');
     try {
       await addDoc(collection(db, 'responses'), {
-        surveyId: 'miot-registration-survey',
-        surveyTitle: 'MIOT International Patient Registration Survey',
+        surveyId: surveyId,
+        surveyTitle: dbSurvey?.title || 'MIOT International Patient Registration Survey',
         answers: formData,
         submittedAt: serverTimestamp()
       });
@@ -612,7 +672,7 @@ export default function TakeSurvey() {
                 </div>
               </div>
             </motion.div>
-          ) : (
+          ) : currentStep === 3 ? (
             <motion.div
               key="step-3"
               custom={direction}
@@ -722,6 +782,150 @@ export default function TakeSurvey() {
                 </div>
               </div>
 
+            </motion.div>
+          ) : (
+            <motion.div
+              key="step-4"
+              custom={direction}
+              variants={variants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{ duration: 0.3, ease: "easeInOut" }}
+              className="p-6 sm:p-10 space-y-10"
+            >
+              <h2 className="text-2xl font-bold text-slate-900 mb-6">Final Questions</h2>
+              
+              <div className="space-y-8">
+                {/* Q15 */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    15. What specialities do you associate with MIOT? Just note top 5 in the order they spell: <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.specialitiesAssociated}
+                    onChange={(e) => setFormData({...formData, specialitiesAssociated: e.target.value})}
+                    placeholder="e.g. Cardiology, Orthopedics, Neurology..."
+                    className="w-full p-4 text-lg border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all bg-slate-50 focus:bg-white"
+                  />
+                </div>
+
+                {/* Q16 */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-3">
+                    16. I will return to MIOT for further treatment: <span className="text-red-500">*</span>
+                  </label>
+                  <div className="flex gap-4 mb-6">
+                    {['Yes', 'No'].map(option => (
+                      <label 
+                        key={option} 
+                        className={`flex-1 flex items-center justify-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                          formData.willReturn === option 
+                            ? 'border-teal-600 bg-teal-50' 
+                            : 'border-slate-200 hover:border-teal-300 hover:bg-slate-50'
+                        }`}
+                      >
+                        <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                          formData.willReturn === option ? 'border-teal-600' : 'border-slate-400'
+                        }`}>
+                          {formData.willReturn === option && <div className="h-2.5 w-2.5 rounded-full bg-teal-600" />}
+                        </div>
+                        <input
+                          type="radio"
+                          name="willReturn"
+                          value={option}
+                          checked={formData.willReturn === option}
+                          onChange={(e) => setFormData({...formData, willReturn: e.target.value as 'Yes' | 'No'})}
+                          className="hidden"
+                        />
+                        <span className={`font-bold text-lg ${formData.willReturn === option ? 'text-teal-900' : 'text-slate-700'}`}>
+                          {option}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+
+                  {formData.willReturn === 'Yes' && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      className="space-y-4 bg-teal-50/50 p-6 rounded-2xl border border-teal-100"
+                    >
+                      <label className="block text-sm font-medium text-slate-700 mb-3">
+                        If YES, because of: <span className="text-red-500">*</span>
+                      </label>
+                      <div className="grid grid-cols-1 gap-3">
+                        {[
+                          'Treating Doctors',
+                          'Treatment Outcome',
+                          'Hassle free experience from appointment booking to consultation/discharge',
+                          'Transparency in treatment, bills, etc',
+                          'Responsible & Experienced support staff',
+                          'Others, if any'
+                        ].map(option => {
+                          const isSelected = formData.returnYesReasons.includes(option);
+                          return (
+                            <label 
+                              key={option} 
+                              className={`flex items-start gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all bg-white ${
+                                isSelected 
+                                  ? 'border-teal-600 bg-teal-50' 
+                                  : 'border-slate-200 hover:border-teal-300'
+                              }`}
+                            >
+                              <div className={`mt-0.5 h-5 w-5 shrink-0 rounded border-2 flex items-center justify-center transition-colors ${
+                                isSelected ? 'bg-teal-600 border-teal-600' : 'border-slate-400 bg-white'
+                              }`}>
+                                {isSelected && <Check className="h-4 w-4 text-white" />}
+                              </div>
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => handleCheckboxChange('returnYesReasons', option)}
+                                className="hidden"
+                              />
+                              <span className={`text-sm font-medium ${isSelected ? 'text-teal-900' : 'text-slate-700'}`}>
+                                {option}
+                              </span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                      {formData.returnYesReasons.includes('Others, if any') && (
+                        <div className="mt-4">
+                          <input
+                            type="text"
+                            placeholder="Please specify other reason"
+                            value={formData.returnYesOther}
+                            onChange={(e) => setFormData({...formData, returnYesOther: e.target.value})}
+                            className="w-full p-3 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all bg-white"
+                          />
+                        </div>
+                      )}
+                    </motion.div>
+                  )}
+
+                  {formData.willReturn === 'No' && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      className="mt-4"
+                    >
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        If NO, please specify: <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Please specify why you will not return"
+                        value={formData.returnNoReason}
+                        onChange={(e) => setFormData({...formData, returnNoReason: e.target.value})}
+                        className="w-full p-4 text-lg border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all bg-slate-50 focus:bg-white"
+                      />
+                    </motion.div>
+                  )}
+                </div>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>

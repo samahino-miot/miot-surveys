@@ -1,22 +1,37 @@
-import { useResponses } from '../hooks/useFirestore';
+import { useResponses, useSurveys } from '../hooks/useFirestore';
 import { Users, FileText, Activity } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export default function AdminDashboard() {
   const { responses, loading: responsesLoading } = useResponses();
+  const { surveys, loading: surveysLoading } = useSurveys(false);
 
-  if (responsesLoading) {
+  if (responsesLoading || surveysLoading) {
     return <div className="flex items-center justify-center min-h-[60vh]">Loading...</div>;
+  }
+
+  const hasHardcoded = surveys.some(s => s.id === 'miot-registration-survey');
+  const allSurveys = [...surveys];
+  
+  if (!hasHardcoded) {
+    allSurveys.push({
+      id: 'miot-registration-survey',
+      title: 'MIOT International Patient Registration Survey',
+      description: 'Please fill out the following details to register.',
+      questions: [],
+      createdAt: new Date().toISOString(),
+      isActive: true,
+    });
   }
 
   const recentResponses = [...responses].sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()).slice(0, 5);
 
-  const responsesBySurvey = [
-    {
-      name: 'MIOT Registration',
-      responses: responses.length
-    }
-  ];
+  const responsesBySurvey = allSurveys.map(survey => ({
+    name: survey.title.length > 20 ? survey.title.substring(0, 20) + '...' : survey.title,
+    responses: responses.filter(r => r.surveyId === survey.id).length
+  }));
+
+  const activeSurveysCount = allSurveys.filter(s => s.isActive).length;
 
   return (
     <div className="space-y-8">
@@ -32,7 +47,7 @@ export default function AdminDashboard() {
           </div>
           <div>
             <p className="text-sm font-medium text-slate-500">Total Surveys</p>
-            <p className="text-2xl font-bold text-slate-900">1</p>
+            <p className="text-2xl font-bold text-slate-900">{allSurveys.length}</p>
           </div>
         </div>
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-4">
@@ -50,7 +65,7 @@ export default function AdminDashboard() {
           </div>
           <div>
             <p className="text-sm font-medium text-slate-500">Active Surveys</p>
-            <p className="text-2xl font-bold text-slate-900">1</p>
+            <p className="text-2xl font-bold text-slate-900">{activeSurveysCount}</p>
           </div>
         </div>
       </div>
@@ -79,10 +94,11 @@ export default function AdminDashboard() {
             ) : (
               recentResponses.map(response => {
                 const answers = response.answers || {};
+                const survey = allSurveys.find(s => s.id === response.surveyId);
                 return (
                   <div key={response.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border border-slate-100 bg-slate-50">
                     <div>
-                      <p className="font-medium text-slate-900">MIOT International Patient Registration Survey</p>
+                      <p className="font-medium text-slate-900">{survey?.title || 'Unknown Survey'}</p>
                       <p className="text-sm text-slate-600 mt-1">From: {answers.patientName || 'Anonymous'}</p>
                       <p className="text-xs text-slate-500 mt-0.5">{new Date(response.submittedAt).toLocaleString()}</p>
                     </div>

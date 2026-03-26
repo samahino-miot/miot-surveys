@@ -65,7 +65,7 @@ export const useSurveys = (activeOnly: boolean = false) => {
     }
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const data = snapshot.docs.map(doc => doc.data() as Survey);
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Survey));
       setSurveys(data);
       setLoading(false);
     }, (error) => {
@@ -92,7 +92,7 @@ export const useResponses = (surveyId?: string) => {
     }
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const data = snapshot.docs.map(doc => doc.data() as SurveyResponse);
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SurveyResponse));
       setResponses(data);
       setLoading(false);
     }, (error) => {
@@ -114,7 +114,7 @@ export const useUsers = () => {
 
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, 'users'), (snapshot) => {
-      const data = snapshot.docs.map(doc => doc.data() as User);
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
       setUsers(data);
       setLoading(false);
     }, (error) => {

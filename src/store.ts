@@ -119,6 +119,14 @@ export const saveResponse = async (response: SurveyResponse) => {
   }
 };
 
+export const deleteResponse = async (id: string) => {
+  try {
+    await deleteDoc(doc(db, 'responses', id));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, `responses/${id}`);
+  }
+};
+
 export interface User {
   id: string;
   name: string;
