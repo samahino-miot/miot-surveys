@@ -7,7 +7,7 @@ import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useSurveys } from '../hooks/useFirestore';
 import { LocationInput } from '../components/LocationInput';
-import { locations } from '../data/locations';
+import { Country, State, City } from 'country-state-city';
 import { departments } from '../data/departments';
 
 const CategoryRatingCard = ({ title, subPoints, value, onChange }: { title: string, subPoints: string, value: number, onChange: (val: number) => void }) => (
@@ -89,6 +89,17 @@ export default function TakeSurvey() {
 
   const dbSurvey = surveys.find(s => s.id === surveyId);
   const isActive = dbSurvey ? dbSurvey.isActive : true; // Default to true if not in DB
+
+  const countries = Country.getAllCountries();
+  const countryNames = countries.map(c => c.name);
+
+  const selectedCountry = countries.find(c => c.name === formData.country);
+  const states = selectedCountry ? State.getStatesOfCountry(selectedCountry.isoCode) : [];
+  const stateNames = states.map(s => s.name);
+
+  const selectedState = states.find(s => s.name === formData.state);
+  const cities = selectedState ? City.getCitiesOfState(selectedCountry!.isoCode, selectedState.isoCode) : [];
+  const cityNames = cities.map(c => c.name);
 
   if (!isActive) {
     return (
@@ -399,7 +410,7 @@ export default function TakeSurvey() {
                   label="7. Country"
                   value={formData.country}
                   onChange={(val) => setFormData({...formData, country: val, state: '', city: ''})}
-                  suggestions={locations.countries}
+                  suggestions={countryNames}
                   placeholder="Enter or select Country"
                   required
                 />
@@ -408,7 +419,7 @@ export default function TakeSurvey() {
                   label="8. State"
                   value={formData.state}
                   onChange={(val) => setFormData({...formData, state: val, city: ''})}
-                  suggestions={locations.states[formData.country as keyof typeof locations.states] || []}
+                  suggestions={stateNames}
                   placeholder="Enter or select State"
                   required
                 />
@@ -417,7 +428,7 @@ export default function TakeSurvey() {
                   label="9. City"
                   value={formData.city}
                   onChange={(val) => setFormData({...formData, city: val})}
-                  suggestions={locations.cities[formData.state as keyof typeof locations.cities] || []}
+                  suggestions={cityNames}
                   placeholder="Enter or select City"
                   required
                 />
