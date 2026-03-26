@@ -316,7 +316,7 @@ export default function TakeSurvey() {
               animate="center"
               exit="exit"
               transition={{ duration: 0.3, ease: "easeInOut" }}
-              className="p-6 sm:p-10 space-y-6"
+              className="p-6 sm:p-10 xl:pb-0 space-y-6"
             >
               <h2 className="text-2xl font-bold text-slate-900 mb-6">Patient Details</h2>
               
