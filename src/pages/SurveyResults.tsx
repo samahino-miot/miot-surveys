@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router';
 import { useResponses, useSurveys } from '../hooks/useFirestore';
 import { ArrowLeft, Download, FileText, ChevronLeft, ChevronRight, FileSpreadsheet, Trash2 } from 'lucide-react';
@@ -6,7 +6,7 @@ import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Toolti
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
-import { deleteResponse } from '../store';
+import { deleteResponse, formatDate, getTimestamp } from '../store';
 
 const COLORS = ['#2e56a6', '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981'];
 
@@ -67,18 +67,31 @@ export default function SurveyResults() {
   
   const [currentPage, setCurrentPage] = useState(1);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [lastFetched, setLastFetched] = useState<Date>(new Date());
   const rowsPerPage = 10;
+
+  // Update last fetched time when responses change
+  useEffect(() => {
+    if (!responsesLoading) {
+      setLastFetched(new Date());
+    }
+  }, [responses, responsesLoading]);
 
   if (responsesLoading || surveysLoading) return <div className="text-center py-12">Loading...</div>;
   
   const dbSurvey = surveys.find(s => s.id === id);
-  const survey = dbSurvey || (id === 'miot-registration-survey' ? hardcodedSurvey : null);
+  let survey = dbSurvey || (id === 'miot-registration-survey' ? hardcodedSurvey : null);
+
+  // If the survey is the hardcoded one but was saved to DB without questions, restore them
+  if (survey && survey.id === 'miot-registration-survey' && (!survey.questions || survey.questions.length === 0)) {
+    survey = { ...survey, questions: hardcodedSurvey.questions };
+  }
 
   if (!survey) return <div className="text-center py-12">Survey not found.</div>;
 
-  const reversedResponses = [...responses].reverse();
-  const totalPages = Math.max(1, Math.ceil(reversedResponses.length / rowsPerPage));
-  const paginatedResponses = reversedResponses.slice(
+  const sortedResponses = [...responses].sort((a, b) => getTimestamp(b.submittedAt) - getTimestamp(a.submittedAt));
+  const totalPages = Math.max(1, Math.ceil(sortedResponses.length / rowsPerPage));
+  const paginatedResponses = sortedResponses.slice(
     (currentPage - 1) * rowsPerPage,
     currentPage * rowsPerPage
   );
@@ -104,9 +117,9 @@ export default function SurveyResults() {
     const headers = ['Response ID', 'Date', 'Patient Name', 'Attendant Name', 'Relation', 'Age', 'Gender', 'Mr. No', 'City', 'State', 'Country', ...survey.questions.map(q => q.text)];
     
     // Rows
-    const rows = responses.map(r => {
+    const rows = sortedResponses.map(r => {
       const answers = r.answers || {};
-      const row = [r.id, new Date(r.submittedAt).toLocaleString(), answers.patientName || 'N/A', answers.attendantName || 'N/A', answers.relationToPatient || 'N/A', answers.age || 'N/A', answers.gender || 'N/A', answers.mrNo || 'N/A', answers.city || 'N/A', answers.state || 'N/A', answers.country || 'N/A'];
+      const row = [r.id, formatDate(r.submittedAt, true), answers.patientName || 'N/A', answers.attendantName || 'N/A', answers.relationToPatient || 'N/A', answers.age || 'N/A', answers.gender || 'N/A', answers.mrNo || 'N/A', answers.city || 'N/A', answers.state || 'N/A', answers.country || 'N/A'];
       survey.questions.forEach(q => {
         const val = answers[q.id];
         if (Array.isArray(val)) {
@@ -142,12 +155,12 @@ export default function SurveyResults() {
     doc.text(`Survey Results: ${survey.title}`, 14, 22);
     doc.setFontSize(11);
     doc.text(`Total Responses: ${responses.length}`, 14, 30);
-    doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 36);
+    doc.text(`Generated on: ${formatDate(new Date(), true)}`, 14, 36);
 
     const headers = [['Date', 'Patient Name', 'Age', 'Gender', 'City', ...survey.questions.map(q => q.text.substring(0, 30) + (q.text.length > 30 ? '...' : ''))]];
-    const data = responses.map(r => {
+    const data = sortedResponses.map(r => {
       const answers = r.answers || {};
-      const row = [new Date(r.submittedAt).toLocaleDateString(), answers.patientName || 'N/A', answers.age || 'N/A', answers.gender || 'N/A', answers.city || 'N/A'];
+      const row = [formatDate(r.submittedAt), answers.patientName || 'N/A', answers.age || 'N/A', answers.gender || 'N/A', answers.city || 'N/A'];
       survey.questions.forEach(q => {
         const val = answers[q.id];
         if (Array.isArray(val)) {
@@ -181,9 +194,9 @@ export default function SurveyResults() {
     const headers = ['Response ID', 'Date', 'Patient Name', 'Attendant Name', 'Relation', 'Age', 'Gender', 'Mr. No', 'City', 'State', 'Country', ...survey.questions.map(q => q.text)];
     
     // Rows
-    const rows = responses.map(r => {
+    const rows = sortedResponses.map(r => {
       const answers = r.answers || {};
-      const row = [r.id, new Date(r.submittedAt).toLocaleString(), answers.patientName || 'N/A', answers.attendantName || 'N/A', answers.relationToPatient || 'N/A', answers.age || 'N/A', answers.gender || 'N/A', answers.mrNo || 'N/A', answers.city || 'N/A', answers.state || 'N/A', answers.country || 'N/A'];
+      const row = [r.id, formatDate(r.submittedAt, true), answers.patientName || 'N/A', answers.attendantName || 'N/A', answers.relationToPatient || 'N/A', answers.age || 'N/A', answers.gender || 'N/A', answers.mrNo || 'N/A', answers.city || 'N/A', answers.state || 'N/A', answers.country || 'N/A'];
       survey.questions.forEach(q => {
         const val = answers[q.id];
         if (Array.isArray(val)) {
@@ -330,6 +343,18 @@ export default function SurveyResults() {
       const data = Object.entries(counts).map(([name, value]) => ({ name, value }));
       const average = responseCount > 0 ? (sum / responseCount).toFixed(1) : '0.0';
 
+      const CustomBarTooltip = ({ active, payload }: any) => {
+        if (active && payload && payload.length) {
+          return (
+            <div className="bg-white p-3 border border-slate-200 shadow-lg rounded-xl">
+              <p className="font-medium text-slate-900 mb-1">Rating: {payload[0].payload.name} Stars</p>
+              <p className="text-sm text-slate-600">Count: <span className="font-medium text-slate-900">{payload[0].value}</span></p>
+            </div>
+          );
+        }
+        return null;
+      };
+
       return (
         <div className="space-y-6">
           <div className="flex items-center justify-between bg-slate-50 p-4 rounded-xl border border-slate-100">
@@ -411,8 +436,12 @@ export default function SurveyResults() {
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        <div className="p-4 sm:p-6 border-b border-slate-200">
+        <div className="p-4 sm:p-6 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <h2 className="text-xl font-bold text-slate-900">Recent Respondents</h2>
+          <div className="text-sm text-slate-500 flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+            Auto-updating (Last fetched: {lastFetched.toLocaleTimeString()})
+          </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm text-slate-600">
@@ -435,7 +464,7 @@ export default function SurveyResults() {
                   const answers = r.answers || {};
                   return (
                     <tr key={r.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-4 py-3 sm:px-6 sm:py-4 whitespace-nowrap">{new Date(r.submittedAt).toLocaleDateString()}</td>
+                      <td className="px-4 py-3 sm:px-6 sm:py-4 whitespace-nowrap">{formatDate(r.submittedAt, true)}</td>
                       <td className="px-4 py-3 sm:px-6 sm:py-4 font-medium text-slate-900">{answers.patientName || 'N/A'}</td>
                       <td className="px-4 py-3 sm:px-6 sm:py-4">{answers.age || 'N/A'}</td>
                       <td className="px-4 py-3 sm:px-6 sm:py-4">{answers.city || 'N/A'}</td>

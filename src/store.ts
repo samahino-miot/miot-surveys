@@ -152,5 +152,34 @@ export const deleteUser = async (id: string) => {
   }
 };
 
+// Date formatting utilities for Firestore Timestamps
+export const getTimestamp = (dateVal: any): number => {
+  if (!dateVal) return 0;
+  if (typeof dateVal.toMillis === 'function') return dateVal.toMillis();
+  if (typeof dateVal.seconds === 'number') return dateVal.seconds * 1000;
+  const parsed = new Date(dateVal).getTime();
+  return isNaN(parsed) ? 0 : parsed;
+};
+
+export const formatDate = (dateVal: any, includeTime: boolean = false): string => {
+  if (!dateVal) return 'N/A';
+  
+  let date: Date;
+  if (typeof dateVal.toDate === 'function') {
+    date = dateVal.toDate();
+  } else if (typeof dateVal.seconds === 'number') {
+    date = new Date(dateVal.seconds * 1000);
+  } else {
+    date = new Date(dateVal);
+  }
+
+  if (isNaN(date.getTime())) return 'Invalid Date';
+
+  if (includeTime) {
+    return date.toLocaleString();
+  }
+  return date.toLocaleDateString();
+};
+
 // We will use hooks in components to fetch data instead of synchronous functions
 

@@ -29,6 +29,11 @@ export default function AdminSurveys() {
   }
 
   const handleToggleStatus = async (survey: Survey) => {
+    const action = survey.isActive ? 'Draft' : 'Live';
+    if (!window.confirm(`Are you sure you want to change the status of this survey to ${action}?`)) {
+      return;
+    }
+
     setToggling(survey.id);
     try {
       await saveSurvey({

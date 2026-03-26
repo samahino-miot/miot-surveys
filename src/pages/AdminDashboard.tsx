@@ -1,10 +1,19 @@
+import { useState, useEffect } from 'react';
 import { useResponses, useSurveys } from '../hooks/useFirestore';
+import { getTimestamp, formatDate } from '../store';
 import { Users, FileText, Activity } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export default function AdminDashboard() {
   const { responses, loading: responsesLoading } = useResponses();
   const { surveys, loading: surveysLoading } = useSurveys(false);
+  const [lastFetched, setLastFetched] = useState<Date>(new Date());
+
+  useEffect(() => {
+    if (!responsesLoading) {
+      setLastFetched(new Date());
+    }
+  }, [responses, responsesLoading]);
 
   if (responsesLoading || surveysLoading) {
     return <div className="flex items-center justify-center min-h-[60vh]">Loading...</div>;
@@ -24,7 +33,7 @@ export default function AdminDashboard() {
     });
   }
 
-  const recentResponses = [...responses].sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()).slice(0, 5);
+  const recentResponses = [...responses].sort((a, b) => getTimestamp(b.submittedAt) - getTimestamp(a.submittedAt)).slice(0, 5);
 
   const responsesBySurvey = allSurveys.map(survey => ({
     name: survey.title.length > 20 ? survey.title.substring(0, 20) + '...' : survey.title,
@@ -87,7 +96,13 @@ export default function AdminDashboard() {
         </div>
 
         <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200">
-          <h2 className="text-lg font-bold text-slate-900 mb-6">Recent Responses</h2>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <h2 className="text-lg font-bold text-slate-900">Recent Responses</h2>
+            <div className="text-xs text-slate-500 flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+              Auto-updating (Last fetched: {lastFetched.toLocaleTimeString()})
+            </div>
+          </div>
           <div className="space-y-4">
             {recentResponses.length === 0 ? (
               <p className="text-slate-500 text-center py-8">No responses yet.</p>
@@ -100,7 +115,7 @@ export default function AdminDashboard() {
                     <div>
                       <p className="font-medium text-slate-900">{survey?.title || 'Unknown Survey'}</p>
                       <p className="text-sm text-slate-600 mt-1">From: {answers.patientName || 'Anonymous'}</p>
-                      <p className="text-xs text-slate-500 mt-0.5">{new Date(response.submittedAt).toLocaleString()}</p>
+                      <p className="text-xs text-slate-500 mt-0.5">{formatDate(response.submittedAt, true)}</p>
                     </div>
                     <div className="text-sm font-medium text-teal-600 bg-teal-50 px-3 py-1 rounded-full self-start sm:self-auto">
                       New

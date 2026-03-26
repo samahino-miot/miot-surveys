@@ -1,0 +1,22 @@
+export const departments = [
+  'Cardiology',
+  'Orthopedics',
+  'Neurology',
+  'Pediatrics',
+  'Oncology',
+  'Gastroenterology',
+  'Urology',
+  'Gynecology',
+  'Dermatology',
+  'ENT',
+  'Ophthalmology',
+  'Psychiatry',
+  'General Medicine',
+  'General Surgery',
+  'Nephrology',
+  'Pulmonology',
+  'Endocrinology',
+  'Rheumatology',
+  'Radiology',
+  'Pathology'
+];

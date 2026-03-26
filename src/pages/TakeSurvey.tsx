@@ -1,30 +1,37 @@
 import React, { useState } from 'react';
+import Select from 'react-select';
 import { useNavigate, useParams } from 'react-router';
 import { CheckCircle2, AlertCircle, ArrowRight, ArrowLeft, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useSurveys } from '../hooks/useFirestore';
+import { LocationInput } from '../components/LocationInput';
+import { locations } from '../data/locations';
+import { departments } from '../data/departments';
 
-const RatingRow = ({ label, value, onChange }: { label: string, value: number, onChange: (val: number) => void }) => (
-  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-3 border-b border-slate-200/60 last:border-0">
-    <span className="text-slate-700 font-medium flex-1">{label}</span>
-    <div className="flex gap-2 shrink-0">
-      {[1, 2, 3, 4, 5].map(rating => (
-        <button
-          key={rating}
-          type="button"
-          onClick={() => onChange(rating)}
-          className={`h-10 w-10 rounded-lg font-bold text-sm transition-all flex items-center justify-center ${
-            value === rating 
-              ? 'bg-teal-600 text-white shadow-md ring-2 ring-teal-600/20' 
-              : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
-          }`}
-        >
-          {rating}
-        </button>
-      ))}
+const CategoryRatingCard = ({ title, subPoints, value, onChange }: { title: string, subPoints: string, value: number, onChange: (val: number) => void }) => (
+  <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mb-6">
+    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+      <h3 className="text-xl font-bold text-slate-900">{title}</h3>
+      <div className="flex gap-2">
+        {[1, 2, 3, 4, 5].map(rating => (
+          <button
+            key={rating}
+            type="button"
+            onClick={() => onChange(rating)}
+            className={`h-10 w-10 rounded-lg font-bold text-sm transition-all flex items-center justify-center ${
+              value === rating 
+                ? 'bg-teal-600 text-white shadow-md ring-2 ring-teal-600/20' 
+                : 'bg-slate-100 border border-slate-200 text-slate-600 hover:bg-slate-200'
+            }`}
+          >
+            {rating}
+          </button>
+        ))}
+      </div>
     </div>
+    <p className="text-sm text-slate-600">{subPoints}</p>
   </div>
 );
 
@@ -50,42 +57,17 @@ export default function TakeSurvey() {
     consultingDuration: '',
     howDidYouKnow: [] as string[],
     howDidYouKnowOther: '',
-    whatInfluenced: [] as string[],
+    whatInfluenced: '' as string,
     whatInfluencedOther: '',
     
-    evalCure_doctors: 0,
-    evalCure_infrastructure: 0,
-    evalCure_technology: 0,
-    evalCure_accuracy: 0,
-    evalCure_successRates: 0,
-    
-    evalCare_compassion: 0,
-    evalCare_cleanliness: 0,
-    evalCare_staffBehaviour: 0,
-    evalCare_waitingTime: 0,
-    evalCare_admission: 0,
-    evalCare_billing: 0,
-    evalCare_insurance: 0,
-
+    evalCure: 0,
+    evalCare: 0,
+    evalComm: 0,
+    evalComfort: 0,
+    evalConv: 0,
     evalCost: '',
-
-    evalComm_doctorsExplaining: 0,
-    evalComm_staffResponsiveness: 0,
-    evalComm_transparency: 0,
-
-    evalComfort_spacious: 0,
-    evalComfort_cleanRooms: 0,
-    evalComfort_otherServices: 0,
-    evalComfort_noHospitalFeel: 0,
-    evalComfort_diet: 0,
-
-    evalConv_cityHeart: 0,
-    evalConv_nearResidence: 0,
-    evalConv_mobility: 0,
-    evalConv_ambulance: 0,
-    evalConv_parking: 0,
     
-    specialitiesAssociated: '',
+    specialitiesAssociated: [] as string[],
     willReturn: '',
     returnYesReasons: [] as string[],
     returnYesOther: '',
@@ -126,7 +108,7 @@ export default function TakeSurvey() {
     );
   }
 
-  const handleCheckboxChange = (field: 'howDidYouKnow' | 'whatInfluenced' | 'returnYesReasons', value: string) => {
+  const handleCheckboxChange = (field: 'howDidYouKnow' | 'returnYesReasons', value: string) => {
     setFormData(prev => {
       const current = prev[field];
       if (current.includes(value)) {
@@ -135,6 +117,10 @@ export default function TakeSurvey() {
         return { ...prev, [field]: [...current, value] };
       }
     });
+  };
+
+  const handleRadioChange = (field: 'whatInfluenced', value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   const nextStep = () => {
@@ -162,21 +148,17 @@ export default function TakeSurvey() {
         setError('Please specify the other source for how you knew about MIOT.');
         return;
       }
-      if (formData.whatInfluenced.length === 0) {
+      if (!formData.whatInfluenced.trim()) {
         setError('Please select at least one option for what influenced your decision.');
         return;
       }
-      if (formData.whatInfluenced.includes('Others') && !formData.whatInfluencedOther.trim()) {
+      if (formData.whatInfluenced === 'Others' && !formData.whatInfluencedOther.trim()) {
         setError('Please specify the other influence.');
         return;
       }
     } else if (currentStep === 3) {
       const requiredRatings = [
-        'evalCure_doctors', 'evalCure_infrastructure', 'evalCure_technology', 'evalCure_accuracy', 'evalCure_successRates',
-        'evalCare_compassion', 'evalCare_cleanliness', 'evalCare_staffBehaviour', 'evalCare_waitingTime', 'evalCare_admission', 'evalCare_billing', 'evalCare_insurance',
-        'evalComm_doctorsExplaining', 'evalComm_staffResponsiveness', 'evalComm_transparency',
-        'evalComfort_spacious', 'evalComfort_cleanRooms', 'evalComfort_otherServices', 'evalComfort_noHospitalFeel', 'evalComfort_diet',
-        'evalConv_cityHeart', 'evalConv_nearResidence', 'evalConv_mobility', 'evalConv_ambulance', 'evalConv_parking'
+        'evalCure', 'evalCare', 'evalComm', 'evalComfort', 'evalConv'
       ];
       
       const missingRating = requiredRatings.some(key => formData[key as keyof typeof formData] === 0);
@@ -185,7 +167,7 @@ export default function TakeSurvey() {
         return;
       }
     } else if (currentStep === 4) {
-      if (!formData.specialitiesAssociated.trim()) {
+      if (formData.specialitiesAssociated.length === 0) {
         setError('Please specify the specialities associated with MIOT.');
         return;
       }
@@ -341,75 +323,7 @@ export default function TakeSurvey() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
-                    1. Patient Name <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.patientName}
-                    onChange={(e) => setFormData({...formData, patientName: e.target.value})}
-                    placeholder="Enter patient name"
-                    className="w-full p-2.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all bg-slate-50 focus:bg-white"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
-                    2. Attendant Name
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.attendantName}
-                    onChange={(e) => setFormData({...formData, attendantName: e.target.value})}
-                    placeholder="Enter attendant name"
-                    className="w-full p-2.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all bg-slate-50 focus:bg-white"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
-                    3. Relation to patient
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.relationToPatient}
-                    onChange={(e) => setFormData({...formData, relationToPatient: e.target.value})}
-                    placeholder="e.g. Son, Daughter"
-                    className="w-full p-2.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all bg-slate-50 focus:bg-white"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
-                    4. Age <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.age}
-                    onChange={(e) => setFormData({...formData, age: e.target.value})}
-                    placeholder="Enter age"
-                    className="w-full p-2.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all bg-slate-50 focus:bg-white"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
-                    5. Gender <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    value={formData.gender}
-                    onChange={(e) => setFormData({...formData, gender: e.target.value})}
-                    className="w-full p-2.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all bg-slate-50 focus:bg-white"
-                  >
-                    <option value="">Select Gender</option>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
-                    6. Mr. No
+                    1. Mr. No
                   </label>
                   <input
                     type="text"
@@ -422,43 +336,91 @@ export default function TakeSurvey() {
 
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
-                    7. City <span className="text-red-500">*</span>
+                    2. Patient Name <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
-                    value={formData.city}
-                    onChange={(e) => setFormData({...formData, city: e.target.value})}
-                    placeholder="Enter City"
+                    value={formData.patientName}
+                    onChange={(e) => setFormData({...formData, patientName: e.target.value})}
+                    placeholder="Enter patient name"
                     className="w-full p-2.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all bg-slate-50 focus:bg-white"
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
-                    8. State <span className="text-red-500">*</span>
+                    3. Attendant Name
                   </label>
                   <input
                     type="text"
-                    value={formData.state}
-                    onChange={(e) => setFormData({...formData, state: e.target.value})}
-                    placeholder="Enter State"
+                    value={formData.attendantName}
+                    onChange={(e) => setFormData({...formData, attendantName: e.target.value})}
+                    placeholder="Enter attendant name"
                     className="w-full p-2.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all bg-slate-50 focus:bg-white"
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
-                    9. Country <span className="text-red-500">*</span>
+                    4. Relation to patient
                   </label>
                   <input
                     type="text"
-                    value={formData.country}
-                    onChange={(e) => setFormData({...formData, country: e.target.value})}
-                    placeholder="Enter Country"
+                    value={formData.relationToPatient}
+                    onChange={(e) => setFormData({...formData, relationToPatient: e.target.value})}
+                    placeholder="e.g. Son, Daughter"
                     className="w-full p-2.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all bg-slate-50 focus:bg-white"
-                    onKeyDown={(e) => e.key === 'Enter' && nextStep()}
                   />
                 </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    5. Age <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.age}
+                    onChange={(e) => setFormData({...formData, age: e.target.value})}
+                    placeholder="Enter age"
+                    className="w-full p-2.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all bg-slate-50 focus:bg-white"
+                  />
+                </div>
+
+                <LocationInput
+                  label="6. Gender"
+                  value={formData.gender}
+                  onChange={(val) => setFormData({...formData, gender: val})}
+                  suggestions={['Male', 'Female', 'Other']}
+                  placeholder="Select or enter Gender"
+                  required
+                />
+
+                <LocationInput
+                  label="7. Country"
+                  value={formData.country}
+                  onChange={(val) => setFormData({...formData, country: val, state: '', city: ''})}
+                  suggestions={locations.countries}
+                  placeholder="Enter or select Country"
+                  required
+                />
+
+                <LocationInput
+                  label="8. State"
+                  value={formData.state}
+                  onChange={(val) => setFormData({...formData, state: val, city: ''})}
+                  suggestions={locations.states[formData.country as keyof typeof locations.states] || []}
+                  placeholder="Enter or select State"
+                  required
+                />
+
+                <LocationInput
+                  label="9. City"
+                  value={formData.city}
+                  onChange={(val) => setFormData({...formData, city: val})}
+                  suggestions={locations.cities[formData.state as keyof typeof locations.cities] || []}
+                  placeholder="Enter or select City"
+                  required
+                />
               </div>
             </motion.div>
           ) : currentStep === 1 ? (
@@ -510,19 +472,14 @@ export default function TakeSurvey() {
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    For which Department:
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.department}
-                    onChange={(e) => setFormData({...formData, department: e.target.value})}
-                    placeholder="e.g. Cardiology, Orthopedics"
-                    className="w-full p-4 text-lg border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all bg-slate-50 focus:bg-white"
-                    onKeyDown={(e) => e.key === 'Enter' && nextStep()}
-                  />
-                </div>
+                <LocationInput
+                  label="For which Department:"
+                  value={formData.department}
+                  onChange={(val) => setFormData({...formData, department: val})}
+                  suggestions={departments}
+                  placeholder="e.g. Cardiology, Orthopedics"
+                  required={false}
+                />
               </div>
             </motion.div>
           ) : currentStep === 2 ? (
@@ -630,7 +587,7 @@ export default function TakeSurvey() {
                   </label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                     {['Newspaper', 'Magazine', 'Television', 'Radio', 'Newspaper Inserts', 'Apartment posters', 'Neighbourhood', 'Friends', 'Relatives', 'Colleague', 'Outdoor Hoardings/ Bus Shelters', 'Corporate tie-up', 'Theatre Ads', 'Outreach clinics', 'Referred by Doctor', 'Treating Doctor', 'Emergency', 'Digital (Website/Google/Social Media)', 'Brand Name', 'Others'].map(option => {
-                      const isSelected = formData.whatInfluenced.includes(option);
+                      const isSelected = formData.whatInfluenced === option;
                       return (
                         <label 
                           key={option} 
@@ -640,15 +597,16 @@ export default function TakeSurvey() {
                               : 'border-slate-200 hover:border-teal-300 hover:bg-slate-50'
                           }`}
                         >
-                          <div className={`mt-0.5 h-5 w-5 shrink-0 rounded border-2 flex items-center justify-center transition-colors ${
-                            isSelected ? 'bg-teal-600 border-teal-600' : 'border-slate-400 bg-white'
+                          <div className={`mt-0.5 h-5 w-5 shrink-0 rounded-full border-2 flex items-center justify-center transition-colors ${
+                            isSelected ? 'border-teal-600' : 'border-slate-400'
                           }`}>
-                            {isSelected && <Check className="h-4 w-4 text-white" />}
+                            {isSelected && <div className="h-2.5 w-2.5 rounded-full bg-teal-600" />}
                           </div>
                           <input
-                            type="checkbox"
+                            type="radio"
+                            name="whatInfluenced"
                             checked={isSelected}
-                            onChange={() => handleCheckboxChange('whatInfluenced', option)}
+                            onChange={() => handleRadioChange('whatInfluenced', option)}
                             className="hidden"
                           />
                           <span className={`text-sm font-medium ${isSelected ? 'text-teal-900' : 'text-slate-700'}`}>
@@ -658,7 +616,7 @@ export default function TakeSurvey() {
                       );
                     })}
                   </div>
-                  {formData.whatInfluenced.includes('Others') && (
+                  {formData.whatInfluenced === 'Others' && (
                     <div className="mt-4">
                       <input
                         type="text"
@@ -684,41 +642,28 @@ export default function TakeSurvey() {
               className="p-6 sm:p-10 space-y-8"
             >
               <div>
-                <h2 className="text-2xl font-bold text-slate-900 mb-2">14. How do you evaluate MIOT based on your perception?</h2>
-                <p className="text-slate-600 mb-6">Rating on the scale of 1 to 5 (Factors that influence the patient's loyalty for the brand)</p>
+                <h2 className="text-2xl font-bold text-slate-900 mb-2">14. How do you evaluate MIOT based on your Experience?</h2>
+                <p className="text-slate-600 mb-6">Rating on a scale of 1 to 5</p>
               </div>
 
-              {/* Cure */}
-              <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200">
-                <h3 className="text-lg font-bold text-slate-900 mb-4 text-teal-700">1. Cure</h3>
-                <div className="space-y-1">
-                  <RatingRow label="Highly Qualified Doctors & experienced nurses" value={formData.evalCure_doctors} onChange={(v) => setFormData({...formData, evalCure_doctors: v})} />
-                  <RatingRow label="Infrastructure" value={formData.evalCure_infrastructure} onChange={(v) => setFormData({...formData, evalCure_infrastructure: v})} />
-                  <RatingRow label="Latest Technology & Equipment" value={formData.evalCure_technology} onChange={(v) => setFormData({...formData, evalCure_technology: v})} />
-                  <RatingRow label="Accuracy of diagnosis and treatment" value={formData.evalCure_accuracy} onChange={(v) => setFormData({...formData, evalCure_accuracy: v})} />
-                  <RatingRow label="Success rates and patient outcomes" value={formData.evalCure_successRates} onChange={(v) => setFormData({...formData, evalCure_successRates: v})} />
-                </div>
-              </div>
+              <CategoryRatingCard 
+                title="1. Cure" 
+                subPoints="Highly Qualified Doctors & experienced nurses, Infrastructure, Latest Technology & Equipment, Accuracy of diagnosis and treatment, Success rates and patient outcomes"
+                value={formData.evalCure} 
+                onChange={(v) => setFormData({...formData, evalCure: v})} 
+              />
 
-              {/* Care */}
-              <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200">
-                <h3 className="text-lg font-bold text-slate-900 mb-4 text-teal-700">2. Care</h3>
-                <div className="space-y-1">
-                  <RatingRow label="Compassion of Doctor" value={formData.evalCare_compassion} onChange={(v) => setFormData({...formData, evalCare_compassion: v})} />
-                  <RatingRow label="Cleanliness and hygiene" value={formData.evalCare_cleanliness} onChange={(v) => setFormData({...formData, evalCare_cleanliness: v})} />
-                  <RatingRow label="Staff behaviour (politeness, empathy, respect)" value={formData.evalCare_staffBehaviour} onChange={(v) => setFormData({...formData, evalCare_staffBehaviour: v})} />
-                  <RatingRow label="Waiting time for consultation or procedures" value={formData.evalCare_waitingTime} onChange={(v) => setFormData({...formData, evalCare_waitingTime: v})} />
-                  <RatingRow label="Ease of admission and discharge" value={formData.evalCare_admission} onChange={(v) => setFormData({...formData, evalCare_admission: v})} />
-                  <RatingRow label="Clear explanation of billing" value={formData.evalCare_billing} onChange={(v) => setFormData({...formData, evalCare_billing: v})} />
-                  <RatingRow label="Availability of insurance support" value={formData.evalCare_insurance} onChange={(v) => setFormData({...formData, evalCare_insurance: v})} />
-                </div>
-              </div>
+              <CategoryRatingCard 
+                title="2. Care" 
+                subPoints="Compassion of Doctor, Cleanliness and hygiene, Staff behaviour (politeness, empathy, respect), Waiting time for consultation or procedures, Ease of admission and discharge, Clear explanation of billing, Availability of insurance support"
+                value={formData.evalCare} 
+                onChange={(v) => setFormData({...formData, evalCare: v})} 
+              />
 
-              {/* Cost */}
-              <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200">
-                <h3 className="text-lg font-bold text-slate-900 mb-4 text-teal-700">3. Cost</h3>
+              <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mb-6">
+                <h3 className="text-xl font-bold text-slate-900 mb-4">2. Cost</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                  {['Exorbitant', 'On the higher side', 'Industry standards', 'Moderate', 'Low'].map(option => (
+                  {['Exorbitant', 'Higher side', 'Industry standards', 'Moderate', 'Low'].map(option => (
                     <label 
                       key={option} 
                       className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${
@@ -748,39 +693,26 @@ export default function TakeSurvey() {
                 </div>
               </div>
 
-              {/* Communication */}
-              <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200">
-                <h3 className="text-lg font-bold text-slate-900 mb-4 text-teal-700">4. Communication</h3>
-                <div className="space-y-1">
-                  <RatingRow label="Doctors explaining conditions clearly" value={formData.evalComm_doctorsExplaining} onChange={(v) => setFormData({...formData, evalComm_doctorsExplaining: v})} />
-                  <RatingRow label="Staff responsiveness to questions" value={formData.evalComm_staffResponsiveness} onChange={(v) => setFormData({...formData, evalComm_staffResponsiveness: v})} />
-                  <RatingRow label="Transparency about treatment options, costs and risks" value={formData.evalComm_transparency} onChange={(v) => setFormData({...formData, evalComm_transparency: v})} />
-                </div>
-              </div>
+              <CategoryRatingCard 
+                title="3. Communication" 
+                subPoints="Doctors explaining conditions clearly, Staff responsiveness to questions, Transparency about treatment options, costs and risks"
+                value={formData.evalComm} 
+                onChange={(v) => setFormData({...formData, evalComm: v})} 
+              />
 
-              {/* Comfort */}
-              <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200">
-                <h3 className="text-lg font-bold text-slate-900 mb-4 text-teal-700">5. Comfort</h3>
-                <div className="space-y-1">
-                  <RatingRow label="Spacious waiting areas/ rooms" value={formData.evalComfort_spacious} onChange={(v) => setFormData({...formData, evalComfort_spacious: v})} />
-                  <RatingRow label="Clean and neat Rooms" value={formData.evalComfort_cleanRooms} onChange={(v) => setFormData({...formData, evalComfort_cleanRooms: v})} />
-                  <RatingRow label="Other Services" value={formData.evalComfort_otherServices} onChange={(v) => setFormData({...formData, evalComfort_otherServices: v})} />
-                  <RatingRow label="No hospital feel" value={formData.evalComfort_noHospitalFeel} onChange={(v) => setFormData({...formData, evalComfort_noHospitalFeel: v})} />
-                  <RatingRow label="Balanced diet & Hygienic food" value={formData.evalComfort_diet} onChange={(v) => setFormData({...formData, evalComfort_diet: v})} />
-                </div>
-              </div>
+              <CategoryRatingCard 
+                title="4. Comfort" 
+                subPoints="Spacious waiting areas/ rooms, Clean and neat Rooms, Other Services, No hospital feel, Balanced diet & Hygienic food"
+                value={formData.evalComfort} 
+                onChange={(v) => setFormData({...formData, evalComfort: v})} 
+              />
 
-              {/* Convenience */}
-              <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200">
-                <h3 className="text-lg font-bold text-slate-900 mb-4 text-teal-700">6. Convenience</h3>
-                <div className="space-y-1">
-                  <RatingRow label="Within Heart of the city" value={formData.evalConv_cityHeart} onChange={(v) => setFormData({...formData, evalConv_cityHeart: v})} />
-                  <RatingRow label="Near to residence" value={formData.evalConv_nearResidence} onChange={(v) => setFormData({...formData, evalConv_nearResidence: v})} />
-                  <RatingRow label="Easy Mobility" value={formData.evalConv_mobility} onChange={(v) => setFormData({...formData, evalConv_mobility: v})} />
-                  <RatingRow label="Ambulance service" value={formData.evalConv_ambulance} onChange={(v) => setFormData({...formData, evalConv_ambulance: v})} />
-                  <RatingRow label="Parking facilities" value={formData.evalConv_parking} onChange={(v) => setFormData({...formData, evalConv_parking: v})} />
-                </div>
-              </div>
+              <CategoryRatingCard 
+                title="5. Convenience" 
+                subPoints="Within Heart of the city, Near to residence, Easy Mobility, Ambulance service, Parking facilities"
+                value={formData.evalConv} 
+                onChange={(v) => setFormData({...formData, evalConv: v})} 
+              />
 
             </motion.div>
           ) : (
@@ -800,14 +732,29 @@ export default function TakeSurvey() {
                 {/* Q15 */}
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
-                    15. What specialities do you associate with MIOT? Just note top 5 in the order they spell: <span className="text-red-500">*</span>
+                    15. What specialities do you associate with MIOT? (Select up to 5) <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="text"
-                    value={formData.specialitiesAssociated}
-                    onChange={(e) => setFormData({...formData, specialitiesAssociated: e.target.value})}
-                    placeholder="e.g. Cardiology, Orthopedics, Neurology..."
-                    className="w-full p-4 text-lg border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all bg-slate-50 focus:bg-white"
+                  <Select
+                    isMulti
+                    options={departments.map(d => ({ label: d, value: d }))}
+                    value={formData.specialitiesAssociated.map(s => ({ label: s, value: s }))}
+                    onChange={(options) => {
+                      if (options.length <= 5) {
+                        setFormData({...formData, specialitiesAssociated: options.map(o => o.value)});
+                      }
+                    }}
+                    placeholder="Select departments..."
+                    className="text-sm"
+                    styles={{
+                      control: (provided) => ({
+                        ...provided,
+                        borderRadius: '0.75rem',
+                        borderColor: '#cbd5e1',
+                        padding: '0.5rem',
+                        '&:hover': { borderColor: '#14b8a6' },
+                        boxShadow: 'none',
+                      }),
+                    }}
                   />
                 </div>
 
