@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router';
-import { signInWithGoogle, logout } from '../firebase';
-import { signInWithEmail, resetPassword } from '../lib/authUtils';
+import { signInWithGoogle, signInWithEmail, logout, resetPassword } from '../firebase';
 import { useAuth } from '../components/AuthProvider';
 import { Lock, AlertCircle, CheckCircle2, Eye, EyeOff } from 'lucide-react';
 

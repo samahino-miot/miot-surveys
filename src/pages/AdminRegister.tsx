@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router';
 import { saveUser } from '../store';
-import { signInWithGoogle } from '../firebase';
-import { registerWithEmail, sendVerificationEmail } from '../lib/authUtils';
+import { signInWithGoogle, registerWithEmail, sendVerificationEmail } from '../firebase';
 import { UserPlus, AlertCircle, CheckCircle2, Eye, EyeOff } from 'lucide-react';
 
 export default function AdminRegister() {
