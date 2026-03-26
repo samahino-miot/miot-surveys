@@ -5,6 +5,7 @@
 
 import { BrowserRouter, Routes, Route } from 'react-router';
 import { SpeedInsights } from '@vercel/speed-insights/react';
+import { Analytics } from '@vercel/analytics/react';
 import Layout from './components/Layout';
 import PatientHome from './pages/PatientHome';
 import TakeSurvey from './pages/TakeSurvey';
@@ -36,6 +37,7 @@ export default function App() {
           </Route>
         </Routes>
         <SpeedInsights />
+        <Analytics />
       </BrowserRouter>
     </AuthProvider>
   );
