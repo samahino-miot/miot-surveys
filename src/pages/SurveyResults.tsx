@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router';
 import { useResponses, useSurveys } from '../hooks/useFirestore';
+import { useWindowWidth } from '../hooks/useWindowWidth';
 import { ArrowLeft, Download, FileText, ChevronLeft, ChevronRight, FileSpreadsheet, Trash2 } from 'lucide-react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import jsPDF from 'jspdf';
@@ -45,9 +46,11 @@ export default function SurveyResults() {
   const { id } = useParams();
   const { responses, loading: responsesLoading } = useResponses(id || '');
   const { surveys, loading: surveysLoading } = useSurveys(false);
+  const width = useWindowWidth();
   
   const [currentPage, setCurrentPage] = useState(1);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [selectedResponses, setSelectedResponses] = useState<string[]>([]);
   const [lastFetched, setLastFetched] = useState<Date>(new Date());
   const rowsPerPage = 10;
 
@@ -77,6 +80,22 @@ export default function SurveyResults() {
     currentPage * rowsPerPage
   );
 
+  const toggleSelectAll = () => {
+    if (selectedResponses.length === sortedResponses.length) {
+      setSelectedResponses([]);
+    } else {
+      setSelectedResponses(sortedResponses.map(r => r.id));
+    }
+  };
+
+  const toggleSelectResponse = (id: string) => {
+    if (selectedResponses.includes(id)) {
+      setSelectedResponses(selectedResponses.filter(rId => rId !== id));
+    } else {
+      setSelectedResponses([...selectedResponses, id]);
+    }
+  };
+
   const handleDelete = async (responseId: string) => {
     if (window.confirm('Are you sure you want to delete this response? This action cannot be undone and will permanently remove this data from the results.')) {
       setIsDeleting(responseId);
@@ -88,6 +107,23 @@ export default function SurveyResults() {
       } finally {
         setIsDeleting(null);
       }
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (!window.confirm(`Are you sure you want to delete ${selectedResponses.length} responses? This action cannot be undone.`)) return;
+    
+    setIsDeleting('bulk');
+    try {
+      for (const id of selectedResponses) {
+        await deleteResponse(id);
+      }
+      setSelectedResponses([]);
+    } catch (error) {
+      console.error('Failed to delete responses:', error);
+      alert('Failed to delete some responses.');
+    } finally {
+      setIsDeleting(null);
     }
   };
 
@@ -328,7 +364,7 @@ export default function SurveyResults() {
     XLSX.writeFile(workbook, `${survey.title.replace(/\s+/g, '_')}_Results.xlsx`);
   };
 
-  const renderChart = (q: any) => {
+  const renderChart = (q: any, width: number) => {
     if (responses.length === 0) return <p className="text-slate-500 italic">No responses yet.</p>;
 
     if (q.type === 'multiple_choice' || q.type === 'checkbox') {
@@ -394,15 +430,15 @@ export default function SurveyResults() {
               </p>
             </div>
           </div>
-          <div className="h-64">
+          <div className="h-64 sm:h-80">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={data}
                   cx="50%"
                   cy="50%"
-                  innerRadius={60}
-                  outerRadius={80}
+                  innerRadius={window.innerWidth < 640 ? 40 : 60}
+                  outerRadius={window.innerWidth < 640 ? 60 : 80}
                   paddingAngle={5}
                   dataKey="value"
                 >
@@ -411,7 +447,7 @@ export default function SurveyResults() {
                   ))}
                 </Pie>
                 <Tooltip content={<CustomPieTooltip />} />
-                <Legend />
+                <Legend wrapperStyle={{ fontSize: window.innerWidth < 640 ? '12px' : '14px' }} />
               </PieChart>
             </ResponsiveContainer>
           </div>
@@ -477,14 +513,20 @@ export default function SurveyResults() {
               <p className="text-3xl font-bold text-teal-600">{average} <span className="text-lg text-slate-400">/ 5</span></p>
             </div>
           </div>
-          <div className="h-64">
+          <div className="h-64 sm:h-80">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={data} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
+                <XAxis 
+                  dataKey="name" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fill: '#64748b', fontSize: width < 640 ? 10 : 12 }} 
+                  interval={width < 640 ? 'preserveStartEnd' : 0}
+                />
                 <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
                 <Tooltip cursor={{ fill: '#f1f5f9' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                <Bar dataKey="value" fill="#0d9488" radius={[4, 4, 0, 0]} barSize={40} />
+                <Bar dataKey="value" fill="#0d9488" radius={[4, 4, 0, 0]} barSize={width < 640 ? 20 : 40} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -540,7 +582,7 @@ export default function SurveyResults() {
             <h3 className="font-semibold text-slate-900 mb-6 line-clamp-2" title={q.text}>
               {i + 1}. {q.text}
             </h3>
-            {renderChart(q)}
+            {renderChart(q, width)}
           </div>
         ))}
       </div>
@@ -548,37 +590,56 @@ export default function SurveyResults() {
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="p-4 sm:p-6 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <h2 className="text-xl font-bold text-slate-900">Recent Respondents</h2>
-          <div className="text-sm text-slate-500 flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-            Auto-updating (Last fetched: {lastFetched.toLocaleTimeString()})
+          <div className="flex items-center gap-4">
+            {selectedResponses.length > 0 && (
+              <button 
+                onClick={handleBulkDelete}
+                disabled={isDeleting === 'bulk'}
+                className="flex items-center gap-2 px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded-lg hover:bg-red-700 disabled:opacity-50"
+              >
+                <Trash2 className="h-3 w-3" /> Delete {selectedResponses.length}
+              </button>
+            )}
+            <div className="text-sm text-slate-500 flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+              Auto-updating (Last fetched: {lastFetched.toLocaleTimeString()})
+            </div>
           </div>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-slate-600">
+          {/* Desktop Table */}
+          <table className="hidden sm:table w-full text-left text-sm text-slate-600">
             <thead className="bg-slate-50 text-slate-700 font-medium border-b border-slate-200">
               <tr>
-                <th className="px-4 py-3 sm:px-6 sm:py-4">Date</th>
-                <th className="px-4 py-3 sm:px-6 sm:py-4">Name</th>
-                <th className="px-4 py-3 sm:px-6 sm:py-4">Age</th>
-                <th className="px-4 py-3 sm:px-6 sm:py-4">City</th>
-                <th className="px-4 py-3 sm:px-6 sm:py-4 text-right">Actions</th>
+                <th className="px-6 py-4">
+                  <input type="checkbox" checked={selectedResponses.length === sortedResponses.length && sortedResponses.length > 0} onChange={toggleSelectAll} className="rounded border-slate-300 text-teal-600 focus:ring-teal-500" />
+                </th>
+                <th className="px-6 py-4">Date</th>
+                <th className="px-6 py-4">Name</th>
+                <th className="px-6 py-4">Age</th>
+                <th className="px-6 py-4">City</th>
+                <th className="px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {responses.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-slate-500">No responses yet</td>
+                  <td colSpan={6} className="px-6 py-8 text-center text-slate-500">No responses yet</td>
                 </tr>
               ) : (
                 paginatedResponses.map(r => {
                   const answers = r.answers || {};
+                  const isSelected = selectedResponses.includes(r.id);
                   return (
-                    <tr key={r.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-4 py-3 sm:px-6 sm:py-4 whitespace-nowrap">{formatDate(r.submittedAt, true)}</td>
-                      <td className="px-4 py-3 sm:px-6 sm:py-4 font-medium text-slate-900">{answers.patientName || 'N/A'}</td>
-                      <td className="px-4 py-3 sm:px-6 sm:py-4">{answers.age || 'N/A'}</td>
-                      <td className="px-4 py-3 sm:px-6 sm:py-4">{answers.city || 'N/A'}</td>
-                      <td className="px-4 py-3 sm:px-6 sm:py-4 text-right">
+                    <tr key={r.id} className={`hover:bg-slate-50 transition-colors ${isSelected ? 'bg-teal-50/50' : ''}`}>
+                      <td className="px-6 py-4">
+                        <input type="checkbox" checked={isSelected} onChange={() => toggleSelectResponse(r.id)} className="rounded border-slate-300 text-teal-600 focus:ring-teal-500" />
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">{formatDate(r.submittedAt, true)}</td>
+                      <td className="px-6 py-4 font-medium text-slate-900">{answers.patientName || 'N/A'}</td>
+                      <td className="px-6 py-4">{answers.age || 'N/A'}</td>
+                      <td className="px-6 py-4">{answers.city || 'N/A'}</td>
+                      <td className="px-6 py-4 text-right">
                         <button
                           onClick={() => handleDelete(r.id)}
                           disabled={isDeleting === r.id}
@@ -594,6 +655,40 @@ export default function SurveyResults() {
               )}
             </tbody>
           </table>
+
+          {/* Mobile Card Layout */}
+          <div className="sm:hidden divide-y divide-slate-200">
+            {responses.length === 0 ? (
+              <div className="p-8 text-center text-slate-500">No responses yet</div>
+            ) : (
+              paginatedResponses.map(r => {
+                const answers = r.answers || {};
+                const isSelected = selectedResponses.includes(r.id);
+                return (
+                  <div key={r.id} className={`p-4 ${isSelected ? 'bg-teal-50/50' : ''}`}>
+                    <div className="flex items-start gap-3">
+                      <input type="checkbox" checked={isSelected} onChange={() => toggleSelectResponse(r.id)} className="mt-1 rounded border-slate-300 text-teal-600 focus:ring-teal-500" />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-slate-900 truncate">{answers.patientName || 'N/A'}</p>
+                        <p className="text-sm text-slate-500">{formatDate(r.submittedAt, true)}</p>
+                        <div className="mt-2 text-sm text-slate-600">
+                          <span className="font-medium">Age:</span> {answers.age || 'N/A'} | <span className="font-medium">City:</span> {answers.city || 'N/A'}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleDelete(r.id)}
+                        disabled={isDeleting === r.id}
+                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                        title="Delete response"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
         </div>
         {responses.length > 0 && (
           <div className="p-4 sm:p-6 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">

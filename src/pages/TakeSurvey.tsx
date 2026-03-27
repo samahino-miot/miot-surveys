@@ -10,8 +10,8 @@ import { LocationInput } from '../components/LocationInput';
 import { Country, State, City } from 'country-state-city';
 import { departments } from '../data/departments';
 
-const CategoryRatingCard = ({ title, subPoints, value, onChange }: { title: string, subPoints: string, value: number, onChange: (val: number) => void }) => (
-  <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mb-6">
+const CategoryRatingCard = ({ id, title, subPoints, value, onChange, error }: { id: string, title: string, subPoints: string, value: number, onChange: (val: number) => void, error?: boolean }) => (
+  <div id={id} className={`bg-white p-6 rounded-2xl shadow-sm border ${error ? 'border-red-500' : 'border-slate-200'} mb-6`}>
     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
       <h3 className="text-xl font-bold text-slate-900">{title}</h3>
       <div className="flex gap-2">
@@ -78,6 +78,7 @@ export default function TakeSurvey() {
   const [direction, setDirection] = useState(1);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
+  const [invalidFields, setInvalidFields] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const totalSteps = 5;
@@ -136,35 +137,71 @@ export default function TakeSurvey() {
 
   const nextStep = () => {
     setError('');
+    const newInvalidFields = [];
     if (currentStep === 0) {
-      if (!formData.patientName.trim() || !formData.age.trim() || !formData.gender.trim() || !formData.city.trim() || !formData.state.trim() || !formData.country.trim()) {
+      if (!formData.patientName.trim()) newInvalidFields.push('patientName');
+      if (!formData.age.trim()) newInvalidFields.push('age');
+      if (!formData.gender.trim()) newInvalidFields.push('gender');
+      if (!formData.city.trim()) newInvalidFields.push('city');
+      if (!formData.state.trim()) newInvalidFields.push('state');
+      if (!formData.country.trim()) newInvalidFields.push('country');
+      
+      if (newInvalidFields.length > 0) {
         setError('Please fill in all required fields (*) to continue.');
+        setInvalidFields(newInvalidFields);
+        const firstField = document.getElementById(newInvalidFields[0]);
+        firstField?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        firstField?.focus();
         return;
       }
     } else if (currentStep === 1) {
       if (!formData.purposeOfVisit.trim()) {
         setError('Please select the purpose of your visit.');
+        setInvalidFields(['purposeOfVisit']);
+        const firstField = document.getElementById('purposeOfVisit');
+        firstField?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        firstField?.focus();
         return;
       }
     } else if (currentStep === 2) {
       if (!formData.consultingDuration) {
         setError('Please select how long you have been consulting.');
+        setInvalidFields(['consultingDuration']);
+        const firstField = document.getElementById('consultingDuration');
+        firstField?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        firstField?.focus();
         return;
       }
       if (formData.howDidYouKnow.length === 0) {
         setError('Please select at least one option for how you knew about MIOT.');
+        setInvalidFields(['howDidYouKnow']);
+        const firstField = document.getElementById('howDidYouKnow');
+        firstField?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        firstField?.focus();
         return;
       }
       if (formData.howDidYouKnow.includes('Others') && !formData.howDidYouKnowOther.trim()) {
         setError('Please specify the other source for how you knew about MIOT.');
+        setInvalidFields(['howDidYouKnowOther']);
+        const firstField = document.getElementById('howDidYouKnowOther');
+        firstField?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        firstField?.focus();
         return;
       }
       if (!formData.whatInfluenced.trim()) {
         setError('Please select at least one option for what influenced your decision.');
+        setInvalidFields(['whatInfluenced']);
+        const firstField = document.getElementById('whatInfluenced');
+        firstField?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        firstField?.focus();
         return;
       }
       if (formData.whatInfluenced === 'Others' && !formData.whatInfluencedOther.trim()) {
         setError('Please specify the other influence.');
+        setInvalidFields(['whatInfluencedOther']);
+        const firstField = document.getElementById('whatInfluencedOther');
+        firstField?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        firstField?.focus();
         return;
       }
     } else if (currentStep === 3) {
@@ -172,32 +209,56 @@ export default function TakeSurvey() {
         'evalCure', 'evalCare', 'evalComm', 'evalComfort', 'evalConv'
       ];
       
-      const missingRating = requiredRatings.some(key => formData[key as keyof typeof formData] === 0);
+      const missingRating = requiredRatings.find(key => formData[key as keyof typeof formData] === 0);
       if (missingRating || !formData.evalCost) {
         setError('Please complete all ratings and selections on this page.');
+        setInvalidFields([...requiredRatings.filter(key => formData[key as keyof typeof formData] === 0), !formData.evalCost ? 'evalCost' : '']);
+        const firstField = document.getElementById(missingRating || 'evalCost');
+        firstField?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        firstField?.focus();
         return;
       }
     } else if (currentStep === 4) {
       if (formData.specialitiesAssociated.length === 0) {
         setError('Please specify the specialities associated with MIOT.');
+        setInvalidFields(['specialitiesAssociated']);
+        const firstField = document.getElementById('specialitiesAssociated');
+        firstField?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        firstField?.focus();
         return;
       }
       if (!formData.willReturn) {
         setError('Please select whether you will return to MIOT.');
+        setInvalidFields(['willReturn']);
+        const firstField = document.getElementById('willReturn');
+        firstField?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        firstField?.focus();
         return;
       }
       if (formData.willReturn === 'Yes') {
         if (formData.returnYesReasons.length === 0) {
           setError('Please select at least one reason for returning.');
+          setInvalidFields(['returnYesReasons']);
+          const firstField = document.getElementById('returnYesReasons');
+          firstField?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          firstField?.focus();
           return;
         }
         if (formData.returnYesReasons.includes('Others, if any') && !formData.returnYesOther.trim()) {
           setError('Please specify the other reason for returning.');
+          setInvalidFields(['returnYesOther']);
+          const firstField = document.getElementById('returnYesOther');
+          firstField?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          firstField?.focus();
           return;
         }
       } else if (formData.willReturn === 'No') {
         if (!formData.returnNoReason.trim()) {
           setError('Please specify the reason for not returning.');
+          setInvalidFields(['returnNoReason']);
+          const firstField = document.getElementById('returnNoReason');
+          firstField?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          firstField?.focus();
           return;
         }
       }
@@ -206,6 +267,7 @@ export default function TakeSurvey() {
     if (currentStep < totalSteps - 1) {
       setDirection(1);
       setCurrentStep(prev => prev + 1);
+      setInvalidFields([]);
     } else {
       handleSubmit();
     }
@@ -350,11 +412,12 @@ export default function TakeSurvey() {
                     2. Patient Name <span className="text-red-500">*</span>
                   </label>
                   <input
+                    id="patientName"
                     type="text"
                     value={formData.patientName}
                     onChange={(e) => setFormData({...formData, patientName: e.target.value})}
                     placeholder="Enter patient name"
-                    className="w-full p-2.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all bg-slate-50 focus:bg-white"
+                    className={`w-full p-2.5 text-sm border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all bg-slate-50 focus:bg-white ${invalidFields.includes('patientName') ? 'border-red-500' : 'border-slate-300'}`}
                   />
                 </div>
 
@@ -389,48 +452,57 @@ export default function TakeSurvey() {
                     5. Age <span className="text-red-500">*</span>
                   </label>
                   <input
+                    id="age"
                     type="text"
                     value={formData.age}
                     onChange={(e) => setFormData({...formData, age: e.target.value})}
                     placeholder="Enter age"
-                    className="w-full p-2.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all bg-slate-50 focus:bg-white"
+                    className={`w-full p-2.5 text-sm border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all bg-slate-50 focus:bg-white ${invalidFields.includes('age') ? 'border-red-500' : 'border-slate-300'}`}
                   />
                 </div>
 
                 <LocationInput
+                  id="gender"
                   label="6. Gender"
                   value={formData.gender}
                   onChange={(val) => setFormData({...formData, gender: val})}
                   suggestions={['Male', 'Female', 'Other']}
                   placeholder="Select or enter Gender"
                   required
+                  error={invalidFields.includes('gender')}
                 />
 
                 <LocationInput
+                  id="country"
                   label="7. Country"
                   value={formData.country}
                   onChange={(val) => setFormData({...formData, country: val, state: '', city: ''})}
                   suggestions={countryNames}
                   placeholder="Enter or select Country"
                   required
+                  error={invalidFields.includes('country')}
                 />
 
                 <LocationInput
+                  id="state"
                   label="8. State"
                   value={formData.state}
                   onChange={(val) => setFormData({...formData, state: val, city: ''})}
                   suggestions={stateNames}
                   placeholder="Enter or select State"
                   required
+                  error={invalidFields.includes('state')}
                 />
 
                 <LocationInput
+                  id="city"
                   label="9. City"
                   value={formData.city}
                   onChange={(val) => setFormData({...formData, city: val})}
                   suggestions={cityNames}
                   placeholder="Enter or select City"
                   required
+                  error={invalidFields.includes('city')}
                 />
               </div>
             </motion.div>
@@ -459,7 +531,7 @@ export default function TakeSurvey() {
                         className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
                           formData.purposeOfVisit === option 
                             ? 'border-teal-600 bg-teal-50' 
-                            : 'border-slate-200 hover:border-teal-300 hover:bg-slate-50'
+                            : (invalidFields.includes('purposeOfVisit') ? 'border-red-500' : 'border-slate-200') + ' hover:border-teal-300 hover:bg-slate-50'
                         }`}
                       >
                         <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center transition-colors ${
@@ -469,6 +541,7 @@ export default function TakeSurvey() {
                         </div>
                         <input
                           type="radio"
+                          id={option === 'OP Consultation' ? 'purposeOfVisit' : ''}
                           name="purposeOfVisit"
                           value={option}
                           checked={formData.purposeOfVisit === option}
@@ -529,6 +602,7 @@ export default function TakeSurvey() {
                         </div>
                         <input
                           type="radio"
+                          id={option === '1st Visit' ? 'consultingDuration' : ''}
                           name="consultingDuration"
                           value={option}
                           checked={formData.consultingDuration === option}
@@ -567,6 +641,7 @@ export default function TakeSurvey() {
                           </div>
                           <input
                             type="checkbox"
+                            id={option === 'Newspaper' ? 'howDidYouKnow' : ''}
                             checked={isSelected}
                             onChange={() => handleCheckboxChange('howDidYouKnow', option)}
                             className="hidden"
@@ -581,11 +656,12 @@ export default function TakeSurvey() {
                   {formData.howDidYouKnow.includes('Others') && (
                     <div className="mt-4">
                       <input
+                        id="howDidYouKnowOther"
                         type="text"
                         placeholder="Please specify other source"
                         value={formData.howDidYouKnowOther}
                         onChange={(e) => setFormData({...formData, howDidYouKnowOther: e.target.value})}
-                        className="w-full p-3 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all bg-slate-50 focus:bg-white"
+                        className={`w-full p-3 text-sm border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all bg-slate-50 focus:bg-white ${invalidFields.includes('howDidYouKnowOther') ? 'border-red-500' : 'border-slate-300'}`}
                       />
                     </div>
                   )}
@@ -615,6 +691,7 @@ export default function TakeSurvey() {
                           </div>
                           <input
                             type="radio"
+                            id={option === 'Newspaper' ? 'whatInfluenced' : ''}
                             name="whatInfluenced"
                             checked={isSelected}
                             onChange={() => handleRadioChange('whatInfluenced', option)}
@@ -630,11 +707,12 @@ export default function TakeSurvey() {
                   {formData.whatInfluenced === 'Others' && (
                     <div className="mt-4">
                       <input
+                        id="whatInfluencedOther"
                         type="text"
                         placeholder="Please specify other influence"
                         value={formData.whatInfluencedOther}
                         onChange={(e) => setFormData({...formData, whatInfluencedOther: e.target.value})}
-                        className="w-full p-3 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all bg-slate-50 focus:bg-white"
+                        className={`w-full p-3 text-sm border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all bg-slate-50 focus:bg-white ${invalidFields.includes('whatInfluencedOther') ? 'border-red-500' : 'border-slate-300'}`}
                       />
                     </div>
                   )}
@@ -658,20 +736,24 @@ export default function TakeSurvey() {
               </div>
 
               <CategoryRatingCard 
+                id="evalCure"
                 title="1. Cure" 
                 subPoints="Highly Qualified Doctors & experienced nurses, Infrastructure, Latest Technology & Equipment, Accuracy of diagnosis and treatment, Success rates and patient outcomes"
                 value={formData.evalCure} 
                 onChange={(v) => setFormData({...formData, evalCure: v})} 
+                error={invalidFields.includes('evalCure')}
               />
 
               <CategoryRatingCard 
+                id="evalCare"
                 title="2. Care" 
                 subPoints="Compassion of Doctor, Cleanliness and hygiene, Staff behaviour (politeness, empathy, respect), Waiting time for consultation or procedures, Ease of admission and discharge, Clear explanation of billing, Availability of insurance support"
                 value={formData.evalCare} 
                 onChange={(v) => setFormData({...formData, evalCare: v})} 
+                error={invalidFields.includes('evalCare')}
               />
 
-              <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mb-6">
+              <div id="evalCost" className={`bg-white p-6 rounded-2xl shadow-sm border ${invalidFields.includes('evalCost') ? 'border-red-500' : 'border-slate-200'} mb-6`}>
                 <h3 className="text-xl font-bold text-slate-900 mb-4">2. Cost</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                   {['Exorbitant', 'Higher side', 'Industry standards', 'Moderate', 'Low'].map(option => (
@@ -690,6 +772,7 @@ export default function TakeSurvey() {
                       </div>
                       <input
                         type="radio"
+                        id={option === 'Exorbitant' ? 'evalCost' : ''}
                         name="evalCost"
                         value={option}
                         checked={formData.evalCost === option}
@@ -705,24 +788,30 @@ export default function TakeSurvey() {
               </div>
 
               <CategoryRatingCard 
+                id="evalComm"
                 title="3. Communication" 
                 subPoints="Doctors explaining conditions clearly, Staff responsiveness to questions, Transparency about treatment options, costs and risks"
                 value={formData.evalComm} 
                 onChange={(v) => setFormData({...formData, evalComm: v})} 
+                error={invalidFields.includes('evalComm')}
               />
 
               <CategoryRatingCard 
+                id="evalComfort"
                 title="4. Comfort" 
                 subPoints="Spacious waiting areas/ rooms, Clean and neat Rooms, Other Services, No hospital feel, Balanced diet & Hygienic food"
                 value={formData.evalComfort} 
                 onChange={(v) => setFormData({...formData, evalComfort: v})} 
+                error={invalidFields.includes('evalComfort')}
               />
 
               <CategoryRatingCard 
+                id="evalConv"
                 title="5. Convenience" 
                 subPoints="Within Heart of the city, Near to residence, Easy Mobility, Ambulance service, Parking facilities"
                 value={formData.evalConv} 
                 onChange={(v) => setFormData({...formData, evalConv: v})} 
+                error={invalidFields.includes('evalConv')}
               />
 
             </motion.div>
@@ -746,6 +835,7 @@ export default function TakeSurvey() {
                     15. What specialities do you associate with MIOT? (Select up to 5) <span className="text-red-500">*</span>
                   </label>
                   <Select
+                    inputId="specialitiesAssociated"
                     isMulti
                     options={departments.map(d => ({ label: d, value: d }))}
                     value={formData.specialitiesAssociated.map(s => ({ label: s, value: s }))}
@@ -760,9 +850,9 @@ export default function TakeSurvey() {
                       control: (provided) => ({
                         ...provided,
                         borderRadius: '0.75rem',
-                        borderColor: '#cbd5e1',
+                        borderColor: invalidFields.includes('specialitiesAssociated') ? '#ef4444' : '#cbd5e1',
                         padding: '0.5rem',
-                        '&:hover': { borderColor: '#14b8a6' },
+                        '&:hover': { borderColor: invalidFields.includes('specialitiesAssociated') ? '#ef4444' : '#14b8a6' },
                         boxShadow: 'none',
                       }),
                     }}
@@ -791,6 +881,7 @@ export default function TakeSurvey() {
                         </div>
                         <input
                           type="radio"
+                          id={option === 'Yes' ? 'willReturn' : ''}
                           name="willReturn"
                           value={option}
                           checked={formData.willReturn === option}

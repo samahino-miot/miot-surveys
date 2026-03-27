@@ -8,18 +8,21 @@ interface LocationInputProps {
   suggestions: string[];
   placeholder: string;
   required?: boolean;
+  error?: boolean;
+  id?: string;
 }
 
-export const LocationInput: React.FC<LocationInputProps> = ({ label, value, onChange, suggestions, placeholder, required }) => {
+export const LocationInput: React.FC<LocationInputProps> = ({ label, value, onChange, suggestions, placeholder, required, error, id }) => {
   const options = suggestions.map(s => ({ label: s, value: s }));
   const selectedOption = options.find(o => o.value === value) || (value ? { label: value, value: value } : null);
 
   return (
-    <div>
+    <div id={id}>
       <label className="block text-sm font-medium text-slate-700 mb-1">
         {label} {required && <span className="text-red-500">*</span>}
       </label>
       <CreatableSelect
+        inputId={id}
         value={selectedOption}
         onChange={(option) => onChange(option ? option.value : '')}
         options={options}
@@ -31,9 +34,9 @@ export const LocationInput: React.FC<LocationInputProps> = ({ label, value, onCh
           control: (provided) => ({
             ...provided,
             borderRadius: '0.5rem',
-            borderColor: '#cbd5e1',
+            borderColor: error ? '#ef4444' : '#cbd5e1',
             padding: '2px',
-            '&:hover': { borderColor: '#14b8a6' },
+            '&:hover': { borderColor: error ? '#ef4444' : '#14b8a6' },
             boxShadow: 'none',
           }),
           menuPortal: (provided) => ({
