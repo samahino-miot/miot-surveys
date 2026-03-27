@@ -7,6 +7,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { deleteResponse, formatDate, getTimestamp } from '../store';
+import { departments } from '../data/departments';
 
 const COLORS = ['#2e56a6', '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981'];
 
@@ -16,42 +17,22 @@ const hardcodedSurvey = {
   description: 'Please fill out the following details to register.',
   questions: [
     { id: 'purposeOfVisit', text: 'Purpose of this visit', type: 'multiple_choice', options: ['OP Consultation', 'Review', 'Second opinion', 'Admission', 'MHC', 'Only Investigations'] },
-    { id: 'department', text: 'For which Department', type: 'text' },
+    { id: 'department', text: 'For which Department', type: 'multiple_choice', options: departments },
     { id: 'consultingDuration', text: 'How long have you been consulting in MIOT?', type: 'multiple_choice', options: ['1st Visit', '<1 month', '1 month – 5yrs', '>5yrs'] },
     { id: 'howDidYouKnow', text: 'How did you know about MIOT?', type: 'checkbox', options: ['Newspaper', 'Magazine', 'Television', 'Radio', 'Theatre Ads', 'Newspaper Inserts', 'Apartment posters', 'Friends', 'Relatives', 'Colleagues', 'Outdoor Hoardings/ Bus Shelters', 'Corporate Tie-up', 'Outreach Clinics', 'Referred by Doctor', 'Digital (Website/Google/Social Media)', 'Others'] },
     { id: 'whatInfluenced', text: 'Who/What influenced your decision to choose MIOT?', type: 'checkbox', options: ['Newspaper', 'Magazine', 'Television', 'Radio', 'Newspaper Inserts', 'Apartment posters', 'Neighbourhood', 'Friends', 'Relatives', 'Colleague', 'Outdoor Hoardings/ Bus Shelters', 'Corporate tie-up', 'Theatre Ads', 'Outreach clinics', 'Referred by Doctor', 'Treating Doctor', 'Emergency', 'Digital (Website/Google/Social Media)', 'Brand Name', 'Others'] },
     
-    { id: 'evalCure_doctors', text: 'Cure: Highly Qualified Doctors & experienced nurses', type: 'rating' },
-    { id: 'evalCure_infrastructure', text: 'Cure: Infrastructure', type: 'rating' },
-    { id: 'evalCure_technology', text: 'Cure: Latest Technology & Equipment', type: 'rating' },
-    { id: 'evalCure_accuracy', text: 'Cure: Accuracy of diagnosis and treatment', type: 'rating' },
-    { id: 'evalCure_successRates', text: 'Cure: Success rates and patient outcomes', type: 'rating' },
+    { id: 'evalCure', text: 'Cure', type: 'rating' },
     
-    { id: 'evalCare_compassion', text: 'Care: Compassion of Doctor', type: 'rating' },
-    { id: 'evalCare_cleanliness', text: 'Care: Cleanliness and hygiene', type: 'rating' },
-    { id: 'evalCare_staffBehaviour', text: 'Care: Staff behaviour', type: 'rating' },
-    { id: 'evalCare_waitingTime', text: 'Care: Waiting time for consultation or procedures', type: 'rating' },
-    { id: 'evalCare_admission', text: 'Care: Ease of admission and discharge', type: 'rating' },
-    { id: 'evalCare_billing', text: 'Care: Clear explanation of billing', type: 'rating' },
-    { id: 'evalCare_insurance', text: 'Care: Availability of insurance support', type: 'rating' },
+    { id: 'evalCare', text: 'Care', type: 'rating' },
 
-    { id: 'evalCost', text: 'Cost', type: 'multiple_choice', options: ['Exorbitant', 'On the higher side', 'Industry standards', 'Moderate', 'Low'] },
+    { id: 'evalCost', text: 'Cost', type: 'multiple_choice', options: ['Exorbitant', 'Higher side', 'Industry standards', 'Moderate', 'Low'] },
 
-    { id: 'evalComm_doctorsExplaining', text: 'Communication: Doctors explaining conditions clearly', type: 'rating' },
-    { id: 'evalComm_staffResponsiveness', text: 'Communication: Staff responsiveness to questions', type: 'rating' },
-    { id: 'evalComm_transparency', text: 'Communication: Transparency about treatment options, costs and risks', type: 'rating' },
+    { id: 'evalComm', text: 'Communication', type: 'rating' },
 
-    { id: 'evalComfort_spacious', text: 'Comfort: Spacious waiting areas/ rooms', type: 'rating' },
-    { id: 'evalComfort_cleanRooms', text: 'Comfort: Clean and neat Rooms', type: 'rating' },
-    { id: 'evalComfort_otherServices', text: 'Comfort: Other Services', type: 'rating' },
-    { id: 'evalComfort_noHospitalFeel', text: 'Comfort: No hospital feel', type: 'rating' },
-    { id: 'evalComfort_diet', text: 'Comfort: Balanced diet & Hygienic food', type: 'rating' },
+    { id: 'evalComfort', text: 'Comfort', type: 'rating' },
 
-    { id: 'evalConv_cityHeart', text: 'Convenience: Within Heart of the city', type: 'rating' },
-    { id: 'evalConv_nearResidence', text: 'Convenience: Near to residence', type: 'rating' },
-    { id: 'evalConv_mobility', text: 'Convenience: Easy Mobility', type: 'rating' },
-    { id: 'evalConv_ambulance', text: 'Convenience: Ambulance service', type: 'rating' },
-    { id: 'evalConv_parking', text: 'Convenience: Parking facilities', type: 'rating' },
+    { id: 'evalConv', text: 'Convenience', type: 'rating' },
     
     { id: 'specialitiesAssociated', text: 'What specialities do you associate with MIOT?', type: 'text' },
     { id: 'willReturn', text: 'I will return to MIOT for further treatment', type: 'multiple_choice', options: ['Yes', 'No'] },
@@ -147,7 +128,7 @@ export default function SurveyResults() {
     link.click();
   };
 
-  const exportPDF = async () => {
+  const exportPDF = () => {
     if (responses.length === 0) return;
     
     const doc = new jsPDF();
@@ -157,32 +138,6 @@ export default function SurveyResults() {
     doc.text(`Total Responses: ${responses.length}`, 14, 30);
     doc.text(`Generated on: ${formatDate(new Date(), true)}`, 14, 36);
 
-    // Capture charts
-    const chartContainers = document.querySelectorAll('.chart-container');
-    let y = 45;
-    for (const container of chartContainers) {
-        const svgElement = container.querySelector('svg');
-        if (svgElement) {
-            const svgData = new XMLSerializer().serializeToString(svgElement);
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const img = new Image();
-            img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
-            await new Promise(resolve => { img.onload = resolve; });
-            canvas.width = img.width;
-            canvas.height = img.height;
-            ctx?.drawImage(img, 0, 0);
-            const imgData = canvas.toDataURL('image/png');
-            doc.addImage(imgData, 'PNG', 14, y, 180, 100);
-            y += 110;
-            if (y > 250) {
-                doc.addPage();
-                y = 20;
-            }
-        }
-    }
-
-    // Add table
     const headers = [['Date', 'Patient Name', 'Age', 'Gender', 'City', ...survey.questions.map(q => q.text.substring(0, 30) + (q.text.length > 30 ? '...' : ''))]];
     const data = sortedResponses.map(r => {
       const answers = r.answers || {};
@@ -203,7 +158,7 @@ export default function SurveyResults() {
     });
 
     autoTable(doc, {
-      startY: y,
+      startY: 45,
       head: headers,
       body: data,
       styles: { fontSize: 8 },
@@ -452,7 +407,7 @@ export default function SurveyResults() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         {survey.questions.map((q, i) => (
-          <div key={q.id} className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200 chart-container">
+          <div key={q.id} className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200">
             <h3 className="font-semibold text-slate-900 mb-6 line-clamp-2" title={q.text}>
               {i + 1}. {q.text}
             </h3>

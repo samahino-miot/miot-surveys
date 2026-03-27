@@ -79,6 +79,8 @@ export default function UserManagement() {
         showToast('User deleted successfully!');
       } catch (err) {
         console.error(err);
+        showToast('Failed to delete user. You may not have permission.');
+        setUserToDelete(null);
       }
     }
   };
