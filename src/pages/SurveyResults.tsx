@@ -131,13 +131,118 @@ export default function SurveyResults() {
   const exportPDF = () => {
     if (responses.length === 0) return;
     
-    const doc = new jsPDF();
+    const doc = new jsPDF('l', 'mm', 'a4');
     doc.setFontSize(18);
     doc.text(`Survey Results: ${survey.title}`, 14, 22);
     doc.setFontSize(11);
     doc.text(`Total Responses: ${responses.length}`, 14, 30);
     doc.text(`Generated on: ${formatDate(new Date(), true)}`, 14, 36);
 
+    // Add Summary Section
+    doc.setFontSize(16);
+    doc.text('Aggregated Results Summary', 14, 45);
+    doc.setFontSize(10);
+    
+    let y = 55;
+    
+    // Helper to add section headers
+    const addSectionHeader = (title: string) => {
+      if (y > 180) { doc.addPage(); y = 20; }
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text(title, 14, y);
+      doc.setFont('helvetica', 'normal');
+      y += 10;
+    };
+
+    let currentSection = '';
+    survey.questions.forEach((q, i) => {
+      // Simple sectioning based on question ID prefixes
+      const section = q.id.startsWith('eval') ? 'Evaluation' : 'General';
+      if (section !== currentSection) {
+        addSectionHeader(section);
+        currentSection = section;
+      }
+
+      const hasResponses = responses.some(r => (r.answers || {})[q.id]);
+      if (!hasResponses) return;
+
+      if (y > 180) {
+        doc.addPage();
+        y = 20;
+      }
+      doc.setFontSize(12);
+      doc.text(`${i + 1}. ${q.text}`, 14, y);
+      y += 7;
+      
+      const summaryData: string[][] = [];
+      if (q.type === 'multiple_choice' || q.type === 'checkbox') {
+        const counts: Record<string, number> = {};
+        q.options?.forEach((opt: string) => counts[opt] = 0);
+        let responseCount = 0;
+        responses.forEach(r => {
+          const val = (r.answers || {})[q.id];
+          if (Array.isArray(val)) {
+            responseCount++;
+            val.forEach(v => counts[v] = (counts[v] || 0) + 1);
+          } else if (val) {
+            responseCount++;
+            counts[val as string] = (counts[val as string] || 0) + 1;
+          }
+        });
+        Object.entries(counts).forEach(([name, value]) => {
+          if (value > 0) summaryData.push([name, value.toString(), responseCount > 0 ? ((value / responseCount) * 100).toFixed(1) + '%' : '0%']);
+        });
+        
+        if (summaryData.length > 0) {
+          autoTable(doc, {
+            startY: y,
+            head: [['Option', 'Count', 'Percentage']],
+            body: summaryData,
+            styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak' },
+            headStyles: { fillColor: [46, 86, 166], halign: 'center' },
+            margin: { left: 14 },
+            tableWidth: 'wrap'
+          });
+          y = (doc as any).lastAutoTable.finalY + 10;
+        }
+      } else if (q.type === 'rating') {
+        const counts: Record<string, number> = { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 };
+        let responseCount = 0;
+        let sum = 0;
+        responses.forEach(r => {
+          const val = (r.answers || {})[q.id];
+          if (val && typeof val === 'number') {
+            counts[val.toString()]++;
+            responseCount++;
+            sum += val;
+          }
+        });
+        Object.entries(counts).forEach(([name, value]) => {
+          summaryData.push([`${name} Stars`, value.toString()]);
+        });
+        summaryData.push(['Average', (responseCount > 0 ? (sum / responseCount).toFixed(1) : '0.0')]);
+        
+        autoTable(doc, {
+          startY: y,
+          head: [['Rating', 'Count/Avg']],
+          body: summaryData,
+          styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak' },
+          headStyles: { fillColor: [46, 86, 166], halign: 'center' },
+          margin: { left: 14 },
+          tableWidth: 'wrap'
+        });
+        y = (doc as any).lastAutoTable.finalY + 10;
+      } else {
+        doc.text('Text response provided.', 14, y);
+        y += 10;
+      }
+    });
+
+    // Raw Data Table
+    doc.addPage();
+    doc.setFontSize(16);
+    doc.text('Raw Data', 14, 20);
     const headers = [['Date', 'Patient Name', 'Age', 'Gender', 'City', ...survey.questions.map(q => q.text.substring(0, 30) + (q.text.length > 30 ? '...' : ''))]];
     const data = sortedResponses.map(r => {
       const answers = r.answers || {};
@@ -157,12 +262,36 @@ export default function SurveyResults() {
       return row;
     });
 
+    const columnStyles: Record<number, any> = {
+      0: { cellWidth: 25 },
+      1: { cellWidth: 35 },
+      2: { cellWidth: 12 },
+      3: { cellWidth: 18 },
+      4: { cellWidth: 25 },
+    };
+    
+    // Calculate remaining width for questions
+    const fixedWidth = 25 + 35 + 12 + 18 + 25; // 115
+    const availableWidth = 297 - 28 - fixedWidth; // 297 - margins - fixed
+    const questionWidth = Math.max(25, availableWidth / survey.questions.length);
+    
+    survey.questions.forEach((_, i) => {
+      columnStyles[5 + i] = { cellWidth: questionWidth };
+    });
+
     autoTable(doc, {
-      startY: 45,
+      startY: 30,
       head: headers,
       body: data,
-      styles: { fontSize: 8 },
-      headStyles: { fillColor: [46, 86, 166] }
+      styles: { fontSize: 7, cellPadding: 1.5, overflow: 'linebreak' },
+      headStyles: { 
+        fillColor: [46, 86, 166], 
+        halign: 'center', 
+        valign: 'middle',
+        overflow: 'hidden'
+      },
+      columnStyles: columnStyles,
+      tableWidth: 'auto'
     });
 
     doc.save(`${survey.title.replace(/\s+/g, '_')}_Results.pdf`);
