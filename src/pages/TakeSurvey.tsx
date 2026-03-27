@@ -754,7 +754,7 @@ export default function TakeSurvey() {
               />
 
               <div id="evalCost" className={`bg-white p-6 rounded-2xl shadow-sm border ${invalidFields.includes('evalCost') ? 'border-red-500' : 'border-slate-200'} mb-6`}>
-                <h3 className="text-xl font-bold text-slate-900 mb-4">2. Cost</h3>
+                <h3 className="text-xl font-bold text-slate-900 mb-4">3. Cost</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                   {['Exorbitant', 'Higher side', 'Industry standards', 'Moderate', 'Low'].map(option => (
                     <label 
@@ -789,7 +789,7 @@ export default function TakeSurvey() {
 
               <CategoryRatingCard 
                 id="evalComm"
-                title="3. Communication" 
+                title="4. Communication" 
                 subPoints="Doctors explaining conditions clearly, Staff responsiveness to questions, Transparency about treatment options, costs and risks"
                 value={formData.evalComm} 
                 onChange={(v) => setFormData({...formData, evalComm: v})} 
@@ -798,7 +798,7 @@ export default function TakeSurvey() {
 
               <CategoryRatingCard 
                 id="evalComfort"
-                title="4. Comfort" 
+                title="5. Comfort" 
                 subPoints="Spacious waiting areas/ rooms, Clean and neat Rooms, Other Services, No hospital feel, Balanced diet & Hygienic food"
                 value={formData.evalComfort} 
                 onChange={(v) => setFormData({...formData, evalComfort: v})} 
@@ -807,7 +807,7 @@ export default function TakeSurvey() {
 
               <CategoryRatingCard 
                 id="evalConv"
-                title="5. Convenience" 
+                title="6. Convenience" 
                 subPoints="Within Heart of the city, Near to residence, Easy Mobility, Ambulance service, Parking facilities"
                 value={formData.evalConv} 
                 onChange={(v) => setFormData({...formData, evalConv: v})} 
