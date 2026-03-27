@@ -1,18 +1,11 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail, User } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
+import firebaseConfig from '../firebase-applet-config.json';
 
-const firebaseConfig = {
-  apiKey: "AIzaSyBdhRgaWMJKSwZGJ-8IfJL6Sq90D524dQc",
-  authDomain: "miot-surveys.firebaseapp.com",
-  projectId: "miot-surveys",
-  storageBucket: "miot-surveys.firebasestorage.app",
-  messagingSenderId: "513984076997",
-  appId: "1:513984076997:web:6bc375b35a3a2583d664ac"
-};
-
+// Initialize Firebase SDK
 const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app);
+export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 
@@ -22,44 +15,6 @@ export const signInWithGoogle = async () => {
     return result.user;
   } catch (error) {
     console.error("Error signing in with Google", error);
-    throw error;
-  }
-};
-
-export const signInWithEmail = async (email: string, password: string) => {
-  try {
-    const result = await signInWithEmailAndPassword(auth, email, password);
-    return result.user;
-  } catch (error) {
-    console.error("Error signing in with email", error);
-    throw error;
-  }
-};
-
-export const registerWithEmail = async (email: string, password: string) => {
-  try {
-    const result = await createUserWithEmailAndPassword(auth, email, password);
-    return result.user;
-  } catch (error) {
-    console.error("Error registering with email", error);
-    throw error;
-  }
-};
-
-export const sendVerificationEmail = async (user: User) => {
-  try {
-    await sendEmailVerification(user);
-  } catch (error) {
-    console.error("Error sending verification email", error);
-    throw error;
-  }
-};
-
-export const resetPassword = async (email: string) => {
-  try {
-    await sendPasswordResetEmail(auth, email);
-  } catch (error) {
-    console.error("Error sending password reset email", error);
     throw error;
   }
 };

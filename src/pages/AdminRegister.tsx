@@ -35,7 +35,11 @@ export default function AdminRegister() {
         navigate('/admin/login');
       }, 3000);
     } catch (err: any) {
-      setError(err.message || 'Failed to register with Google.');
+      if (err.code === 'auth/unauthorized-domain') {
+        setError('This domain is not authorized for Google sign-in. Please add it to your Firebase Console.');
+      } else {
+        setError(err.message || 'Failed to register with Google.');
+      }
       setIsRegistering(false);
     }
   };

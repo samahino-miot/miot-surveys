@@ -34,7 +34,11 @@ export default function AdminLogin() {
       await signInWithGoogle();
       // The useEffect will handle the redirection or error setting
     } catch (err: any) {
-      setError(err.message || 'Failed to sign in with Google.');
+      if (err.code === 'auth/unauthorized-domain') {
+        setError('This domain is not authorized for Google sign-in. Please add it to your Firebase Console.');
+      } else {
+        setError(err.message || 'Failed to sign in with Google.');
+      }
       setIsLoggingIn(false);
     }
   };
@@ -57,7 +61,11 @@ export default function AdminLogin() {
         return;
       }
     } catch (err: any) {
-      setError(err.message || 'Failed to sign in with email.');
+      if (err.code === 'auth/invalid-credential') {
+        setError('Invalid email or password.');
+      } else {
+        setError(err.message || 'Failed to sign in with email.');
+      }
       setIsLoggingIn(false);
     }
   };

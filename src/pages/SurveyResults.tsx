@@ -147,7 +147,7 @@ export default function SurveyResults() {
     link.click();
   };
 
-  const exportPDF = () => {
+  const exportPDF = async () => {
     if (responses.length === 0) return;
     
     const doc = new jsPDF();
@@ -157,6 +157,32 @@ export default function SurveyResults() {
     doc.text(`Total Responses: ${responses.length}`, 14, 30);
     doc.text(`Generated on: ${formatDate(new Date(), true)}`, 14, 36);
 
+    // Capture charts
+    const chartContainers = document.querySelectorAll('.chart-container');
+    let y = 45;
+    for (const container of chartContainers) {
+        const svgElement = container.querySelector('svg');
+        if (svgElement) {
+            const svgData = new XMLSerializer().serializeToString(svgElement);
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const img = new Image();
+            img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+            await new Promise(resolve => { img.onload = resolve; });
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx?.drawImage(img, 0, 0);
+            const imgData = canvas.toDataURL('image/png');
+            doc.addImage(imgData, 'PNG', 14, y, 180, 100);
+            y += 110;
+            if (y > 250) {
+                doc.addPage();
+                y = 20;
+            }
+        }
+    }
+
+    // Add table
     const headers = [['Date', 'Patient Name', 'Age', 'Gender', 'City', ...survey.questions.map(q => q.text.substring(0, 30) + (q.text.length > 30 ? '...' : ''))]];
     const data = sortedResponses.map(r => {
       const answers = r.answers || {};
@@ -177,7 +203,7 @@ export default function SurveyResults() {
     });
 
     autoTable(doc, {
-      startY: 45,
+      startY: y,
       head: headers,
       body: data,
       styles: { fontSize: 8 },
@@ -426,7 +452,7 @@ export default function SurveyResults() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         {survey.questions.map((q, i) => (
-          <div key={q.id} className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200">
+          <div key={q.id} className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200 chart-container">
             <h3 className="font-semibold text-slate-900 mb-6 line-clamp-2" title={q.text}>
               {i + 1}. {q.text}
             </h3>
