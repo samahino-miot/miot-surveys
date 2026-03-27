@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router';
-import { signInWithGoogle, signInWithEmail, logout, resetPassword } from '../firebase';
+import { signInWithGoogle, signInWithEmailUser, logout, resetPassword } from '../firebase';
 import { useAuth } from '../components/AuthProvider';
 import { Lock, AlertCircle, CheckCircle2, Eye, EyeOff } from 'lucide-react';
 
@@ -53,7 +53,7 @@ export default function AdminLogin() {
     setResetMessage('');
     setIsLoggingIn(true);
     try {
-      const user = await signInWithEmail(email, password);
+      const user = await signInWithEmailUser(email, password);
       if (!user.emailVerified) {
         await logout();
         setError('Please verify your email address. Check your inbox for the verification link.');
