@@ -455,6 +455,105 @@ export default function SurveyResults() {
       );
     }
 
+    if (q.id === 'specialitiesAssociated') {
+      const counts: Record<string, number> = {};
+      let responseCount = 0;
+
+      responses.forEach(r => {
+        const answers = r.answers || {};
+        const val = answers[q.id];
+        if (val) {
+          responseCount++;
+          
+          let specialties: string[] = [];
+          if (Array.isArray(val)) {
+            specialties = val;
+          } else if (typeof val === 'string') {
+            // Fallback for older data or if it was saved as a string
+            const regex = new RegExp(departments.map(d => d.toLowerCase()).join('|'), 'gi');
+            const matches = val.toLowerCase().match(regex);
+            if (matches) {
+              matches.forEach(match => {
+                const dept = departments.find(d => d.toLowerCase() === match);
+                if (dept) specialties.push(dept);
+              });
+            }
+          }
+
+          specialties.forEach(specialty => {
+            // Find the canonical name from departments list
+            const canonicalDept = departments.find(d => d.toLowerCase() === specialty.toLowerCase());
+            if (canonicalDept) {
+              counts[canonicalDept] = (counts[canonicalDept] || 0) + 1;
+            }
+          });
+        } else {
+          // No action needed
+        }
+      });
+
+      const data = Object.entries(counts).map(([name, value]) => ({ 
+        name, 
+        value,
+        percentage: responseCount > 0 ? ((value / responseCount) * 100).toFixed(1) : '0.0'
+      })).filter(d => d.value > 0);
+
+      if (data.length === 0) return <p className="text-slate-500 italic">No responses yet.</p>;
+
+      const CustomPieTooltip = ({ active, payload }: any) => {
+        if (active && payload && payload.length) {
+          return (
+            <div className="bg-white p-3 border border-slate-200 shadow-lg rounded-xl">
+              <p className="font-medium text-slate-900 mb-1">{payload[0].name}</p>
+              <p className="text-sm text-slate-600">Count: <span className="font-medium text-slate-900">{payload[0].value}</span></p>
+              <p className="text-sm text-slate-600">Share: <span className="font-medium text-slate-900">{payload[0].payload.percentage}%</span></p>
+            </div>
+          );
+        }
+        return null;
+      };
+
+      return (
+        <div className="space-y-6">
+          <div className="flex flex-wrap gap-2">
+            {Object.keys(counts).map((dept, i) => (
+              <span key={i} className="px-2 py-1 bg-slate-100 text-slate-700 text-xs rounded-full">{dept}</span>
+            ))}
+          </div>
+          <div className="h-64 sm:h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={data}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={window.innerWidth < 640 ? 40 : 60}
+                  outerRadius={window.innerWidth < 640 ? 60 : 80}
+                  paddingAngle={5}
+                  dataKey="value"
+                >
+                  {data.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip content={<CustomPieTooltip />} />
+                <Legend 
+                  layout={width < 640 ? 'vertical' : 'horizontal'} 
+                  align="center" 
+                  verticalAlign="bottom"
+                  wrapperStyle={{ 
+                    fontSize: width < 640 ? '10px' : '12px', 
+                    marginTop: width < 640 ? '10px' : '20px',
+                    paddingTop: '10px'
+                  }} 
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      );
+    }
+
     if (q.type === 'text') {
       const textResponses = responses.map(r => (r.answers || {})[q.id]).filter(Boolean);
       return (
