@@ -26,16 +26,18 @@ export default function Layout() {
                 MIOT <span className="hidden sm:inline">International</span>
               </span>
             </div>
-            <nav className="flex gap-4 sm:gap-6 shrink-0">
-              <Link to="/" className={`flex items-center gap-2 text-sm font-medium ${!isAdminPath ? 'text-teal-600' : 'text-slate-500 hover:text-slate-900'}`}>
-                <Home className="h-5 w-5 sm:h-4 sm:w-4" />
-                <span className="hidden sm:inline">Patient Portal</span>
-              </Link>
-              <Link to="/admin" className={`flex items-center gap-2 text-sm font-medium ${isAdminPath ? 'text-teal-600' : 'text-slate-500 hover:text-slate-900'}`}>
-                <LayoutDashboard className="h-5 w-5 sm:h-4 sm:w-4" />
-                <span className="hidden sm:inline">Admin</span>
-              </Link>
-            </nav>
+            {isAuth && (
+              <nav className="flex gap-4 sm:gap-6 shrink-0">
+                <Link to="/" className={`flex items-center gap-2 text-sm font-medium ${!isAdminPath ? 'text-teal-600' : 'text-slate-500 hover:text-slate-900'}`}>
+                  <Home className="h-5 w-5 sm:h-4 sm:w-4" />
+                  <span className="hidden sm:inline">Patient Portal</span>
+                </Link>
+                <Link to="/admin" className={`flex items-center gap-2 text-sm font-medium ${isAdminPath ? 'text-teal-600' : 'text-slate-500 hover:text-slate-900'}`}>
+                  <LayoutDashboard className="h-5 w-5 sm:h-4 sm:w-4" />
+                  <span className="hidden sm:inline">Admin</span>
+                </Link>
+              </nav>
+            )}
           </div>
         </div>
       </header>
