@@ -448,7 +448,7 @@ export default function TakeSurvey() {
 
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
-                    4. Relation to patient
+                    4. Relationship to Patient
                   </label>
                   <input
                     type="text"
@@ -469,7 +469,7 @@ export default function TakeSurvey() {
                     value={formData.age}
                     onChange={(e) => {
                       const value = e.target.value;
-                      if (/^[0-9]*$/.test(value)) {
+                      if (/^[0-9]*$/.test(value) && value.length <= 3) {
                         setFormData({...formData, age: value});
                       }
                     }}
@@ -483,7 +483,7 @@ export default function TakeSurvey() {
                   label="6. Gender"
                   value={formData.gender}
                   onChange={(val) => setFormData({...formData, gender: val})}
-                  suggestions={['Male', 'Female', 'Other']}
+                  suggestions={['Male', 'Female']}
                   placeholder="Select or enter Gender"
                   required
                   error={invalidFields.includes('gender')}
@@ -640,8 +640,9 @@ export default function TakeSurvey() {
                     12. How did you know about MIOT? <span className="text-red-500">*</span>
                   </label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                    {['Newspaper', 'Magazine', 'Television', 'Radio', 'Theatre Ads', 'Newspaper Inserts', 'Apartment posters', 'Friends', 'Relatives', 'Colleagues', 'Outdoor Hoardings/ Bus Shelters', 'Corporate Tie-up', 'Outreach Clinics', 'Referred by Doctor', 'Digital (Website/Google/Social Media)', 'Others'].map(option => {
+                    {['Apartment posters', 'Colleagues', 'Corporate Tie-up', 'Digital (Website/Google/Social Media)', 'Friends', 'Magazine', 'Newspaper', 'Newspaper Inserts', 'Outdoor Hoardings / Bus Shelters', 'Outreach Clinics', 'Radio', 'Referred by Doctor', 'Relatives', 'Television', 'Theatre Ads', 'Others'].map(option => {
                       const isSelected = formData.howDidYouKnow.includes(option);
+                      const label = option;
                       return (
                         <label 
                           key={option} 
@@ -658,13 +659,13 @@ export default function TakeSurvey() {
                           </div>
                           <input
                             type="checkbox"
-                            id={option === 'Newspaper' ? 'howDidYouKnow' : ''}
+                            id={option === 'Apartment posters' ? 'howDidYouKnow' : ''}
                             checked={isSelected}
                             onChange={() => handleCheckboxChange('howDidYouKnow', option)}
                             className="hidden"
                           />
                           <span className={`text-sm font-medium ${isSelected ? 'text-teal-900' : 'text-slate-700'}`}>
-                            {option}
+                            {label}
                           </span>
                         </label>
                       );
@@ -690,8 +691,9 @@ export default function TakeSurvey() {
                     13. Who/What influenced your decision to choose MIOT? <span className="text-red-500">*</span>
                   </label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                    {['Newspaper', 'Magazine', 'Television', 'Radio', 'Newspaper Inserts', 'Apartment posters', 'Neighbourhood', 'Friends', 'Relatives', 'Colleague', 'Outdoor Hoardings/ Bus Shelters', 'Corporate tie-up', 'Theatre Ads', 'Outreach clinics', 'Referred by Doctor', 'Treating Doctor', 'Emergency', 'Digital (Website/Google/Social Media)', 'Brand Name', 'Others'].map(option => {
+                    {['Apartment posters', 'Brand Name', 'Colleague', 'Corporate tie-up', 'Digital (Website/Google/Social Media)', 'Emergency', 'Friends', 'Magazine', 'Neighbourhood', 'Newspaper Inserts', 'Outdoor Hoardings / Bus Shelters', 'Outreach clinics', 'Radio', 'Referred by Doctor', 'Relatives', 'Television', 'Theatre Ads', 'Treating Doctor', 'Others'].map(option => {
                       const isSelected = formData.whatInfluenced === option;
+                      const label = option;
                       return (
                         <label 
                           key={option} 
@@ -708,14 +710,14 @@ export default function TakeSurvey() {
                           </div>
                           <input
                             type="radio"
-                            id={option === 'Newspaper' ? 'whatInfluenced' : ''}
+                            id={option === 'Apartment posters' ? 'whatInfluenced' : ''}
                             name="whatInfluenced"
                             checked={isSelected}
                             onChange={() => handleRadioChange('whatInfluenced', option)}
                             className="hidden"
                           />
                           <span className={`text-sm font-medium ${isSelected ? 'text-teal-900' : 'text-slate-700'}`}>
-                            {option}
+                            {label}
                           </span>
                         </label>
                       );
@@ -807,7 +809,7 @@ export default function TakeSurvey() {
               <CategoryRatingCard 
                 id="evalComm"
                 title="4. Communication" 
-                subPoints="Doctors explaining conditions clearly - Staff responsiveness to questions - Transparency about treatment options - costs and risks"
+                subPoints="Doctors explaining conditions clearly - Staff responsiveness to questions - Transparency about treatment options, costs and risks"
                 value={formData.evalComm} 
                 onChange={(v) => setFormData({...formData, evalComm: v})} 
                 error={invalidFields.includes('evalComm')}
@@ -849,7 +851,7 @@ export default function TakeSurvey() {
                 {/* Q15 */}
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
-                    15. What specialities do you associate with MIOT? (Select up to 5) <span className="text-red-500">*</span>
+                    15. What specialities do you associate with MIOT? Just note top 5 in the order they spell <span className="text-red-500">*</span>
                   </label>
                   <Select
                     inputId="specialitiesAssociated"

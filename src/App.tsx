@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { BrowserRouter, Routes, Route } from 'react-router';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router';
 import Layout from './components/Layout';
 import PatientHome from './pages/PatientHome';
 import TakeSurvey from './pages/TakeSurvey';
@@ -24,6 +24,8 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Layout />}>
             <Route index element={<PatientHome />} />
+            <Route path="home" element={<Navigate to="/" replace />} />
+            <Route path="homepage" element={<Navigate to="/" replace />} />
             <Route path="survey/:id" element={<TakeSurvey />} />
             <Route path="admin/login" element={<AdminLogin />} />
             <Route path="admin/register" element={<AdminRegister />} />
