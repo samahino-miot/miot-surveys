@@ -14,6 +14,7 @@ import AdminLogin from './pages/AdminLogin';
 import AdminRegister from './pages/AdminRegister';
 import AdminRoute from './components/AdminRoute';
 import UserManagement from './pages/UserManagement';
+import NotFound from './pages/NotFound';
 import { AuthProvider } from './components/AuthProvider';
 
 export default function App() {
@@ -32,6 +33,7 @@ export default function App() {
               <Route path="admin/surveys/:id/results" element={<SurveyResults />} />
               <Route path="admin/users" element={<UserManagement />} />
             </Route>
+            <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
       </BrowserRouter>
