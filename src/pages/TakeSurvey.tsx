@@ -10,30 +10,37 @@ import { LocationInput } from '../components/LocationInput';
 import { Country, State, City } from 'country-state-city';
 import { departments } from '../data/departments';
 
-const CategoryRatingCard = ({ id, title, subPoints, value, onChange, error }: { id: string, title: string, subPoints: string, value: number, onChange: (val: number) => void, error?: boolean }) => (
-  <div id={id} className={`bg-white p-6 rounded-2xl shadow-sm border ${error ? 'border-red-500' : 'border-slate-200'} mb-6`}>
-    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
-      <h3 className="text-xl font-bold text-slate-900">{title}</h3>
-      <div className="flex gap-2">
-        {[1, 2, 3, 4, 5].map(rating => (
-          <button
-            key={rating}
-            type="button"
-            onClick={() => onChange(rating)}
-            className={`h-10 w-10 rounded-lg font-bold text-sm transition-all flex items-center justify-center ${
-              value === rating 
-                ? 'bg-teal-600 text-white shadow-md ring-2 ring-teal-600/20' 
-                : 'bg-slate-100 border border-slate-200 text-slate-600 hover:bg-slate-200'
-            }`}
-          >
-            {rating}
-          </button>
-        ))}
+const CategoryRatingCard = ({ id, title, subPoints, value, onChange, error }: { id: string, title: string, subPoints: string, value: number, onChange: (val: number) => void, error?: boolean }) => {
+  const points = subPoints.split(' - ');
+  return (
+    <div id={id} className={`bg-white p-6 rounded-2xl shadow-sm border ${error ? 'border-red-500' : 'border-slate-200'} mb-6`}>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+        <h3 className="text-xl font-bold text-slate-900">{title}</h3>
+        <div className="flex gap-2">
+          {[1, 2, 3, 4, 5].map(rating => (
+            <button
+              key={rating}
+              type="button"
+              onClick={() => onChange(rating)}
+              className={`h-10 w-10 rounded-lg font-bold text-sm transition-all flex items-center justify-center ${
+                value === rating 
+                  ? 'bg-teal-600 text-white shadow-md ring-2 ring-teal-600/20' 
+                  : 'bg-slate-100 border border-slate-200 text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              {rating}
+            </button>
+          ))}
+        </div>
       </div>
+      <ul className="list-disc list-inside text-sm text-slate-600 space-y-1">
+        {points.map((point, index) => (
+          <li key={index}>{point}</li>
+        ))}
+      </ul>
     </div>
-    <p className="text-sm text-slate-600">{subPoints}</p>
-  </div>
-);
+  );
+};
 
 export default function TakeSurvey() {
   const navigate = useNavigate();
@@ -401,7 +408,12 @@ export default function TakeSurvey() {
                   <input
                     type="text"
                     value={formData.mrNo}
-                    onChange={(e) => setFormData({...formData, mrNo: e.target.value})}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (/^[a-zA-Z0-9]*$/.test(value)) {
+                        setFormData({...formData, mrNo: value});
+                      }
+                    }}
                     placeholder="Enter MR No"
                     className="w-full p-2.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all bg-slate-50 focus:bg-white"
                   />
@@ -455,7 +467,12 @@ export default function TakeSurvey() {
                     id="age"
                     type="text"
                     value={formData.age}
-                    onChange={(e) => setFormData({...formData, age: e.target.value})}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (/^[0-9]*$/.test(value)) {
+                        setFormData({...formData, age: value});
+                      }
+                    }}
                     placeholder="Enter age"
                     className={`w-full p-2.5 text-sm border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all bg-slate-50 focus:bg-white ${invalidFields.includes('age') ? 'border-red-500' : 'border-slate-300'}`}
                   />
@@ -731,8 +748,8 @@ export default function TakeSurvey() {
               className="p-6 sm:p-10 space-y-8"
             >
               <div>
-                <h2 className="text-2xl font-bold text-slate-900 mb-2">14. How do you evaluate MIOT based on your Experience?</h2>
-                <p className="text-slate-600 mb-6">Rating on a scale of 1 to 5</p>
+                <h2 className="text-2xl font-bold text-slate-900 mb-2">14. How do you rate MIOT based on your Experience?</h2>
+                <p className="text-slate-600 mb-6">Please rate on a scale of 1 to 5, with 1 being the lowest and 5 being the highest.</p>
               </div>
 
               <CategoryRatingCard 
