@@ -10,7 +10,7 @@ async function rename() {
     try {
         const surveyRef = doc(db, 'surveys', 'test-survey-1774431512613');
         await updateDoc(surveyRef, {
-            title: "MIOT International Patient Registration Survey"
+            title: "MIOT International Patient Experience Survey"
         });
         console.log("Renamed successfully!");
         process.exit(0);

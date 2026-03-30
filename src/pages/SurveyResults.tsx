@@ -14,8 +14,8 @@ const COLORS = ['#2e56a6', '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981'
 
 const hardcodedSurvey = {
   id: 'miot-registration-survey',
-  title: 'MIOT International Patient Registration Survey',
-  description: 'Please fill out the following details to register.',
+  title: 'MIOT International Patient Experience Survey',
+  description: 'Please fill out the following questions to share your feedback.',
   questions: [
     { id: 'purposeOfVisit', text: 'Purpose of this visit', type: 'multiple_choice', options: ['OP Consultation', 'Review', 'Second opinion', 'Admission', 'MHC', 'Only Investigations'] },
     { id: 'department', text: 'For which Department', type: 'multiple_choice', options: departments },

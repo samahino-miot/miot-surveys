@@ -287,7 +287,7 @@ export default function TakeSurvey() {
     try {
       await addDoc(collection(db, 'responses'), {
         surveyId: surveyId,
-        surveyTitle: dbSurvey?.title || 'MIOT International Patient Registration Survey',
+        surveyTitle: dbSurvey?.title || 'MIOT International Patient Experience Survey',
         answers: formData,
         submittedAt: serverTimestamp()
       });
@@ -347,8 +347,8 @@ export default function TakeSurvey() {
     <div className="max-w-3xl mx-auto min-h-[80vh] flex flex-col">
       {/* Header & Progress */}
       <div className="mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">MIOT International Patient Registration Survey</h1>
-        {currentStep === 0 && <p className="text-slate-600 text-lg mb-6">Please fill out the following details to register.</p>}
+        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">MIOT International Patient Experience Survey</h1>
+        {currentStep === 0 && <p className="text-slate-600 text-lg mb-6">Please fill out the following questions to share your feedback.</p>}
         
         <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
           <div className="flex justify-between items-center mb-2">

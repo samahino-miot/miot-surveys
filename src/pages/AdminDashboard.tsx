@@ -25,8 +25,8 @@ export default function AdminDashboard() {
   if (!hasHardcoded) {
     allSurveys.push({
       id: 'miot-registration-survey',
-      title: 'MIOT International Patient Registration Survey',
-      description: 'Please fill out the following details to register.',
+      title: 'MIOT International Patient Experience Survey',
+      description: 'Please fill out the following questions to share your feedback.',
       questions: [],
       createdAt: new Date().toISOString(),
       isActive: true,

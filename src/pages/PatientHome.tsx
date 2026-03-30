@@ -12,11 +12,11 @@ export default function PatientHome() {
   return (
     <div className="max-w-3xl mx-auto">
       <div className="text-center mb-12">
-        <img src="/logo.png" alt="MIOT International" className="h-16 sm:h-20 mx-auto mb-6 object-contain" onError={(e) => {
+        <img src="https://www.miotinternational.com/wp-content/uploads/2025/06/logo_cmp_pg.png" alt="MIOT International" className="h-16 sm:h-20 mx-auto mb-6 object-contain" referrerPolicy="no-referrer" onError={(e) => {
           (e.target as HTMLImageElement).style.display = 'none';
         }} />
         <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 mb-4 tracking-tight">Welcome to MIOT International</h1>
-        <p className="text-lg text-slate-600">Your feedback helps us provide better care. Please take a moment to complete our surveys.</p>
+        <p className="text-lg text-slate-600">Help us make your experience better, share your feedback with us.</p>
       </div>
 
       <div className="space-y-4">
