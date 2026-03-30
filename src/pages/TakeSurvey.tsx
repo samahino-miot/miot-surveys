@@ -738,7 +738,7 @@ export default function TakeSurvey() {
               <CategoryRatingCard 
                 id="evalCure"
                 title="1. Cure" 
-                subPoints="Highly Qualified Doctors & experienced nurses, Infrastructure, Latest Technology & Equipment, Accuracy of diagnosis and treatment, Success rates and patient outcomes"
+                subPoints="Highly Qualified Doctors & experienced nurses - Infrastructure - Latest Technology & Equipment - Accuracy of diagnosis and treatment - Success rates and patient outcomes"
                 value={formData.evalCure} 
                 onChange={(v) => setFormData({...formData, evalCure: v})} 
                 error={invalidFields.includes('evalCure')}
@@ -747,7 +747,7 @@ export default function TakeSurvey() {
               <CategoryRatingCard 
                 id="evalCare"
                 title="2. Care" 
-                subPoints="Compassion of Doctor, Cleanliness and hygiene, Staff behaviour (politeness, empathy, respect), Waiting time for consultation or procedures, Ease of admission and discharge, Clear explanation of billing, Availability of insurance support"
+                subPoints="Compassion of Doctor - Cleanliness and hygiene - Staff behaviour (politeness, empathy, respect) - Waiting time for consultation or procedures - Ease of admission and discharge - Clear explanation of billing - Availability of insurance support"
                 value={formData.evalCare} 
                 onChange={(v) => setFormData({...formData, evalCare: v})} 
                 error={invalidFields.includes('evalCare')}
@@ -790,7 +790,7 @@ export default function TakeSurvey() {
               <CategoryRatingCard 
                 id="evalComm"
                 title="4. Communication" 
-                subPoints="Doctors explaining conditions clearly, Staff responsiveness to questions, Transparency about treatment options, costs and risks"
+                subPoints="Doctors explaining conditions clearly - Staff responsiveness to questions - Transparency about treatment options - costs and risks"
                 value={formData.evalComm} 
                 onChange={(v) => setFormData({...formData, evalComm: v})} 
                 error={invalidFields.includes('evalComm')}
@@ -799,7 +799,7 @@ export default function TakeSurvey() {
               <CategoryRatingCard 
                 id="evalComfort"
                 title="5. Comfort" 
-                subPoints="Spacious waiting areas/ rooms, Clean and neat Rooms, Other Services, No hospital feel, Balanced diet & Hygienic food"
+                subPoints="Spacious waiting areas/ rooms - Clean and neat Rooms - Other Services - No hospital feel - Balanced diet & Hygienic food"
                 value={formData.evalComfort} 
                 onChange={(v) => setFormData({...formData, evalComfort: v})} 
                 error={invalidFields.includes('evalComfort')}
@@ -808,7 +808,7 @@ export default function TakeSurvey() {
               <CategoryRatingCard 
                 id="evalConv"
                 title="6. Convenience" 
-                subPoints="Within Heart of the city, Near to residence, Easy Mobility, Ambulance service, Parking facilities"
+                subPoints="Within Heart of the city - Near to residence - Easy Mobility - Ambulance service - Parking facilities"
                 value={formData.evalConv} 
                 onChange={(v) => setFormData({...formData, evalConv: v})} 
                 error={invalidFields.includes('evalConv')}
