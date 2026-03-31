@@ -98,7 +98,7 @@ export default function TakeSurvey() {
   const dbSurvey = surveys.find(s => s.id === surveyId);
   const isActive = dbSurvey ? dbSurvey.isActive : true; // Default to true if not in DB
 
-  const countries = Country.getAllCountries();
+  const countries = Country.getAllCountries().filter(c => !['Aland Islands', 'American Samoa', 'Anguilla', 'Antarctica'].includes(c.name));
   const countryNames = countries.map(c => c.name);
 
   const selectedCountry = countries.find(c => c.name === formData.country);
