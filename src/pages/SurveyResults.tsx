@@ -10,7 +10,11 @@ import * as XLSX from 'xlsx';
 import { deleteResponse, formatDate, getTimestamp } from '../store';
 import { departments } from '../data/departments';
 
-const COLORS = ['#2e56a6', '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981'];
+const COLORS = [
+  '#3b82f6', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#ef4444', 
+  '#06b6d4', '#f97316', '#84cc16', '#6366f1', '#d946ef', '#14b8a6', 
+  '#e11d48', '#a855f7', '#22c55e', '#eab308', '#0ea5e9', '#94a3b8'
+];
 
 const hardcodedSurvey = {
   id: 'miot-registration-survey',
