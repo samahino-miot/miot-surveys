@@ -13,7 +13,7 @@ export default function Layout() {
 
   const handleLogout = async () => {
     await logout();
-    navigate('/admin/login');
+    navigate('/login');
   };
 
   return (
@@ -27,7 +27,7 @@ export default function Layout() {
               </span>
             </div>
             {isAuth && (
-              <nav className="flex gap-4 sm:gap-6 shrink-0">
+              <nav className="flex gap-4 sm:gap-6 shrink-0 items-center">
                 {(adminUser.role === 'admin' || adminUser.role === 'superadmin' || adminUser.role === 'viewer') && (
                   <Link to="/" className={`flex items-center gap-2 text-sm font-medium ${location.pathname === '/' ? 'text-teal-600' : 'text-slate-500 hover:text-slate-900'}`}>
                     <Home className="h-5 w-5 sm:h-4 sm:w-4" />
@@ -40,6 +40,13 @@ export default function Layout() {
                     <span className="hidden sm:inline">Admin</span>
                   </Link>
                 )}
+                <button 
+                  onClick={handleLogout}
+                  className="flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-red-600 transition-colors"
+                >
+                  <LogOut className="h-5 w-5 sm:h-4 sm:w-4" />
+                  <span className="hidden sm:inline">Logout</span>
+                </button>
               </nav>
             )}
           </div>
