@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Select from 'react-select';
+import CreatableSelect from 'react-select/creatable';
 import { useNavigate, useParams } from 'react-router';
 import { CheckCircle2, AlertCircle, ArrowRight, ArrowLeft, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -59,6 +60,8 @@ export default function TakeSurvey() {
     city: '',
     state: '',
     country: '',
+    pinCode: '',
+    typeOfVisit: '',
     purposeOfVisit: '',
     department: '',
     consultingDuration: '',
@@ -78,7 +81,8 @@ export default function TakeSurvey() {
     willReturn: '',
     returnYesReasons: [] as string[],
     returnYesOther: '',
-    returnNoReason: ''
+    returnNoReason: '',
+    otherHospital: ''
   });
 
   const [currentStep, setCurrentStep] = useState(0);
@@ -146,10 +150,12 @@ export default function TakeSurvey() {
     setError('');
     const newInvalidFields = [];
     if (currentStep === 0) {
+      if (!formData.mrNo.trim()) newInvalidFields.push('mrNo');
       if (!formData.patientName.trim()) newInvalidFields.push('patientName');
       if (!formData.age.trim()) newInvalidFields.push('age');
       if (!formData.gender.trim()) newInvalidFields.push('gender');
       if (!formData.city.trim()) newInvalidFields.push('city');
+      if (!formData.pinCode.trim()) newInvalidFields.push('pinCode');
       if (!formData.state.trim()) newInvalidFields.push('state');
       if (!formData.country.trim()) newInvalidFields.push('country');
       
@@ -162,6 +168,14 @@ export default function TakeSurvey() {
         return;
       }
     } else if (currentStep === 1) {
+      if (!formData.typeOfVisit.trim()) {
+        setError('Please select the type of visit.');
+        setInvalidFields(['typeOfVisit']);
+        const firstField = document.getElementById('typeOfVisit');
+        firstField?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        firstField?.focus();
+        return;
+      }
       if (!formData.purposeOfVisit.trim()) {
         setError('Please select the purpose of your visit.');
         setInvalidFields(['purposeOfVisit']);
@@ -403,9 +417,10 @@ export default function TakeSurvey() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
-                    1. MR No
+                    1. MR No <span className="text-red-500">*</span>
                   </label>
                   <input
+                    id="mrNo"
                     type="text"
                     value={formData.mrNo}
                     onChange={(e) => {
@@ -415,7 +430,7 @@ export default function TakeSurvey() {
                       }
                     }}
                     placeholder="Enter MR No"
-                    className="w-full p-2.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all bg-slate-50 focus:bg-white"
+                    className={`w-full p-2.5 text-sm border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all bg-slate-50 focus:bg-white ${invalidFields.includes('mrNo') ? 'border-red-500' : 'border-slate-300'}`}
                   />
                 </div>
 
@@ -521,6 +536,20 @@ export default function TakeSurvey() {
                   required
                   error={invalidFields.includes('city')}
                 />
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    10. Pin Code <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    id="pinCode"
+                    type="text"
+                    value={formData.pinCode}
+                    onChange={(e) => setFormData({...formData, pinCode: e.target.value})}
+                    placeholder="Enter Pin Code"
+                    className={`w-full p-2.5 text-sm border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all bg-slate-50 focus:bg-white ${invalidFields.includes('pinCode') ? 'border-red-500' : 'border-slate-300'}`}
+                  />
+                </div>
               </div>
             </motion.div>
           ) : currentStep === 1 ? (
@@ -539,39 +568,80 @@ export default function TakeSurvey() {
               <div className="space-y-6">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-3">
-                    10. Purpose of this visit: <span className="text-red-500">*</span>
+                    11. Type of visit? <span className="text-red-500">*</span>
                   </label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {['OP Consultation', 'Review', 'Second opinion', 'Admission', 'MHC', 'Only Investigations'].map(option => (
+                    {['IP consultation', 'OP consultation'].map(option => (
                       <label 
                         key={option} 
                         className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                          formData.purposeOfVisit === option 
+                          formData.typeOfVisit === option 
                             ? 'border-teal-600 bg-teal-50' 
-                            : (invalidFields.includes('purposeOfVisit') ? 'border-red-500' : 'border-slate-200') + ' hover:border-teal-300 hover:bg-slate-50'
+                            : (invalidFields.includes('typeOfVisit') ? 'border-red-500' : 'border-slate-200') + ' hover:border-teal-300 hover:bg-slate-50'
                         }`}
                       >
                         <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                          formData.purposeOfVisit === option ? 'border-teal-600' : 'border-slate-400'
+                          formData.typeOfVisit === option ? 'border-teal-600' : 'border-slate-400'
                         }`}>
-                          {formData.purposeOfVisit === option && <div className="h-2.5 w-2.5 rounded-full bg-teal-600" />}
+                          {formData.typeOfVisit === option && <div className="h-2.5 w-2.5 rounded-full bg-teal-600" />}
                         </div>
                         <input
                           type="radio"
-                          id={option === 'OP Consultation' ? 'purposeOfVisit' : ''}
-                          name="purposeOfVisit"
+                          id={option === 'IP consultation' ? 'typeOfVisit' : ''}
+                          name="typeOfVisit"
                           value={option}
-                          checked={formData.purposeOfVisit === option}
-                          onChange={(e) => setFormData({...formData, purposeOfVisit: e.target.value})}
+                          checked={formData.typeOfVisit === option}
+                          onChange={(e) => setFormData({...formData, typeOfVisit: e.target.value, purposeOfVisit: ''})}
                           className="hidden"
                         />
-                        <span className={`font-medium ${formData.purposeOfVisit === option ? 'text-teal-900' : 'text-slate-700'}`}>
+                        <span className={`font-medium ${formData.typeOfVisit === option ? 'text-teal-900' : 'text-slate-700'}`}>
                           {option}
                         </span>
                       </label>
                     ))}
                   </div>
                 </div>
+
+                {formData.typeOfVisit && (
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-3">
+                      12. Purpose of this visit: <span className="text-red-500">*</span>
+                    </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {(formData.typeOfVisit === 'IP consultation' 
+                        ? ['First time consultation', 'Second time consultation and above']
+                        : ['First time consultation', 'Second opinion', 'Review', 'For Admission', 'MHC', 'Investigations']
+                      ).map(option => (
+                        <label 
+                          key={option} 
+                          className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                            formData.purposeOfVisit === option 
+                              ? 'border-teal-600 bg-teal-50' 
+                              : (invalidFields.includes('purposeOfVisit') ? 'border-red-500' : 'border-slate-200') + ' hover:border-teal-300 hover:bg-slate-50'
+                          }`}
+                        >
+                          <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                            formData.purposeOfVisit === option ? 'border-teal-600' : 'border-slate-400'
+                          }`}>
+                            {formData.purposeOfVisit === option && <div className="h-2.5 w-2.5 rounded-full bg-teal-600" />}
+                          </div>
+                          <input
+                            type="radio"
+                            id={option === 'First time consultation' ? 'purposeOfVisit' : ''}
+                            name="purposeOfVisit"
+                            value={option}
+                            checked={formData.purposeOfVisit === option}
+                            onChange={(e) => setFormData({...formData, purposeOfVisit: e.target.value})}
+                            className="hidden"
+                          />
+                          <span className={`font-medium ${formData.purposeOfVisit === option ? 'text-teal-900' : 'text-slate-700'}`}>
+                            {option}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 <LocationInput
                   label="For which Department:"
@@ -597,10 +667,10 @@ export default function TakeSurvey() {
               <h2 className="text-2xl font-bold text-slate-900 mb-6">Consultation & Awareness</h2>
               
               <div className="space-y-8">
-                {/* Q11 */}
+                {/* Q13 */}
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-3">
-                    11. How long have you been consulting in MIOT? <span className="text-red-500">*</span>
+                    13. How long have you been consulting in MIOT? <span className="text-red-500">*</span>
                   </label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {['1st Visit', '<1 month', '1 month – 5yrs', '>5yrs'].map(option => (
@@ -634,13 +704,13 @@ export default function TakeSurvey() {
                   </div>
                 </div>
 
-                {/* Q12 */}
+                {/* Q14 */}
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-3">
-                    12. How did you know about MIOT? <span className="text-red-500">*</span>
+                    14. How did you know about MIOT? <span className="text-red-500">*</span>
                   </label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                    {['Apartment posters', 'Colleagues', 'Corporate Tie-up', 'Digital (Website/Google/Social Media)', 'Friends', 'Magazine', 'Newspaper', 'Newspaper Inserts', 'Outdoor Hoardings / Bus Shelters', 'Outreach Clinics', 'Radio', 'Referred by Doctor', 'Relatives', 'Television', 'Theatre Ads', 'Others'].map(option => {
+                    {['Apartment posters', 'Corporate Tie-up', 'Digital (Website/Google/Social Media)', 'Magazine', 'Newspaper', 'Newspaper Inserts', 'Outdoor Hoardings / Bus Shelters', 'Outreach Clinics', 'Radio', 'Referred by Doctor', 'Television', 'Theatre Ads', 'Word of mouth (colleagues, relatives, friends)', 'Others'].map(option => {
                       const isSelected = formData.howDidYouKnow.includes(option);
                       const label = option;
                       return (
@@ -685,13 +755,13 @@ export default function TakeSurvey() {
                   )}
                 </div>
 
-                {/* Q13 */}
+                {/* Q15 */}
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-3">
-                    13. Who/What influenced your decision to choose MIOT? <span className="text-red-500">*</span>
+                    15. Who/What influenced your decision the most to choose MIOT? <span className="text-red-500">*</span>
                   </label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                    {['Apartment posters', 'Brand Name', 'Colleague', 'Corporate tie-up', 'Digital (Website/Google/Social Media)', 'Emergency', 'Friends', 'Magazine', 'Neighbourhood', 'Newspaper Inserts', 'Outdoor Hoardings / Bus Shelters', 'Outreach clinics', 'Radio', 'Referred by Doctor', 'Relatives', 'Television', 'Theatre Ads', 'Treating Doctor', 'Others'].map(option => {
+                    {['Apartment posters', 'Corporate Tie-up', 'Digital (Website/Google/Social Media)', 'Magazine', 'Newspaper', 'Newspaper Inserts', 'Outdoor Hoardings / Bus Shelters', 'Outreach Clinics', 'Radio', 'Referred by Doctor', 'Television', 'Theatre Ads', 'Word of mouth (colleagues, relatives, friends)', 'Others'].map(option => {
                       const isSelected = formData.whatInfluenced === option;
                       const label = option;
                       return (
@@ -750,14 +820,14 @@ export default function TakeSurvey() {
               className="p-6 sm:p-10 space-y-8"
             >
               <div>
-                <h2 className="text-2xl font-bold text-slate-900 mb-2">14. How do you rate MIOT based on your Experience?</h2>
+                <h2 className="text-2xl font-bold text-slate-900 mb-2">16. How do you rate MIOT based on your Experience?</h2>
                 <p className="text-slate-600 mb-6">Please rate on a scale of 1 to 5, with 1 being the lowest and 5 being the highest.</p>
               </div>
 
               <CategoryRatingCard 
                 id="evalCure"
                 title="1. Cure" 
-                subPoints="Highly Qualified Doctors & experienced nurses - Infrastructure - Latest Technology & Equipment - Accuracy of diagnosis and treatment - Success rates and patient outcomes"
+                subPoints="Highly Qualified Doctors & experienced nurses - Latest Technology & Diagnostic Equipment - Accuracy of diagnosis and treatment - Success rates and patient outcomes"
                 value={formData.evalCure} 
                 onChange={(v) => setFormData({...formData, evalCure: v})} 
                 error={invalidFields.includes('evalCure')}
@@ -775,16 +845,16 @@ export default function TakeSurvey() {
               <div id="evalCost" className={`bg-white p-6 rounded-2xl shadow-sm border ${invalidFields.includes('evalCost') ? 'border-red-500' : 'border-slate-200'} mb-6`}>
                 <h3 className="text-xl font-bold text-slate-900 mb-4">3. Cost</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                  {['Exorbitant', 'Higher side', 'Industry standards', 'Moderate', 'Low'].map(option => (
+                  {['Exorbitant', 'Higher side', 'On a par with other hospitals', 'Affordable'].map(option => (
                     <label 
                       key={option} 
-                      className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${
+                      className={`flex items-start gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${
                         formData.evalCost === option 
                           ? 'border-teal-600 bg-teal-50' 
                           : 'border-slate-200 hover:border-teal-300 hover:bg-white bg-white'
                       }`}
                     >
-                      <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                      <div className={`mt-0.5 h-5 w-5 shrink-0 rounded-full border-2 flex items-center justify-center transition-colors ${
                         formData.evalCost === option ? 'border-teal-600' : 'border-slate-400'
                       }`}>
                         {formData.evalCost === option && <div className="h-2.5 w-2.5 rounded-full bg-teal-600" />}
@@ -818,7 +888,7 @@ export default function TakeSurvey() {
               <CategoryRatingCard 
                 id="evalComfort"
                 title="5. Comfort" 
-                subPoints="Spacious waiting areas/ rooms - Clean and neat Rooms - Other Services - No hospital feel - Balanced diet & Hygienic food"
+                subPoints="Spacious waiting areas/ rooms - Clean and neat Rooms - No hospital feel - Balanced diet & Hygienic food"
                 value={formData.evalComfort} 
                 onChange={(v) => setFormData({...formData, evalComfort: v})} 
                 error={invalidFields.includes('evalComfort')}
@@ -848,10 +918,10 @@ export default function TakeSurvey() {
               <h2 className="text-2xl font-bold text-slate-900 mb-6">Final Questions</h2>
               
               <div className="space-y-8">
-                {/* Q15 */}
+                {/* Q17 */}
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
-                    15. What specialities do you associate with MIOT? Just note top 5 in the order they spell <span className="text-red-500">*</span>
+                    17. What specialities do you associate with MIOT? Just note top 5 in the order they spell <span className="text-red-500">*</span>
                   </label>
                   <Select
                     inputId="specialitiesAssociated"
@@ -878,10 +948,10 @@ export default function TakeSurvey() {
                   />
                 </div>
 
-                {/* Q16 */}
+                {/* Q18 */}
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-3">
-                    16. I will return to MIOT for further treatment: <span className="text-red-500">*</span>
+                    18. I will return to MIOT for further treatment: <span className="text-red-500">*</span>
                   </label>
                   <div className="flex gap-4 mb-6">
                     {['Yes', 'No'].map(option => (
@@ -925,12 +995,14 @@ export default function TakeSurvey() {
                       </label>
                       <div className="grid grid-cols-1 gap-3">
                         {[
+                          'Empathetic nurses',
+                          'Hassle free experience from appointment booking to consultation/discharge',
+                          'Others, if any',
+                          'Responsible & Experienced support staff',
+                          'Transparency in treatment, bills, etc',
                           'Treating Doctors',
                           'Treatment Outcome',
-                          'Hassle free experience from appointment booking to consultation/discharge',
-                          'Transparency in treatment, bills, etc',
-                          'Responsible & Experienced support staff',
-                          'Others, if any'
+                          'Trusted neighborhood hospital'
                         ].map(option => {
                           const isSelected = formData.returnYesReasons.includes(option);
                           return (
@@ -973,6 +1045,39 @@ export default function TakeSurvey() {
                       )}
                     </motion.div>
                   )}
+
+                  <div className="mt-8">
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      19. If not MIOT, which multispecialty or superspecialty hospital would you choose for your medical treatment?
+                    </label>
+                    <CreatableSelect
+                      isClearable
+                      options={[
+                        { label: 'Apollo Hospitals', value: 'Apollo Hospitals' },
+                        { label: 'Fortis Malar Hospital', value: 'Fortis Malar Hospital' },
+                        { label: 'Global Hospitals', value: 'Global Hospitals' },
+                        { label: 'Sri Ramachandra Medical Centre', value: 'Sri Ramachandra Medical Centre' },
+                        { label: 'SIMS Hospital', value: 'SIMS Hospital' },
+                        { label: 'MGM Healthcare', value: 'MGM Healthcare' },
+                        { label: 'Kauvery Hospital', value: 'Kauvery Hospital' },
+                        { label: 'Vijaya Hospital', value: 'Vijaya Hospital' },
+                      ]}
+                      value={formData.otherHospital ? { label: formData.otherHospital, value: formData.otherHospital } : null}
+                      onChange={(option) => setFormData({...formData, otherHospital: option ? option.value : ''})}
+                      placeholder="Select or type a hospital..."
+                      className="text-sm"
+                      styles={{
+                        control: (provided) => ({
+                          ...provided,
+                          borderRadius: '0.75rem',
+                          borderColor: '#cbd5e1',
+                          padding: '0.5rem',
+                          '&:hover': { borderColor: '#14b8a6' },
+                          boxShadow: 'none',
+                        }),
+                      }}
+                    />
+                  </div>
 
                   {formData.willReturn === 'No' && (
                     <motion.div
