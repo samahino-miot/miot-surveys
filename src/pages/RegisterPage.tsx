@@ -75,7 +75,15 @@ export default function RegisterPage() {
         navigate('/login');
       }, 3000);
     } catch (err: any) {
-      setError(err.message || 'Failed to register with email.');
+      if (err.code === 'auth/email-already-in-use') {
+        setError('An account with this email already exists.');
+      } else if (err.code === 'auth/invalid-email') {
+        setError('Invalid email address.');
+      } else if (err.code === 'auth/weak-password') {
+        setError('Password is too weak.');
+      } else {
+        setError('Failed to register. Please try again.');
+      }
       setIsRegistering(false);
     }
   };

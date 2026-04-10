@@ -23,7 +23,11 @@ export default function ForgotPasswordPage() {
       await resetPassword(email);
       setMessage('Password reset email sent. Please check your inbox.');
     } catch (err: any) {
-      setError(err.message || 'Failed to send password reset email.');
+      if (err.code === 'auth/user-not-found') {
+        setError('No user found with this email address.');
+      } else {
+        setError('Failed to send password reset email. Please try again.');
+      }
     } finally {
       setIsSending(false);
     }

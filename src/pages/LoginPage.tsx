@@ -34,7 +34,7 @@ export default function LoginPage() {
     try {
       await signInWithGoogle();
     } catch (err: any) {
-      setError(err.message || 'Failed to sign in with Google.');
+      setError('Failed to sign in with Google. Please try again.');
       setIsLoggingIn(false);
     }
   };
@@ -50,7 +50,11 @@ export default function LoginPage() {
     try {
       await signInWithEmailUser(email, password);
     } catch (err: any) {
-      setError(err.message || 'Failed to sign in with email.');
+      if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
+        setError('Invalid credentials.');
+      } else {
+        setError('Failed to sign in. Please try again.');
+      }
       setIsLoggingIn(false);
     }
   };
