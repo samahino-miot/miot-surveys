@@ -68,13 +68,6 @@ export default function Layout() {
                   User Management
                 </Link>
               </nav>
-              <button 
-                onClick={handleLogout}
-                className="flex items-center gap-2 text-sm font-medium text-slate-300 hover:text-white transition-colors"
-              >
-                <LogOut className="h-4 w-4" />
-                <span className="hidden sm:inline">Logout</span>
-              </button>
             </div>
           </div>
         </div>
