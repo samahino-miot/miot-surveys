@@ -18,9 +18,7 @@ export default function LoginPage() {
       if (adminUser) {
         if (adminUser.role === 'admin' || adminUser.role === 'superadmin') {
           navigate('/admin');
-        } else if (adminUser.role === 'editor') {
-          navigate('/survey/miot-registration-survey');
-        } else if (adminUser.role === 'viewer') {
+        } else if (adminUser.role === 'editor' || adminUser.role === 'viewer') {
           navigate('/');
         }
       } else {

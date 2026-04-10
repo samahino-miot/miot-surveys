@@ -1001,12 +1001,12 @@ export default function TakeSurvey() {
                         {[
                           'Empathetic nurses',
                           'Hassle free experience from appointment booking to consultation/discharge',
-                          'Others, if any',
                           'Responsible & Experienced support staff',
                           'Transparency in treatment, bills, etc',
                           'Treating Doctors',
                           'Treatment Outcome',
-                          'Trusted neighborhood hospital'
+                          'Trusted neighborhood hospital',
+                          'Others, if any'
                         ].map(option => {
                           const isSelected = formData.returnYesReasons.includes(option);
                           return (
