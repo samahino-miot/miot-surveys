@@ -4,7 +4,7 @@ import { saveUser } from '../store';
 import { signInWithGoogle, registerWithEmail, sendVerificationEmail } from '../firebase';
 import { UserPlus, AlertCircle, CheckCircle2, Eye, EyeOff } from 'lucide-react';
 
-export default function AdminRegister() {
+export default function RegisterPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -20,19 +20,19 @@ export default function AdminRegister() {
     try {
       const user = await signInWithGoogle();
       
-      // Save the new user as pending
+      // Save the new user as pending, no role assigned
       await saveUser({
         id: user.uid,
         name: user.displayName || 'Unknown User',
         email: user.email || '',
-        role: 'admin', // Default role, superadmin can change it
+        role: 'viewer', // Default role
         status: 'pending',
         createdAt: new Date().toISOString()
       });
 
       setSuccess(true);
       setTimeout(() => {
-        navigate('/admin/login');
+        navigate('/login');
       }, 3000);
     } catch (err: any) {
       if (err.code === 'auth/unauthorized-domain') {
@@ -65,14 +65,14 @@ export default function AdminRegister() {
         id: user.uid,
         name: name,
         email: user.email || email,
-        role: 'admin',
+        role: 'viewer',
         status: 'pending',
         createdAt: new Date().toISOString()
       });
 
       setSuccess(true);
       setTimeout(() => {
-        navigate('/admin/login');
+        navigate('/login');
       }, 3000);
     } catch (err: any) {
       setError(err.message || 'Failed to register with email.');
@@ -91,7 +91,7 @@ export default function AdminRegister() {
           </div>
           <h2 className="text-2xl font-bold text-slate-900 mb-4">Registration Successful!</h2>
           <p className="text-slate-600 mb-6">
-            Your account has been created. A verification link has been sent to your email address. Please verify your email before a superadmin can approve your account.
+            Your account has been created. A verification link has been sent to your email address. Please verify your email.
           </p>
           <p className="text-sm text-slate-500">Redirecting to login...</p>
         </div>
@@ -108,8 +108,8 @@ export default function AdminRegister() {
           </div>
         </div>
         
-        <h1 className="text-2xl font-bold text-center text-slate-900 mb-2">Admin Registration</h1>
-        <p className="text-center text-slate-600 mb-8">Create an account to request admin access.</p>
+        <h1 className="text-2xl font-bold text-center text-slate-900 mb-2">Register</h1>
+        <p className="text-center text-slate-600 mb-8">Create an account to access the portal.</p>
 
         {error && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3 text-red-700">
@@ -136,7 +136,7 @@ export default function AdminRegister() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none"
-              placeholder="admin@example.com"
+              placeholder="jane@example.com"
             />
           </div>
           <div>
@@ -205,7 +205,7 @@ export default function AdminRegister() {
         
         <div className="mt-6 text-center text-sm text-slate-600">
           Already have an account?{' '}
-          <Link to="/admin/login" className="text-teal-600 font-medium hover:underline">
+          <Link to="/login" className="text-teal-600 font-medium hover:underline">
             Sign in
           </Link>
         </div>

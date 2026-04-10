@@ -28,14 +28,18 @@ export default function Layout() {
             </div>
             {isAuth && (
               <nav className="flex gap-4 sm:gap-6 shrink-0">
-                <Link to="/" className={`flex items-center gap-2 text-sm font-medium ${!isAdminPath ? 'text-teal-600' : 'text-slate-500 hover:text-slate-900'}`}>
-                  <Home className="h-5 w-5 sm:h-4 sm:w-4" />
-                  <span className="hidden sm:inline">Patient Portal</span>
-                </Link>
-                <Link to="/admin" className={`flex items-center gap-2 text-sm font-medium ${isAdminPath ? 'text-teal-600' : 'text-slate-500 hover:text-slate-900'}`}>
-                  <LayoutDashboard className="h-5 w-5 sm:h-4 sm:w-4" />
-                  <span className="hidden sm:inline">Admin</span>
-                </Link>
+                {(adminUser.role === 'admin' || adminUser.role === 'superadmin' || adminUser.role === 'viewer') && (
+                  <Link to="/" className={`flex items-center gap-2 text-sm font-medium ${location.pathname === '/' ? 'text-teal-600' : 'text-slate-500 hover:text-slate-900'}`}>
+                    <Home className="h-5 w-5 sm:h-4 sm:w-4" />
+                    <span className="hidden sm:inline">Survey Portal</span>
+                  </Link>
+                )}
+                {(adminUser.role === 'admin' || adminUser.role === 'superadmin') && (
+                  <Link to="/admin" className={`flex items-center gap-2 text-sm font-medium ${isAdminPath ? 'text-teal-600' : 'text-slate-500 hover:text-slate-900'}`}>
+                    <LayoutDashboard className="h-5 w-5 sm:h-4 sm:w-4" />
+                    <span className="hidden sm:inline">Admin</span>
+                  </Link>
+                )}
               </nav>
             )}
           </div>

@@ -131,7 +131,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'superadmin' | 'editor';
+  role: 'admin' | 'superadmin' | 'editor' | 'viewer';
   status: 'pending' | 'active';
   createdAt: string;
 }

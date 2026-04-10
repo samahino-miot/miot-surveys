@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useSurveys } from '../hooks/useFirestore';
+import { useAuth } from '../components/AuthProvider';
 import { LocationInput } from '../components/LocationInput';
 import { Country, State, City } from 'country-state-city';
 import { departments } from '../data/departments';
@@ -46,6 +47,7 @@ const CategoryRatingCard = ({ id, title, subPoints, value, onChange, error }: { 
 export default function TakeSurvey() {
   const navigate = useNavigate();
   const { id } = useParams();
+  const { currentUser } = useAuth();
   const surveyId = id || 'miot-registration-survey';
   
   const { surveys, loading: surveysLoading } = useSurveys(false);
@@ -310,7 +312,9 @@ export default function TakeSurvey() {
         surveyId: surveyId,
         surveyTitle: dbSurvey?.title || 'MIOT International Patient Experience Survey',
         answers: formData,
-        submittedAt: serverTimestamp()
+        submittedAt: serverTimestamp(),
+        submittedBy: currentUser?.uid,
+        submittedByEmail: currentUser?.email
       });
       setSubmitted(true);
     } catch (err) {

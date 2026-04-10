@@ -13,7 +13,7 @@ export default function UserManagement() {
   // Form state
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [role, setRole] = useState<'admin' | 'superadmin' | 'editor'>('admin');
+  const [role, setRole] = useState<'admin' | 'superadmin' | 'editor' | 'viewer'>('admin');
   const [status, setStatus] = useState<'pending' | 'active'>('active');
   const [error, setError] = useState('');
 
@@ -179,6 +179,7 @@ export default function UserManagement() {
                   <option value="superadmin">Super Admin (Full Access)</option>
                   <option value="admin">Admin (Manage Surveys & Users)</option>
                   <option value="editor">Editor (Manage Surveys Only)</option>
+                  <option value="viewer">Viewer (View Only)</option>
                 </select>
               </div>
               <div>
