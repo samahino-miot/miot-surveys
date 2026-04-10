@@ -1052,6 +1052,8 @@ export default function TakeSurvey() {
                     </label>
                     <CreatableSelect
                       isClearable
+                      menuPortalTarget={document.body}
+                      menuPosition="fixed"
                       options={[
                         { label: 'Apollo Hospitals', value: 'Apollo Hospitals' },
                         { label: 'Fortis Malar Hospital', value: 'Fortis Malar Hospital' },
@@ -1075,6 +1077,7 @@ export default function TakeSurvey() {
                           '&:hover': { borderColor: '#14b8a6' },
                           boxShadow: 'none',
                         }),
+                        menuPortal: (provided) => ({ ...provided, zIndex: 9999 }),
                       }}
                     />
                   </div>
