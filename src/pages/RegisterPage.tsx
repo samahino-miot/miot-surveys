@@ -101,9 +101,11 @@ export default function RegisterPage() {
           </div>
           <h2 className="text-2xl font-bold text-slate-900 mb-4">Registration Successful!</h2>
           <p className="text-slate-600 mb-6">
-            Your account has been created. A verification link has been sent to your email address. Please verify your email.
+            Your account has been created successfully and is pending for admin approval. Once approved, you can log in.
           </p>
-          <p className="text-sm text-slate-500">Redirecting to login...</p>
+          <Link to="/login" className="block w-full py-3 bg-teal-600 text-white font-semibold rounded-xl hover:bg-teal-700 shadow-sm transition-colors">
+            Login
+          </Link>
         </div>
       </div>
     );
