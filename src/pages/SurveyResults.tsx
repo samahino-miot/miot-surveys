@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router';
 import { useResponses, useSurveys } from '../hooks/useFirestore';
 import { useWindowWidth } from '../hooks/useWindowWidth';
-import { ArrowLeft, Download, FileText, ChevronLeft, ChevronRight, FileSpreadsheet, Trash2 } from 'lucide-react';
+import { LocationHeatmap } from '../components/LocationHeatmap';
+import { ArrowLeft, Download, FileText, ChevronLeft, ChevronRight, FileSpreadsheet, Trash2, MapPin } from 'lucide-react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -21,6 +22,7 @@ const hardcodedSurvey = {
   title: 'MIOT International Patient Experience Survey',
   description: 'Please fill out the following questions to share your feedback.',
   questions: [
+    { id: 'typeOfVisit', text: 'Type of visit', type: 'multiple_choice', options: ['IP consultation', 'OP consultation'] },
     { id: 'purposeOfVisit', text: 'Purpose of this visit', type: 'multiple_choice', options: ['OP Consultation', 'Review', 'Second opinion', 'Admission', 'MHC', 'Only Investigations'] },
     { id: 'department', text: 'For which Department', type: 'multiple_choice', options: departments },
     { id: 'consultingDuration', text: 'How long have you been consulting in MIOT?', type: 'multiple_choice', options: ['1st Visit', '<1 month', '1 month – 5yrs', '>5yrs'] },
@@ -42,7 +44,8 @@ const hardcodedSurvey = {
     { id: 'specialitiesAssociated', text: 'What specialities do you associate with MIOT?', type: 'text' },
     { id: 'willReturn', text: 'I will return to MIOT for further treatment', type: 'multiple_choice', options: ['Yes', 'No'] },
     { id: 'returnYesReasons', text: 'If YES, because of', type: 'checkbox', options: ['Treating Doctors', 'Treatment Outcome', 'Hassle free experience from appointment booking to consultation/discharge', 'Transparency in treatment, bills, etc', 'Responsible & Experienced support staff', 'Others, if any'] },
-    { id: 'returnNoReason', text: 'If NO, please specify', type: 'text' }
+    { id: 'returnNoReason', text: 'If NO, please specify', type: 'text' },
+    { id: 'otherHospital', text: 'If not MIOT, which multispecialty or superspecialty hospital would you choose for your medical treatment?', type: 'text' }
   ]
 };
 
@@ -373,6 +376,7 @@ export default function SurveyResults() {
 
     if (q.type === 'multiple_choice' || q.type === 'checkbox') {
       const counts: Record<string, number> = {};
+      // Use the options from the current survey definition
       q.options?.forEach((opt: string) => counts[opt] = 0);
       
       let responseCount = 0;
@@ -383,18 +387,21 @@ export default function SurveyResults() {
         if (Array.isArray(val) && val.length > 0) {
           responseCount++;
           val.forEach(v => { 
+            // If the value is not in the current options, we can either ignore it or add it as "Other"
             if (counts[v] !== undefined) {
               counts[v]++; 
             } else {
-              counts[v] = 1;
+              // Handle unexpected values
+              counts[v] = (counts[v] || 0) + 1;
             }
           });
-        } else if (val && !Array.isArray(val)) {
+        } else if (val !== undefined && val !== null && !Array.isArray(val)) {
           responseCount++;
-          if (counts[val as string] !== undefined) {
-            counts[val as string]++;
+          const valStr = String(val);
+          if (counts[valStr] !== undefined) {
+            counts[valStr]++;
           } else {
-            counts[val as string] = 1;
+            counts[valStr] = (counts[valStr] || 0) + 1;
           }
         }
       });
@@ -459,105 +466,6 @@ export default function SurveyResults() {
       );
     }
 
-    if (q.id === 'specialitiesAssociated') {
-      const counts: Record<string, number> = {};
-      let responseCount = 0;
-
-      responses.forEach(r => {
-        const answers = r.answers || {};
-        const val = answers[q.id];
-        if (val) {
-          responseCount++;
-          
-          let specialties: string[] = [];
-          if (Array.isArray(val)) {
-            specialties = val;
-          } else if (typeof val === 'string') {
-            // Fallback for older data or if it was saved as a string
-            const regex = new RegExp(departments.map(d => d.toLowerCase()).join('|'), 'gi');
-            const matches = val.toLowerCase().match(regex);
-            if (matches) {
-              matches.forEach(match => {
-                const dept = departments.find(d => d.toLowerCase() === match);
-                if (dept) specialties.push(dept);
-              });
-            }
-          }
-
-          specialties.forEach(specialty => {
-            // Find the canonical name from departments list
-            const canonicalDept = departments.find(d => d.toLowerCase() === specialty.toLowerCase());
-            if (canonicalDept) {
-              counts[canonicalDept] = (counts[canonicalDept] || 0) + 1;
-            }
-          });
-        } else {
-          // No action needed
-        }
-      });
-
-      const data = Object.entries(counts).map(([name, value]) => ({ 
-        name, 
-        value,
-        percentage: responseCount > 0 ? ((value / responseCount) * 100).toFixed(1) : '0.0'
-      })).filter(d => d.value > 0);
-
-      if (data.length === 0) return <p className="text-slate-500 italic">No responses yet.</p>;
-
-      const CustomPieTooltip = ({ active, payload }: any) => {
-        if (active && payload && payload.length) {
-          return (
-            <div className="bg-white p-3 border border-slate-200 shadow-lg rounded-xl">
-              <p className="font-medium text-slate-900 mb-1">{payload[0].name}</p>
-              <p className="text-sm text-slate-600">Count: <span className="font-medium text-slate-900">{payload[0].value}</span></p>
-              <p className="text-sm text-slate-600">Share: <span className="font-medium text-slate-900">{payload[0].payload.percentage}%</span></p>
-            </div>
-          );
-        }
-        return null;
-      };
-
-      return (
-        <div className="space-y-6">
-          <div className="flex flex-wrap gap-2">
-            {Object.keys(counts).map((dept, i) => (
-              <span key={i} className="px-2 py-1 bg-slate-100 text-slate-700 text-xs rounded-full">{dept}</span>
-            ))}
-          </div>
-          <div className="h-64 sm:h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={data}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={window.innerWidth < 640 ? 40 : 60}
-                  outerRadius={window.innerWidth < 640 ? 60 : 80}
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  {data.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip content={<CustomPieTooltip />} />
-                <Legend 
-                  layout={width < 640 ? 'vertical' : 'horizontal'} 
-                  align="center" 
-                  verticalAlign="bottom"
-                  wrapperStyle={{ 
-                    fontSize: width < 640 ? '10px' : '12px', 
-                    marginTop: width < 640 ? '10px' : '20px',
-                    paddingTop: '10px'
-                  }} 
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      );
-    }
-
     if (q.type === 'text') {
       const textResponses = responses.map(r => (r.answers || {})[q.id]).filter(Boolean);
       return (
@@ -582,8 +490,12 @@ export default function SurveyResults() {
 
       responses.forEach(r => {
         const val = (r.answers || {})[q.id];
-        if (val && typeof val === 'number') {
-          counts[val.toString()]++;
+        if (val !== undefined && val !== null && typeof val === 'number') {
+          if (counts[val.toString()] !== undefined) {
+            counts[val.toString()]++;
+          } else {
+            counts[val.toString()] = 1;
+          }
           responseCount++;
           sum += val;
         }
@@ -688,6 +600,14 @@ export default function SurveyResults() {
             {renderChart(q, width)}
           </div>
         ))}
+      </div>
+
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mb-8">
+        <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
+          <MapPin className="h-5 w-5 text-teal-600" />
+          Patient Location Heatmap
+        </h2>
+        <LocationHeatmap responses={responses} />
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
