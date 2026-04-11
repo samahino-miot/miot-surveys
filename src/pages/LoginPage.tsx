@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router';
-import { signInWithGoogle, signInWithEmailUser } from '../firebase';
+import { signInWithGoogle, signInWithEmailUser, logout } from '../firebase';
 import { useAuth } from '../components/AuthProvider';
 import { Lock, AlertCircle, Eye, EyeOff } from 'lucide-react';
 
@@ -16,7 +16,10 @@ export default function LoginPage() {
   useEffect(() => {
     if (!loading && currentUser) {
       if (adminUser) {
-        if (adminUser.role === 'admin' || adminUser.role === 'superadmin') {
+        if (adminUser.status === 'pending') {
+          setError('Your account is under review. Please wait for admin approval.');
+          (async () => { await logout(); })();
+        } else if (adminUser.role === 'admin' || adminUser.role === 'superadmin') {
           navigate('/admin');
         } else if (adminUser.role === 'editor' || adminUser.role === 'viewer') {
           navigate('/');

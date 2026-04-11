@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { saveUser, deleteUser, User } from '../store';
 import { useUsers } from '../hooks/useFirestore';
+import { useAuth } from '../components/AuthProvider';
 import { Plus, Edit2, Trash2, Shield, AlertTriangle, CheckCircle2, X } from 'lucide-react';
 
 export default function UserManagement() {
   const { users, loading } = useUsers();
+  const { adminUser } = useAuth();
+  const isSuperAdmin = adminUser?.role === 'superadmin';
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [userToDelete, setUserToDelete] = useState<string | null>(null);
@@ -49,6 +52,11 @@ export default function UserManagement() {
     e.preventDefault();
     if (!name || !email) {
       setError('Name and email are required.');
+      return;
+    }
+
+    if (status === 'active' && !isSuperAdmin) {
+      setError('Only Super Admins can approve users.');
       return;
     }
 

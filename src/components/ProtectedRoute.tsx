@@ -13,7 +13,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles }) 
     return <div className="flex items-center justify-center min-h-[60vh]">Loading...</div>;
   }
 
-  if (!currentUser || !adminUser) {
+  if (!currentUser || !adminUser || adminUser.status !== 'active') {
     return <Navigate to="/login" replace />;
   }
 
