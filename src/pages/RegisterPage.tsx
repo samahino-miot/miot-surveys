@@ -60,8 +60,6 @@ export default function RegisterPage() {
     try {
       const user = await registerWithEmail(email, password);
       
-      await sendVerificationEmail(user);
-      
       await saveUser({
         id: user.uid,
         name: name,
