@@ -61,7 +61,7 @@ export const LocationHeatmap = ({ responses }: { responses: SurveyResponse[] }) 
 
   return (
     <div className="h-96 w-full rounded-xl overflow-hidden border border-slate-200">
-      <MapContainer center={[13.0827, 80.2707] as [number, number]} zoom={12} className="h-full w-full">
+      <MapContainer center={[13.0827, 80.2707] as [number, number]} zoom={12} className="h-full w-full" attributionControl={false}>
         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
         <HeatmapLayer points={points} />
       </MapContainer>
