@@ -93,6 +93,8 @@ export interface SurveyResponse {
   department: string;
   answers: Record<string, string | string[] | number>;
   submittedAt: string;
+  editorId: string;
+  editorName: string;
 }
 
 export const saveSurvey = async (survey: Survey) => {

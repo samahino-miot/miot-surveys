@@ -47,7 +47,7 @@ const CategoryRatingCard = ({ id, title, subPoints, value, onChange, error }: { 
 export default function TakeSurvey() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { currentUser } = useAuth();
+  const { currentUser, adminUser } = useAuth();
   const surveyId = id || 'miot-registration-survey';
   
   const { surveys, loading: surveysLoading } = useSurveys(false);
@@ -313,8 +313,8 @@ export default function TakeSurvey() {
         surveyTitle: dbSurvey?.title || 'MIOT International Patient Experience Survey',
         answers: formData,
         submittedAt: serverTimestamp(),
-        submittedBy: currentUser?.uid,
-        submittedByEmail: currentUser?.email
+        editorId: adminUser?.id || currentUser?.uid || 'unknown',
+        editorName: adminUser?.name || currentUser?.displayName || currentUser?.email || 'Unknown'
       });
       setSubmitted(true);
     } catch (err) {

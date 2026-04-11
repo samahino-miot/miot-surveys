@@ -12,6 +12,7 @@ import PatientHome from './pages/PatientHome';
 import TakeSurvey from './pages/TakeSurvey';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminSurveys from './pages/AdminSurveys';
+import EditorReports from './pages/EditorReports';
 import SurveyResults from './pages/SurveyResults';
 import AdminLogin from './pages/AdminLogin';
 import { ProtectedRoute } from './components/ProtectedRoute';
@@ -36,6 +37,7 @@ export default function App() {
             <Route element={<ProtectedRoute allowedRoles={['admin', 'superadmin']} />}>
               <Route path="admin" element={<AdminDashboard />} />
               <Route path="admin/surveys" element={<AdminSurveys />} />
+              <Route path="admin/editor-reports" element={<EditorReports />} />
               <Route path="admin/surveys/:id/results" element={<SurveyResults />} />
               <Route path="admin/users" element={<UserManagement />} />
             </Route>
