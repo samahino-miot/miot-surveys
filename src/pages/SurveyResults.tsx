@@ -374,6 +374,69 @@ export default function SurveyResults() {
   const renderChart = (q: any, width: number) => {
     if (responses.length === 0) return <p className="text-slate-500 italic">No responses yet.</p>;
 
+    if (q.id === 'specialitiesAssociated') {
+      const textResponses = responses.map(r => (r.answers || {})[q.id]).filter(Boolean);
+      
+      // Simple word frequency count for categorization
+      const wordCounts: Record<string, number> = {};
+      textResponses.forEach(text => {
+        const words = String(text).toLowerCase().split(/[\s,]+/);
+        words.forEach(word => {
+          if (word.length > 3) {
+            wordCounts[word] = (wordCounts[word] || 0) + 1;
+          }
+        });
+      });
+
+      const data = Object.entries(wordCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 8) // Take top 8 categories
+        .map(([name, value]) => ({ 
+          name, 
+          value,
+          percentage: textResponses.length > 0 ? ((value / textResponses.length) * 100).toFixed(1) : '0.0'
+        }));
+
+      if (data.length === 0) return <p className="text-slate-500 italic">No responses.</p>;
+
+      const CustomPieTooltip = ({ active, payload }: any) => {
+        if (active && payload && payload.length) {
+          return (
+            <div className="bg-white p-3 border border-slate-200 shadow-lg rounded-xl">
+              <p className="font-medium text-slate-900 mb-1">{payload[0].name}</p>
+              <p className="text-sm text-slate-600">Count: <span className="font-medium text-slate-900">{payload[0].value}</span></p>
+              <p className="text-sm text-slate-600">Share: <span className="font-medium text-slate-900">{payload[0].payload.percentage}%</span></p>
+            </div>
+          );
+        }
+        return null;
+      };
+
+      return (
+        <div className="h-64 sm:h-80">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={data}
+                cx="50%"
+                cy="50%"
+                innerRadius={window.innerWidth < 640 ? 40 : 60}
+                outerRadius={window.innerWidth < 640 ? 60 : 80}
+                paddingAngle={5}
+                dataKey="value"
+              >
+                {data.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip content={<CustomPieTooltip />} />
+              <Legend wrapperStyle={{ fontSize: window.innerWidth < 640 ? '12px' : '14px' }} />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+      );
+    }
+
     if (q.type === 'multiple_choice' || q.type === 'checkbox') {
       const counts: Record<string, number> = {};
       // Use the options from the current survey definition
