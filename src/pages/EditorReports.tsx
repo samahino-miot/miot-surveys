@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useResponses, useSurveys } from '../hooks/useFirestore';
 
@@ -7,10 +7,6 @@ export default function EditorReports() {
   const { responses, loading: responsesLoading } = useResponses();
   const { surveys, loading: surveysLoading } = useSurveys(false);
   const [selectedEditorId, setSelectedEditorId] = useState<string | null>(null);
-
-  if (responsesLoading || surveysLoading) {
-    return <div className="flex items-center justify-center min-h-[60vh]">Loading...</div>;
-  }
 
   const editorStats = responses.reduce((acc, response) => {
     const editorId = response.editorId || 'unknown';
@@ -29,6 +25,16 @@ export default function EditorReports() {
     acc[editorId].surveys[surveyTitle].respondents.push(patientName);
     return acc;
   }, {} as Record<string, { name: string, surveys: Record<string, { count: number, respondents: string[] }> }>);
+
+  useEffect(() => {
+    if (!selectedEditorId && Object.keys(editorStats).length > 0) {
+      setSelectedEditorId(Object.keys(editorStats)[0]);
+    }
+  }, [editorStats, selectedEditorId]);
+
+  if (responsesLoading || surveysLoading) {
+    return <div className="flex items-center justify-center min-h-[60vh]">Loading...</div>;
+  }
 
   const selectedEditor = selectedEditorId ? editorStats[selectedEditorId] : null;
 
