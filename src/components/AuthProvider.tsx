@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User as FirebaseUser } from 'firebase/auth';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { User as FirebaseUser, signOut } from 'firebase/auth';
 import { auth, db } from '../firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { User } from '../store';
@@ -23,6 +23,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [adminUser, setAdminUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const logout = useCallback(async () => {
+    try {
+      await signOut(auth);
+      window.location.href = '/login'; // Force redirect to login
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+
+    const resetTimer = () => {
+      clearTimeout(timer);
+      timer = setTimeout(logout, 30 * 60 * 1000); // 30 minutes
+    };
+
+    const events = ['mousedown', 'keydown', 'scroll', 'touchstart'];
+    
+    if (currentUser) {
+      events.forEach(event => window.addEventListener(event, resetTimer));
+      resetTimer();
+    }
+
+    return () => {
+      clearTimeout(timer);
+      events.forEach(event => window.removeEventListener(event, resetTimer));
+    };
+  }, [currentUser, logout]);
 
   useEffect(() => {
     let unsubscribeDoc: (() => void) | undefined;
