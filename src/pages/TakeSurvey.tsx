@@ -291,6 +291,9 @@ export default function TakeSurvey() {
       setDirection(1);
       setCurrentStep(prev => prev + 1);
       setInvalidFields([]);
+      if (window.innerWidth < 640) {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
     } else {
       handleSubmit();
     }

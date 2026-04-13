@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router';
 import { useResponses, useSurveys } from '../hooks/useFirestore';
 
 export default function EditorReports() {
+  const navigate = useNavigate();
   const { responses, loading: responsesLoading } = useResponses();
   const { surveys, loading: surveysLoading } = useSurveys(false);
   const [selectedEditorId, setSelectedEditorId] = useState<string | null>(null);
@@ -15,7 +17,7 @@ export default function EditorReports() {
     const editorName = response.editorName && response.editorName !== 'Unknown' ? response.editorName : 'Unknown (No Editor Info)';
     const survey = surveys.find(s => s.id === response.surveyId);
     const surveyTitle = survey?.title || 'Unknown Survey';
-    const patientName = response.patientName || 'Anonymous';
+    const patientName = String(response.answers?.patientName || 'Anonymous');
     
     if (!acc[editorId]) {
       acc[editorId] = { name: editorName, surveys: {} };
@@ -71,11 +73,23 @@ export default function EditorReports() {
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {Object.entries(selectedEditor.surveys).map(([surveyTitle, data]) => (
-                    <tr key={surveyTitle}>
-                      <td className="px-6 py-4 text-slate-600 whitespace-nowrap">{surveyTitle}</td>
-                      <td className="px-6 py-4 text-slate-600">{data.count}</td>
-                      <td className="px-6 py-4 text-slate-600 text-sm">{data.respondents.join(', ')}</td>
-                    </tr>
+                      <tr key={surveyTitle}>
+                        <td className="px-6 py-4 text-slate-600 whitespace-nowrap">{surveyTitle}</td>
+                        <td className="px-6 py-4 text-slate-600">{data.count}</td>
+                        <td className="px-6 py-4 text-slate-600 text-sm">
+                          <button
+                            onClick={() => {
+                              const survey = surveys.find(s => s.title === surveyTitle);
+                              if (survey) {
+                                navigate(`/admin/editor-reports/${selectedEditorId}/${survey.id}`);
+                              }
+                            }}
+                            className="text-teal-600 hover:text-teal-800 font-medium underline"
+                          >
+                            View Respondents
+                          </button>
+                        </td>
+                      </tr>
                   ))}
                 </tbody>
               </table>
