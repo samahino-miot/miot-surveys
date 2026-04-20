@@ -1,20 +1,36 @@
 import React from 'react';
 import CreatableSelect from 'react-select/creatable';
+import { MultiValue, SingleValue } from 'react-select';
 
 interface LocationInputProps {
   label: string;
-  value: string;
-  onChange: (value: string) => void;
+  value: string | string[];
+  onChange: (value: any) => void;
   suggestions: string[];
   placeholder: string;
   required?: boolean;
   error?: boolean;
   id?: string;
+  isMulti?: boolean;
 }
 
-export const LocationInput: React.FC<LocationInputProps> = ({ label, value, onChange, suggestions, placeholder, required, error, id }) => {
+export const LocationInput: React.FC<LocationInputProps> = ({ label, value, onChange, suggestions, placeholder, required, error, id, isMulti }) => {
   const options = suggestions.map(s => ({ label: s, value: s }));
-  const selectedOption = options.find(o => o.value === value) || (value ? { label: value, value: value } : null);
+  
+  let selectedOption: any;
+  if (isMulti) {
+    selectedOption = Array.isArray(value) ? options.filter(o => value.includes(o.value)).concat(value.filter(v => !suggestions.includes(v)).map(v => ({ label: v, value: v }))) : [];
+  } else {
+    selectedOption = options.find(o => o.value === value) || (value && typeof value === 'string' ? { label: value, value: value } : null);
+  }
+
+  const handleChange = (option: MultiValue<{label: string, value: string}> | SingleValue<{label: string, value: string}>) => {
+    if (isMulti) {
+      onChange((option as MultiValue<{label: string, value: string}>).map(o => o.value));
+    } else {
+      onChange(option ? (option as {label: string, value: string}).value : '');
+    }
+  };
 
   return (
     <div id={id}>
@@ -24,10 +40,11 @@ export const LocationInput: React.FC<LocationInputProps> = ({ label, value, onCh
       <CreatableSelect
         inputId={id}
         value={selectedOption}
-        onChange={(option) => onChange(option ? option.value : '')}
+        onChange={handleChange}
         options={options}
         placeholder={placeholder}
-        isClearable
+        isClearable={!isMulti}
+        isMulti={isMulti}
         menuPortalTarget={typeof document !== 'undefined' ? document.body : undefined}
         className="text-sm"
         styles={{

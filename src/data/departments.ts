@@ -11,6 +11,7 @@ export const departments = [
   'Gynaecology & Obstetrics',
   'Interventional Radiology',
   'Mental Well-being',
+  'MHC',
   'Nephrology',
   'Neurology & Neurosciences',
   'Neurosurgery',

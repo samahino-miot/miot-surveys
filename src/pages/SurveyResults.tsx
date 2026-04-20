@@ -22,12 +22,12 @@ const hardcodedSurvey = {
   title: 'MIOT International Patient Experience Survey',
   description: 'Please fill out the following questions to share your feedback.',
   questions: [
-    { id: 'typeOfVisit', text: 'Type of visit', type: 'multiple_choice', options: ['IP consultation', 'OP consultation'] },
+    { id: 'typeOfVisit', text: 'Type of visit', type: 'multiple_choice', options: ['OP', 'IP'] },
     { id: 'purposeOfVisit', text: 'Purpose of this visit', type: 'multiple_choice', options: ['OP Consultation', 'Review', 'Second opinion', 'Admission', 'MHC', 'Only Investigations'] },
     { id: 'department', text: 'For which Department', type: 'multiple_choice', options: departments },
     { id: 'consultingDuration', text: 'How long have you been consulting in MIOT?', type: 'multiple_choice', options: ['1st Visit', '<1 month', '1 month – 5yrs', '>5yrs'] },
-    { id: 'howDidYouKnow', text: 'How did you know about MIOT?', type: 'checkbox', options: ['Newspaper', 'Magazine', 'Television', 'Radio', 'Theatre Ads', 'Newspaper Inserts', 'Apartment posters', 'Friends', 'Relatives', 'Colleagues', 'Outdoor Hoardings/ Bus Shelters', 'Corporate Tie-up', 'Outreach Clinics', 'Referred by Doctor', 'Digital (Website/Google/Social Media)', 'Others'] },
-    { id: 'whatInfluenced', text: 'Who/What influenced your decision to choose MIOT?', type: 'checkbox', options: ['Newspaper', 'Magazine', 'Television', 'Radio', 'Newspaper Inserts', 'Apartment posters', 'Neighbourhood', 'Friends', 'Relatives', 'Colleague', 'Outdoor Hoardings/ Bus Shelters', 'Corporate tie-up', 'Theatre Ads', 'Outreach clinics', 'Referred by Doctor', 'Treating Doctor', 'Emergency', 'Digital (Website/Google/Social Media)', 'Brand Name', 'Others'] },
+    { id: 'howDidYouKnow', text: 'How did you know about MIOT?', type: 'checkbox', options: ['Newspaper', 'Magazine', 'Television', 'Radio', 'Theatre Ads', 'Newspaper Inserts', 'Apartment posters', 'Friends', 'Neighborhood Hospital', 'Relatives', 'Colleagues', 'Outdoor Hoardings/ Bus Shelters', 'Corporate Tie-up', 'Outreach Clinics', 'Referred by Doctor', 'Digital (Website/Google/Social Media)', 'Others'] },
+    { id: 'whatInfluenced', text: 'Who/What influenced your decision to choose MIOT?', type: 'checkbox', options: ['Apartment posters', 'Brand Name', 'Corporate tie-up', 'Digital (Website/Google/Social Media)', 'Emergency', 'Magazine', 'Neighbourhood Hospitals', 'Newspaper', 'Newspaper Inserts', 'Outdoor Hoardings/ Bus Shelters', 'Outreach clinics', 'Radio', 'Referred by Doctor', 'Television', 'Theatre Ads', 'Treating Doctors (MIOT)', 'Others'] },
     
     { id: 'evalCure', text: 'Cure', type: 'rating' },
     
@@ -424,13 +424,33 @@ export default function SurveyResults() {
                 outerRadius={window.innerWidth < 640 ? 60 : 80}
                 paddingAngle={5}
                 dataKey="value"
+                labelLine={false}
+                label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
               >
                 {data.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
               <Tooltip content={<CustomPieTooltip />} />
-              <Legend wrapperStyle={{ fontSize: window.innerWidth < 640 ? '12px' : '14px' }} />
+              <Legend 
+                content={(props: any) => {
+                  const { payload } = props;
+                  return (
+                    <ul className="flex flex-wrap justify-center gap-2 text-xs sm:text-sm mt-4">
+                      {payload.map((entry: any, index: number) => {
+                        const dataItem = data.find(p => p.name === entry.value);
+                        return (
+                          <li key={`item-${index}`} className="flex items-center gap-1">
+                            <span className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }} />
+                            <span className="font-medium text-slate-700">{entry.value}</span>
+                            <span className="text-slate-500">({dataItem?.value})</span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  );
+                }} 
+              />
             </PieChart>
           </ResponsiveContainer>
         </div>
@@ -515,13 +535,33 @@ export default function SurveyResults() {
                   outerRadius={window.innerWidth < 640 ? 60 : 80}
                   paddingAngle={5}
                   dataKey="value"
+                  labelLine={false}
+                  label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
                 >
                   {data.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
                 <Tooltip content={<CustomPieTooltip />} />
-                <Legend wrapperStyle={{ fontSize: window.innerWidth < 640 ? '12px' : '14px' }} />
+                <Legend 
+                  content={(props: any) => {
+                    const { payload } = props;
+                    return (
+                      <ul className="flex flex-wrap justify-center gap-2 text-xs sm:text-sm mt-4">
+                        {payload.map((entry: any, index: number) => {
+                          const dataItem = data.find(p => p.name === entry.value);
+                          return (
+                            <li key={`item-${index}`} className="flex items-center gap-1">
+                              <span className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }} />
+                              <span className="font-medium text-slate-700">{entry.value}</span>
+                              <span className="text-slate-500">({dataItem?.value})</span>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    );
+                  }} 
+                />
               </PieChart>
             </ResponsiveContainer>
           </div>

@@ -65,7 +65,7 @@ export default function TakeSurvey() {
     pinCode: '',
     typeOfVisit: '',
     purposeOfVisit: '',
-    department: '',
+    department: [] as string[],
     consultingDuration: '',
     howDidYouKnow: [] as string[],
     howDidYouKnowOther: '',
@@ -182,6 +182,14 @@ export default function TakeSurvey() {
         setError('Please select the purpose of your visit.');
         setInvalidFields(['purposeOfVisit']);
         const firstField = document.getElementById('purposeOfVisit');
+        firstField?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        firstField?.focus();
+        return;
+      }
+      if (formData.department.length === 0) {
+        setError('Please select at least one department.');
+        setInvalidFields(['department']);
+        const firstField = document.getElementById('department');
         firstField?.scrollIntoView({ behavior: 'smooth', block: 'center' });
         firstField?.focus();
         return;
@@ -578,7 +586,7 @@ export default function TakeSurvey() {
                     11. Type of visit? <span className="text-red-500">*</span>
                   </label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {['IP consultation', 'OP consultation'].map(option => (
+                    {['OP', 'IP'].map(option => (
                       <label 
                         key={option} 
                         className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
@@ -594,7 +602,7 @@ export default function TakeSurvey() {
                         </div>
                         <input
                           type="radio"
-                          id={option === 'IP consultation' ? 'typeOfVisit' : ''}
+                          id={option === 'IP' ? 'typeOfVisit' : ''}
                           name="typeOfVisit"
                           value={option}
                           checked={formData.typeOfVisit === option}
@@ -615,8 +623,8 @@ export default function TakeSurvey() {
                       12. Purpose of this visit: <span className="text-red-500">*</span>
                     </label>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {(formData.typeOfVisit === 'IP consultation' 
-                        ? ['First time consultation', 'Second time consultation and above']
+                      {(formData.typeOfVisit === 'IP' 
+                        ? ['First time admission', 'second time admission or Above']
                         : ['First time consultation', 'Second opinion', 'Review', 'For Admission', 'MHC', 'Investigations']
                       ).map(option => (
                         <label 
@@ -651,12 +659,21 @@ export default function TakeSurvey() {
                 )}
 
                 <LocationInput
-                  label="For which Department:"
+                  id="department"
+                  label="For which Department (Choose one or more as applicable):"
                   value={formData.department}
-                  onChange={(val) => setFormData({...formData, department: val})}
+                  onChange={(val) => {
+                    setFormData({...formData, department: val});
+                    if (invalidFields.includes('department')) {
+                      setInvalidFields(invalidFields.filter(f => f !== 'department'));
+                      setError('');
+                    }
+                  }}
                   suggestions={departments}
                   placeholder="e.g. Cardiology, Orthopedics"
-                  required={false}
+                  required={true}
+                  error={invalidFields.includes('department')}
+                  isMulti={true}
                 />
               </div>
             </motion.div>
@@ -714,10 +731,10 @@ export default function TakeSurvey() {
                 {/* Q14 */}
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-3">
-                    14. How did you know about MIOT? <span className="text-red-500">*</span>
+                    14. How did you know about MIOT? (Choose one or more as applicable)* <span className="text-red-500">*</span>
                   </label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                    {['Apartment posters', 'Corporate Tie-up', 'Digital (Website/Google/Social Media)', 'Magazine', 'Newspaper', 'Newspaper Inserts', 'Outdoor Hoardings / Bus Shelters', 'Outreach Clinics', 'Radio', 'Referred by Doctor', 'Television', 'Theatre Ads', 'Word of mouth (colleagues, relatives, friends)', 'Others'].map(option => {
+                    {['Apartment posters', 'Corporate Tie-up', 'Digital (Website/Google/Social Media)', 'Magazine', 'Neighborhood Hospital', 'Newspaper', 'Newspaper Inserts', 'Outdoor Hoardings / Bus Shelters', 'Outreach Clinics', 'Radio', 'Referred by Doctor', 'Television', 'Theatre Ads', 'Word of mouth (colleagues, relatives, friends)', 'Others'].map(option => {
                       const isSelected = formData.howDidYouKnow.includes(option);
                       const label = option;
                       return (
@@ -765,10 +782,10 @@ export default function TakeSurvey() {
                 {/* Q15 */}
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-3">
-                    15. Who/What influenced your decision the most to choose MIOT? <span className="text-red-500">*</span>
+                    15. Who/What influenced your decision the most to choose MIOT? (Choose one)* <span className="text-red-500">*</span>
                   </label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                    {['Apartment posters', 'Corporate Tie-up', 'Digital (Website/Google/Social Media)', 'Magazine', 'Newspaper', 'Newspaper Inserts', 'Outdoor Hoardings / Bus Shelters', 'Outreach Clinics', 'Radio', 'Referred by Doctor', 'Television', 'Theatre Ads', 'Word of mouth (colleagues, relatives, friends)', 'Others'].map(option => {
+                    {['Apartment posters', 'Brand Name', 'Corporate Tie-up', 'Digital (Website/Google/Social Media)', 'Emergency', 'Magazine', 'Neighborhood Hospitals', 'Newspaper', 'Newspaper Inserts', 'Outdoor Hoardings / Bus Shelters', 'Outreach Clinics', 'Radio', 'Referred by Doctor', 'Television', 'Theatre Ads', 'Treating Doctors (MIOT)', 'Word of mouth (colleagues, relatives, friends)', 'Others'].map(option => {
                       const isSelected = formData.whatInfluenced === option;
                       const label = option;
                       return (
