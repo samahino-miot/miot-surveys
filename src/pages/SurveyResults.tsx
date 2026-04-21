@@ -411,10 +411,35 @@ export default function SurveyResults() {
   const renderChart = (q: any, width: number) => {
     if (responses.length === 0) return <p className="text-slate-500 italic">No responses yet.</p>;
 
+    if (q.id === 'otherHospital') {
+      const counts: Record<string, number> = {};
+      responses.forEach(r => {
+        const val = (r.answers || {})[q.id];
+        if (val && typeof val === 'string') {
+          const normalized = val.trim().toLowerCase();
+          const capitalized = normalized.charAt(0).toUpperCase() + normalized.slice(1);
+          counts[capitalized] = (counts[capitalized] || 0) + 1;
+        }
+      });
+      const data = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+      
+      if (data.length === 0) return <p className="text-slate-500 italic">No responses.</p>;
+
+      return (
+        <ul className="space-y-2">
+          {data.map(([name, count]) => (
+            <li key={name} className="flex justify-between items-center py-2 border-b border-slate-100 italic">
+              <span className="font-medium text-slate-800">{name}</span>
+              <span className="text-teal-600 font-bold">{count}</span>
+            </li>
+          ))}
+        </ul>
+      );
+    }
+
     if (q.id === 'specialitiesAssociated') {
       const textResponses = responses.map(r => (r.answers || {})[q.id]).filter(Boolean);
       
-      // Simple word frequency count for categorization
       const wordCounts: Record<string, number> = {};
       textResponses.forEach(text => {
         const words = String(text).toLowerCase().split(/[\s,]+/);
@@ -427,7 +452,7 @@ export default function SurveyResults() {
 
       const data = Object.entries(wordCounts)
         .sort((a, b) => b[1] - a[1])
-        .slice(0, 8) // Take top 8 categories
+        .slice(0, 8)
         .map(([name, value]) => ({ 
           name, 
           value,
@@ -450,46 +475,60 @@ export default function SurveyResults() {
       };
 
       return (
-        <div className="h-64 sm:h-80">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={data}
-                cx="50%"
-                cy="50%"
-                innerRadius={window.innerWidth < 640 ? 40 : 60}
-                outerRadius={window.innerWidth < 640 ? 60 : 80}
-                paddingAngle={5}
-                dataKey="value"
-                labelLine={false}
-                label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
-              >
-                {data.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip content={<CustomPieTooltip />} />
-              <Legend 
-                content={(props: any) => {
-                  const { payload } = props;
-                  return (
-                    <ul className="flex flex-wrap justify-center gap-2 text-xs sm:text-sm mt-4">
-                      {payload.map((entry: any, index: number) => {
-                        const dataItem = data.find(p => p.name === entry.value);
-                        return (
-                          <li key={`item-${index}`} className="flex items-center gap-1">
-                            <span className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }} />
-                            <span className="font-medium text-slate-700">{entry.value}</span>
-                            <span className="text-slate-500">({dataItem?.value})</span>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  );
-                }} 
-              />
-            </PieChart>
-          </ResponsiveContainer>
+        <div className="space-y-6">
+          <div className="flex items-center justify-between bg-slate-50 p-4 rounded-xl border border-slate-100">
+            <div>
+              <p className="text-sm text-slate-500 font-medium mb-1">Total Responses</p>
+              <p className="text-3xl font-bold text-slate-900">{textResponses.length}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-sm text-slate-500 font-medium mb-1">Most Popular</p>
+              <p className="text-lg font-bold text-slate-900 truncate max-w-[150px] sm:max-w-[200px]">
+                {data.length > 0 ? data[0].name : '-'}
+              </p>
+            </div>
+          </div>
+          <div className="h-64 sm:h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={data}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={window.innerWidth < 640 ? 40 : 60}
+                  outerRadius={window.innerWidth < 640 ? 60 : 80}
+                  paddingAngle={5}
+                  dataKey="value"
+                  labelLine={false}
+                  label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
+                >
+                  {data.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip content={<CustomPieTooltip />} />
+                <Legend 
+                  content={(props: any) => {
+                    const { payload } = props;
+                    return (
+                      <ul className="flex flex-wrap justify-center gap-2 text-xs sm:text-sm mt-4">
+                        {payload.map((entry: any, index: number) => {
+                          const dataItem = data.find(p => p.name === entry.value);
+                          return (
+                            <li key={`item-${index}`} className="flex items-center gap-1">
+                              <span className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }} />
+                              <span className="font-medium text-slate-700">{entry.value}</span>
+                              <span className="text-slate-500">({dataItem?.value})</span>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    );
+                  }} 
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       );
     }
@@ -753,7 +792,12 @@ export default function SurveyResults() {
           .map((q, i) => (
             <div key={q.id} className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200">
               <h3 className="font-semibold text-slate-900 mb-6 line-clamp-2" title={q.text}>
-                {i + 1}. {q.text}
+                {i + 1}. {
+                  q.id === 'otherHospital' ? 'Preferred Alternative Hospitals (if not MIOT)' :
+                  q.id === 'returnYesReasons' ? 'I will return to MIOT for further treatment – YES, because of:' :
+                  q.id === 'returnNoReason' ? 'I will not return to MIOT for further treatment – NO, because:' :
+                  q.text
+                }
               </h3>
               {renderChart(q, width)}
             </div>
