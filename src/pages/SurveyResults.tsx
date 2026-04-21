@@ -26,14 +26,14 @@ const hardcodedSurvey = {
     { id: 'purposeOfVisit', text: 'Purpose of this visit', type: 'multiple_choice', options: ['OP Consultation', 'Review', 'Second opinion', 'Admission', 'MHC', 'Only Investigations'] },
     { id: 'department', text: 'For which Department', type: 'multiple_choice', options: departments },
     { id: 'consultingDuration', text: 'How long have you been consulting in MIOT?', type: 'multiple_choice', options: ['1st Visit', '<1 month', '1 month – 5yrs', '>5yrs'] },
-    { id: 'howDidYouKnow', text: 'How did you know about MIOT?', type: 'checkbox', options: ['Newspaper', 'Magazine', 'Television', 'Radio', 'Theatre Ads', 'Newspaper Inserts', 'Apartment posters', 'Friends', 'Neighborhood Hospital', 'Relatives', 'Colleagues', 'Outdoor Hoardings/ Bus Shelters', 'Corporate Tie-up', 'Outreach Clinics', 'Referred by Doctor', 'Digital (Website/Google/Social Media)', 'Others'] },
-    { id: 'whatInfluenced', text: 'Who/What influenced your decision to choose MIOT?', type: 'checkbox', options: ['Apartment posters', 'Brand Name', 'Corporate tie-up', 'Digital (Website/Google/Social Media)', 'Emergency', 'Magazine', 'Neighbourhood Hospitals', 'Newspaper', 'Newspaper Inserts', 'Outdoor Hoardings/ Bus Shelters', 'Outreach clinics', 'Radio', 'Referred by Doctor', 'Television', 'Theatre Ads', 'Treating Doctors (MIOT)', 'Others'] },
+    { id: 'howDidYouKnow', text: 'How did you know about MIOT?', type: 'checkbox', options: ['Apartment posters', 'Corporate Tie-up', 'Digital (Website/Google/Social Media)', 'Magazine', 'Neighborhood Hospital', 'Newspaper', 'Newspaper Inserts', 'Outdoor Hoardings / Bus Shelters', 'Outreach Clinics', 'Radio', 'Referred by Doctor', 'Television', 'Theatre Ads', 'Word of mouth (colleagues, relatives, friends)', 'Others'] },
+    { id: 'whatInfluenced', text: 'Who/What influenced your decision to choose MIOT?', type: 'checkbox', options: ['Apartment posters', 'Brand Name', 'Corporate Tie-up', 'Digital (Website/Google/Social Media)', 'Emergency', 'Magazine', 'Neighborhood Hospitals', 'Newspaper', 'Newspaper Inserts', 'Outdoor Hoardings / Bus Shelters', 'Outreach Clinics', 'Radio', 'Referred by Doctor', 'Television', 'Theatre Ads', 'Treating Doctors (MIOT)', 'Word of mouth (colleagues, relatives, friends)', 'Others'] },
     
     { id: 'evalCure', text: 'Cure', type: 'rating' },
     
     { id: 'evalCare', text: 'Care', type: 'rating' },
 
-    { id: 'evalCost', text: 'Cost', type: 'multiple_choice', options: ['Exorbitant', 'Higher side', 'Industry standards', 'Moderate', 'Low'] },
+    { id: 'evalCost', text: 'Cost', type: 'multiple_choice', options: ['Exorbitant', 'Higher side', 'On a par with other hospitals', 'Affordable'] },
 
     { id: 'evalComm', text: 'Communication', type: 'rating' },
 
@@ -86,6 +86,43 @@ export default function SurveyResults() {
     (currentPage - 1) * rowsPerPage,
     currentPage * rowsPerPage
   );
+
+  const evalMap: Record<string, string> = {
+    'evalCure': 'Cure',
+    'evalCare': 'Care',
+    'evalCost': 'Cost',
+    'evalComm': 'Communication',
+    'evalComfort': 'Comfort',
+    'evalConv': 'Convenience'
+  };
+
+  const costMapping: Record<string, number> = {
+    'Exorbitant': 1,
+    'Higher side': 2,
+    'On a par with other hospitals': 3,
+    'Affordable': 4
+  };
+
+  const evalData = Object.keys(evalMap).map(id => {
+    let sum = 0;
+    let count = 0;
+    responses.forEach(r => {
+      const val = (r.answers || {})[id];
+      if (val !== undefined && val !== null) {
+        let numVal = 0;
+        if (id === 'evalCost') {
+          numVal = costMapping[val as string] || 0;
+        } else if (typeof val === 'number') {
+          numVal = val;
+        }
+        if (numVal > 0) {
+          sum += numVal;
+          count++;
+        }
+      }
+    });
+    return { name: evalMap[id], value: count > 0 ? parseFloat((sum / count).toFixed(2)) : 0 };
+  });
 
   const toggleSelectAll = () => {
     if (selectedResponses.length === sortedResponses.length) {
@@ -694,15 +731,33 @@ export default function SurveyResults() {
         </button>
       </div>
 
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mb-8">
+        <h3 className="text-xl font-bold text-slate-900 mb-2">Patient Overall Experience</h3>
+        <p className="text-teal-600 font-bold mb-6">Overall Average: {evalData.reduce((acc, curr) => acc + curr.value, 0) / evalData.filter(d => d.value > 0).length > 0 ? (evalData.reduce((acc, curr) => acc + curr.value, 0) / evalData.filter(d => d.value > 0).length).toFixed(1) : '0.0'} / 5.0</p>
+        <div className="h-64 sm:h-80">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={evalData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
+              <YAxis axisLine={false} tickLine={false} domain={[0, 5]} tick={{ fill: '#64748b', fontSize: 12 }} />
+              <Tooltip cursor={{ fill: '#f1f5f9' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+              <Bar dataKey="value" fill="#0d9488" radius={[8, 8, 0, 0]} barSize={40} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        {survey.questions.map((q, i) => (
-          <div key={q.id} className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200">
-            <h3 className="font-semibold text-slate-900 mb-6 line-clamp-2" title={q.text}>
-              {i + 1}. {q.text}
-            </h3>
-            {renderChart(q, width)}
-          </div>
-        ))}
+        {survey.questions
+          .filter(q => !['evalCure', 'evalCare', 'evalCost', 'evalComm', 'evalComfort', 'evalConv'].includes(q.id))
+          .map((q, i) => (
+            <div key={q.id} className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200">
+              <h3 className="font-semibold text-slate-900 mb-6 line-clamp-2" title={q.text}>
+                {i + 1}. {q.text}
+              </h3>
+              {renderChart(q, width)}
+            </div>
+          ))}
       </div>
 
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mb-8">
