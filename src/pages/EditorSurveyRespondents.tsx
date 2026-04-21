@@ -31,7 +31,7 @@ export default function EditorSurveyRespondents() {
           Respondents for {survey?.title || 'Unknown Survey'}
         </h1>
         <p className="text-slate-600">
-          Editor: {editorResponses[0]?.editorName || 'Unknown'}
+          Surveyor: {editorResponses[0]?.editorName || 'Unknown'}
         </p>
       </div>
 

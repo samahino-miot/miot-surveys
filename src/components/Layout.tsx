@@ -65,7 +65,7 @@ export default function Layout() {
                   Manage Surveys
                 </Link>
                 <Link to="/admin/editor-reports" className={`text-sm font-medium ${location.pathname.includes('/admin/editor-reports') ? 'text-teal-400' : 'text-slate-300 hover:text-white'}`}>
-                  Editor Reports
+                  Surveyor Reports
                 </Link>
                 <Link to="/admin/users" className={`text-sm font-medium ${location.pathname.includes('/admin/users') ? 'text-teal-400' : 'text-slate-300 hover:text-white'}`}>
                   User Management

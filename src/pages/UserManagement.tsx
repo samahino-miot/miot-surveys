@@ -186,7 +186,7 @@ export default function UserManagement() {
                 >
                   <option value="superadmin">Super Admin (Full Access)</option>
                   <option value="admin">Admin (Manage Surveys & Users)</option>
-                  <option value="editor">Editor (Manage Surveys Only)</option>
+                  <option value="editor">Surveyor (Manage Surveys Only)</option>
                   <option value="viewer">Viewer (View Only)</option>
                 </select>
               </div>
@@ -271,7 +271,9 @@ export default function UserManagement() {
                           user.role === 'superadmin' ? 'text-purple-500' : 
                           user.role === 'admin' ? 'text-blue-500' : 'text-emerald-500'
                         }`} />
-                        <span className="capitalize text-sm font-medium text-slate-700">{user.role}</span>
+                        <span className="capitalize text-sm font-medium text-slate-700">
+                          {user.role === 'editor' ? 'Surveyor' : user.role}
+                        </span>
                       </div>
                     </td>
                     <td className="px-4 sm:px-6 py-4">

@@ -41,14 +41,14 @@ export default function EditorReports() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Editor Reports</h1>
-        <p className="text-slate-600 mt-1">Click on an editor to view their survey data.</p>
+        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Surveyor Reports</h1>
+        <p className="text-slate-600 mt-1">Click on a surveyor to view their survey data.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        {/* Editor List */}
+        {/* Surveyor List */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-          <div className="bg-slate-50 border-b border-slate-200 px-6 py-4 font-semibold text-slate-700">Editors</div>
+          <div className="bg-slate-50 border-b border-slate-200 px-6 py-4 font-semibold text-slate-700">Surveyors</div>
           <div className="divide-y divide-slate-100">
             {Object.entries(editorStats).map(([id, data]) => (
               <button
@@ -62,10 +62,10 @@ export default function EditorReports() {
           </div>
         </div>
 
-        {/* Editor Details */}
+        {/* Surveyor Details */}
         <div className="md:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
           <div className="bg-slate-50 border-b border-slate-200 px-6 py-4 font-semibold text-slate-700">
-            {selectedEditor ? `Surveys taken by ${selectedEditor.name}` : 'Select an editor to view details'}
+            {selectedEditor ? `Surveys taken by ${selectedEditor.name}` : 'Select a surveyor to view details'}
           </div>
           {selectedEditor ? (
             <div className="overflow-x-auto">
