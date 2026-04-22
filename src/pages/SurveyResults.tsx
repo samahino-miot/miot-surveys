@@ -104,6 +104,12 @@ export default function SurveyResults() {
     'Affordable': 4
   };
 
+  // Cost values are 1-4, others are 1-5. Normalize to 1-5 for accuracy.
+  const normalizeRating = (val: number, isCost: boolean) => isCost ? ((val - 1) / 3 * 4 + 1) : val;
+
+  let totalSum = 0;
+  let totalCount = 0;
+
   const evalData = Object.keys(evalMap).map(id => {
     let sum = 0;
     let count = 0;
@@ -117,13 +123,18 @@ export default function SurveyResults() {
           numVal = val;
         }
         if (numVal > 0) {
-          sum += numVal;
+          const normalized = normalizeRating(numVal, id === 'evalCost');
+          sum += normalized;
+          totalSum += normalized;
           count++;
+          totalCount++;
         }
       }
     });
     return { name: evalMap[id], value: count > 0 ? parseFloat((sum / count).toFixed(2)) : 0 };
   });
+
+  const overallAverage = totalCount > 0 ? (totalSum / totalCount).toFixed(1) : '0.0';
 
   const toggleSelectAll = () => {
     if (selectedResponses.length === sortedResponses.length) {
@@ -688,12 +699,12 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
     if (q.type === 'text') {
       const textResponses = responses.map(r => (r.answers || {})[q.id]).filter(Boolean);
       return (
-        <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
+        <div className="space-y-3 w-full">
           {textResponses.length === 0 ? (
             <p className="text-slate-500 italic">No responses.</p>
           ) : (
             textResponses.map((text, i) => (
-              <div key={i} className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-slate-700 text-sm">
+              <div key={i} className="p-4 bg-white rounded-xl border border-slate-200 shadow-sm text-slate-700 text-sm leading-relaxed">
                 "{text}"
               </div>
             ))
@@ -812,7 +823,7 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
 
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mb-8">
         <h3 className="text-xl font-bold text-slate-900 mb-2">Patient Overall Experience</h3>
-        <p className="text-teal-600 font-bold mb-6">Overall Average: {evalData.reduce((acc, curr) => acc + curr.value, 0) / evalData.filter(d => d.value > 0).length > 0 ? (evalData.reduce((acc, curr) => acc + curr.value, 0) / evalData.filter(d => d.value > 0).length).toFixed(1) : '0.0'} / 5.0</p>
+        <p className="text-teal-600 font-bold mb-6">Overall Average: {overallAverage} / 5.0</p>
         
         <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 mb-6 w-fit">
           <p className="text-sm font-medium text-slate-500">Total Responses</p>
