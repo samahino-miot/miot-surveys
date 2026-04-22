@@ -26,9 +26,13 @@ const LIBRARIES: (google.maps.drawing.DrawingLibrary | google.maps.geometry.Geom
 
 export const LocationHeatmap = ({ responses }: { responses: SurveyResponse[] }) => {
   const [points, setPoints] = useState<[number, number, number][]>([]);
+  useEffect(() => {
+    console.log("DEBUG: Maps API Key raw value (from platform/env):", import.meta.env.VITE_GOOGLE_MAPS_API_KEY);
+  }, []);
+
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
-    googleMapsApiKey: import.meta.env.GOOGLE_MAPS_API_KEY || '',
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
     libraries: LIBRARIES
   });
 
