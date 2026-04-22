@@ -64,7 +64,7 @@ export const LocationHeatmap = ({ responses }: { responses: SurveyResponse[] }) 
             newPoints.push([lat(), lng(), locationCounts[key]] as [number, number, number]);
           }
         } catch (e) {
-          console.error("Geocoding failed for:", key, e);
+          // Geocoding errors are expected and handled silently.
         }
       }
       setPoints(newPoints);
