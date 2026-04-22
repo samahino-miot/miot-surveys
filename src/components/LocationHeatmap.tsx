@@ -22,12 +22,14 @@ const center = {
   lng: 80.2707,
 };
 
+const LIBRARIES: (google.maps.drawing.DrawingLibrary | google.maps.geometry.GeometryLibrary | google.maps.places.PlacesLibrary | google.maps.visualization.VisualizationLibrary)[] = ['visualization', 'geocoding'];
+
 export const LocationHeatmap = ({ responses }: { responses: SurveyResponse[] }) => {
   const [points, setPoints] = useState<[number, number, number][]>([]);
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
-    libraries: ['visualization', 'geocoding']
+    libraries: LIBRARIES
   });
 
   const [map, setMap] = useState<google.maps.Map | null>(null);
