@@ -5,6 +5,7 @@ import { useWindowWidth } from '../hooks/useWindowWidth';
 import { LocationHeatmap } from '../components/LocationHeatmap';
 import { ArrowLeft, Download, FileText, ChevronLeft, ChevronRight, FileSpreadsheet, Trash2, MapPin } from 'lucide-react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Treemap } from 'recharts';
+import { motion } from 'motion/react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -533,9 +534,58 @@ export default function SurveyResults() {
       );
     }
 
+const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: number }) => {
+  const [showAll, setShowAll] = useState(false);
+  const sortedData = [...data].sort((a, b) => b.value - a.value);
+  const displayData = showAll ? sortedData : sortedData.slice(0, 5);
+  const hasMore = sortedData.length > 5;
+
+  return (
+    <div className="space-y-3">
+      {displayData.map((item, index) => {
+        const percentage = ((item.value / responseCount) * 100).toFixed(1);
+        const isTop = index === 0 && !showAll;
+        
+        return (
+          <motion.div 
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: index * 0.05 }}
+            key={item.name} 
+            className="space-y-1.5 p-3 rounded-xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100"
+          >
+            <div className="flex justify-between text-sm font-bold text-slate-800">
+              <span className="truncate pr-4 leading-tight">{item.name}</span>
+              <span className="font-mono text-slate-900 whitespace-nowrap">
+                {item.value} <span className="text-slate-400 font-normal">({percentage}%)</span>
+              </span>
+            </div>
+            <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${(item.value / responseCount) * 100}%` }}
+                transition={{ duration: 0.5, delay: index * 0.05 }}
+                className={`h-full rounded-full ${isTop ? 'bg-gradient-to-r from-teal-500 to-emerald-400' : 'bg-gradient-to-r from-blue-500 to-indigo-400'}`}
+              />
+            </div>
+          </motion.div>
+        );
+      })}
+      {hasMore && (
+        <button 
+          onClick={() => setShowAll(!showAll)}
+          className="w-full py-2 text-sm font-semibold text-teal-600 hover:text-teal-700 bg-teal-50 hover:bg-teal-100 rounded-lg transition-colors mt-2"
+        >
+          {showAll ? 'Show Fewer' : 'Show All Options'}
+        </button>
+      )}
+    </div>
+  );
+};
+
+// ... inside renderChart function:
     if (q.type === 'multiple_choice' || q.type === 'checkbox') {
       const counts: Record<string, number> = {};
-      // Use the options from the current survey definition
       q.options?.forEach((opt: string) => counts[opt] = 0);
       
       let responseCount = 0;
@@ -546,22 +596,12 @@ export default function SurveyResults() {
         if (Array.isArray(val) && val.length > 0) {
           responseCount++;
           val.forEach(v => { 
-            // If the value is not in the current options, we can either ignore it or add it as "Other"
-            if (counts[v] !== undefined) {
-              counts[v]++; 
-            } else {
-              // Handle unexpected values
-              counts[v] = (counts[v] || 0) + 1;
-            }
+            if (counts[v] !== undefined) { counts[v]++; } else { counts[v] = (counts[v] || 0) + 1; }
           });
         } else if (val !== undefined && val !== null && !Array.isArray(val)) {
           responseCount++;
           const valStr = String(val);
-          if (counts[valStr] !== undefined) {
-            counts[valStr]++;
-          } else {
-            counts[valStr] = (counts[valStr] || 0) + 1;
-          }
+          if (counts[valStr] !== undefined) { counts[valStr]++; } else { counts[valStr] = (counts[valStr] || 0) + 1; }
         }
       });
 
@@ -569,26 +609,36 @@ export default function SurveyResults() {
         name, 
         value,
         percentage: responseCount > 0 ? ((value / responseCount) * 100).toFixed(1) : '0.0'
-      })).filter(d => d.value > 0);
+      })).filter(d => d.value > 0).sort((a, b) => b.value - a.value);
 
       if (data.length === 0) return <p className="text-slate-500 italic">No selections made.</p>;
 
-      const CustomPieTooltip = ({ active, payload }: any) => {
-        if (active && payload && payload.length) {
-          return (
-            <div className="bg-white p-3 border border-slate-200 shadow-lg rounded-xl">
-              <p className="font-medium text-slate-900 mb-1">{payload[0].name}</p>
-              <p className="text-sm text-slate-600">Count: <span className="font-medium text-slate-900">{payload[0].value}</span></p>
-              <p className="text-sm text-slate-600">Share: <span className="font-medium text-slate-900">{payload[0].payload.percentage}%</span></p>
-            </div>
-          );
-        }
-        return null;
-      };
+      const useBarChart = q.id === 'willReturn' || q.id === 'consultingDuration';
 
+      if (useBarChart) {
+        return (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between bg-slate-50 p-4 rounded-xl border border-slate-100 mb-2">
+              <div>
+                <p className="text-sm text-slate-500 font-medium mb-1">Total Responses</p>
+                <p className="text-3xl font-bold text-slate-900">{responseCount}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-sm text-slate-500 font-medium mb-1">Most Popular</p>
+                <p className="text-lg font-bold text-slate-900 truncate max-w-[150px] sm:max-w-[200px]">
+                  {data.length > 0 ? data[0].name : '-'}
+                </p>
+              </div>
+            </div>
+            <SurveyBarChart data={data} responseCount={responseCount} />
+          </div>
+        );
+      }
+
+      // Enhanced Donut Chart
       return (
         <div className="space-y-6">
-          <div className="flex items-center justify-between bg-slate-50 p-4 rounded-xl border border-slate-100">
+          <div className="flex items-center justify-between bg-slate-50 p-4 rounded-xl border border-slate-100 mb-2">
             <div>
               <p className="text-sm text-slate-500 font-medium mb-1">Total Responses</p>
               <p className="text-3xl font-bold text-slate-900">{responseCount}</p>
@@ -596,50 +646,40 @@ export default function SurveyResults() {
             <div className="text-right">
               <p className="text-sm text-slate-500 font-medium mb-1">Most Popular</p>
               <p className="text-lg font-bold text-slate-900 truncate max-w-[150px] sm:max-w-[200px]">
-                {data.length > 0 ? [...data].sort((a, b) => b.value - a.value)[0].name : '-'}
+                {data.length > 0 ? data[0].name : '-'}
               </p>
             </div>
           </div>
           <div className="h-64 sm:h-80">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie
-                  data={data}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={window.innerWidth < 640 ? 40 : 60}
-                  outerRadius={window.innerWidth < 640 ? 60 : 80}
-                  paddingAngle={5}
+                <Pie 
+                  data={data} 
+                  cx="50%" 
+                  cy="50%" 
+                  innerRadius={60} 
+                  outerRadius={80} 
+                  paddingAngle={5} 
                   dataKey="value"
-                  labelLine={false}
                   label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
+                  labelLine={false}
                 >
-                  {data.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
+                  {data.map((_, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
                 </Pie>
-                <Tooltip content={<CustomPieTooltip />} />
-                <Legend 
-                  content={(props: any) => {
-                    const { payload } = props;
-                    return (
-                      <ul className="flex flex-wrap justify-center gap-2 text-xs sm:text-sm mt-4">
-                        {payload.map((entry: any, index: number) => {
-                          const dataItem = data.find(p => p.name === entry.value);
-                          return (
-                            <li key={`item-${index}`} className="flex items-center gap-1">
-                              <span className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }} />
-                              <span className="font-medium text-slate-700">{entry.value}</span>
-                              <span className="text-slate-500">({dataItem?.value})</span>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    );
-                  }} 
-                />
+                <Tooltip />
               </PieChart>
             </ResponsiveContainer>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {data.map((item, index) => (
+              <div key={index} className="bg-white p-3 rounded-xl border border-slate-200 flex items-center gap-3 shadow-sm">
+                <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-bold text-slate-500 truncate" title={item.name}>{item.name}</p>
+                  <p className="text-sm font-bold text-slate-900">{item.value} responses</p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       );
@@ -772,16 +812,39 @@ export default function SurveyResults() {
 
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mb-8">
         <h3 className="text-xl font-bold text-slate-900 mb-2">Patient Overall Experience</h3>
-        <p className="text-teal-600 font-bold mb-1">Overall Average: {evalData.reduce((acc, curr) => acc + curr.value, 0) / evalData.filter(d => d.value > 0).length > 0 ? (evalData.reduce((acc, curr) => acc + curr.value, 0) / evalData.filter(d => d.value > 0).length).toFixed(1) : '0.0'} / 5.0</p>
-        <p className="text-slate-500 text-sm mb-6">Based on {responses.length} total responses</p>
+        <p className="text-teal-600 font-bold mb-6">Overall Average: {evalData.reduce((acc, curr) => acc + curr.value, 0) / evalData.filter(d => d.value > 0).length > 0 ? (evalData.reduce((acc, curr) => acc + curr.value, 0) / evalData.filter(d => d.value > 0).length).toFixed(1) : '0.0'} / 5.0</p>
+        
+        <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 mb-6 w-fit">
+          <p className="text-sm font-medium text-slate-500">Total Responses</p>
+          <p className="text-3xl font-bold text-slate-900">{responses.length}</p>
+        </div>
+
         <div className="h-64 sm:h-80">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={evalData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
+            <BarChart data={evalData} margin={{ top: 30, right: 30, left: 0, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
               <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
-              <YAxis axisLine={false} tickLine={false} domain={[0, 5]} tick={{ fill: '#64748b', fontSize: 12 }} />
+              <YAxis axisLine={false} tickLine={false} domain={[0, 5]} hide />
               <Tooltip cursor={{ fill: '#f1f5f9' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-              <Bar dataKey="value" fill="#0d9488" radius={[8, 8, 0, 0]} barSize={40} />
+              <Bar 
+                dataKey="value" 
+                radius={[8, 8, 8, 8]} 
+                barSize={width < 640 ? 30 : 50}
+                label={{ position: 'top', fill: '#0f172a', fontWeight: 'bold' }}
+              >
+                {evalData.map((_, index) => (
+                  <Cell 
+                    key={`cell-${index}`} 
+                    fill={`url(#gradient)`}
+                  />
+                ))}
+              </Bar>
+              <defs>
+                <linearGradient id="gradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#3b82f6" />
+                  <stop offset="100%" stopColor="#2dd4bf" />
+                </linearGradient>
+              </defs>
             </BarChart>
           </ResponsiveContainer>
         </div>
