@@ -425,14 +425,11 @@ export default function SurveyResults() {
     const maxCount = Math.max(...data.map((d) => d.value));
     const popular = data.filter((d) => d.value === maxCount);
     return (
-      <div className="flex flex-wrap gap-1 justify-end">
+      <div className="flex flex-wrap gap-1 justify-end font-bold text-slate-900">
         {popular.map((item, idx) => (
-          <span
-            key={idx}
-            className="bg-teal-50 text-teal-700 text-xs px-2 py-0.5 rounded-full font-medium"
-            title={item.name}
-          >
+          <span key={idx} title={item.name}>
             {item.name}
+            {idx < popular.length - 1 ? ', ' : ''}
           </span>
         ))}
       </div>
@@ -459,8 +456,8 @@ export default function SurveyResults() {
       return (
         <ul className="space-y-2">
           {data.map(([name, count]) => (
-            <li key={name} className="flex justify-between items-center py-2 border-b border-slate-100 italic">
-              <span className="font-medium text-slate-800">{name}</span>
+            <li key={name} className="flex justify-between items-center py-2 border-b border-slate-100">
+              <span className="font-bold text-slate-800">{name}</span>
               <span className="text-teal-600 font-bold">{count}</span>
             </li>
           ))}
