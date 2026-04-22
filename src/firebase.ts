@@ -1,10 +1,18 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail, User } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
-import firebaseConfig from '../firebase-applet-config.json';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBdhRgaWMJKSwZGJ-8IfJL6Sq90D524dQc",
+  authDomain: "miot-surveys.firebaseapp.com",
+  projectId: "miot-surveys",
+  storageBucket: "miot-surveys.firebasestorage.app",
+  messagingSenderId: "513984076997",
+  appId: "1:513984076997:web:6bc375b35a3a2583d664ac"
+};
 
 const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+export const db = getFirestore(app);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 

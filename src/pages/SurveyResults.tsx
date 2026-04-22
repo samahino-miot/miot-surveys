@@ -772,7 +772,8 @@ export default function SurveyResults() {
 
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mb-8">
         <h3 className="text-xl font-bold text-slate-900 mb-2">Patient Overall Experience</h3>
-        <p className="text-teal-600 font-bold mb-6">Overall Average: {evalData.reduce((acc, curr) => acc + curr.value, 0) / evalData.filter(d => d.value > 0).length > 0 ? (evalData.reduce((acc, curr) => acc + curr.value, 0) / evalData.filter(d => d.value > 0).length).toFixed(1) : '0.0'} / 5.0</p>
+        <p className="text-teal-600 font-bold mb-1">Overall Average: {evalData.reduce((acc, curr) => acc + curr.value, 0) / evalData.filter(d => d.value > 0).length > 0 ? (evalData.reduce((acc, curr) => acc + curr.value, 0) / evalData.filter(d => d.value > 0).length).toFixed(1) : '0.0'} / 5.0</p>
+        <p className="text-slate-500 text-sm mb-6">Based on {responses.length} total responses</p>
         <div className="h-64 sm:h-80">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={evalData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
