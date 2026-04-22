@@ -22,6 +22,7 @@ import NotFound from './pages/NotFound';
 import { AuthProvider } from './components/AuthProvider';
 
 export default function App() {
+  // Force system redeploy
   return (
     <AuthProvider>
       <BrowserRouter>

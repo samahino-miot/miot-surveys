@@ -26,10 +26,6 @@ const LIBRARIES: (google.maps.drawing.DrawingLibrary | google.maps.geometry.Geom
 
 export const LocationHeatmap = ({ responses }: { responses: SurveyResponse[] }) => {
   const [points, setPoints] = useState<[number, number, number][]>([]);
-  useEffect(() => {
-    console.log("DEBUG: Maps API Key raw value (from platform/env):", import.meta.env.VITE_GOOGLE_MAPS_API_KEY);
-  }, []);
-
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
@@ -60,14 +56,7 @@ export const LocationHeatmap = ({ responses }: { responses: SurveyResponse[] }) 
       for (const key of Object.keys(locationCounts)) {
         const [pinCode, city, country] = key.split('-');
         
-        // Try local JSON first for speed
-        const localCoords = getLatLongFromPincode(pinCode);
-        if (localCoords) {
-          newPoints.push([...localCoords, locationCounts[key]] as [number, number, number]);
-          continue;
-        }
-
-        // Fallback to Google Geocoder
+        // Always use Google Geocoder
         try {
           const result = await geocoder.geocode({ address: `${pinCode}, ${city}, ${country}` });
           if (result.results && result.results[0]) {

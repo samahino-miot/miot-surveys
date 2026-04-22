@@ -420,6 +420,25 @@ export default function SurveyResults() {
     XLSX.writeFile(workbook, `${survey.title.replace(/\s+/g, '_')}_Results.xlsx`);
   };
 
+  const getMostPopular = (data: { name: string; value: number }[]) => {
+    if (data.length === 0) return <span className="text-slate-400 font-normal">No data available</span>;
+    const maxCount = Math.max(...data.map((d) => d.value));
+    const popular = data.filter((d) => d.value === maxCount);
+    return (
+      <div className="flex flex-wrap gap-1 justify-end">
+        {popular.map((item, idx) => (
+          <span
+            key={idx}
+            className="bg-teal-50 text-teal-700 text-xs px-2 py-0.5 rounded-full font-medium"
+            title={item.name}
+          >
+            {item.name}
+          </span>
+        ))}
+      </div>
+    );
+  };
+
   const renderChart = (q: any, width: number) => {
     if (responses.length === 0) return <p className="text-slate-500 italic">No responses yet.</p>;
 
@@ -473,73 +492,49 @@ export default function SurveyResults() {
 
       if (data.length === 0) return <p className="text-slate-500 italic">No responses.</p>;
 
-      const CustomPieTooltip = ({ active, payload }: any) => {
-        if (active && payload && payload.length) {
-          return (
-            <div className="bg-white p-3 border border-slate-200 shadow-lg rounded-xl">
-              <p className="font-medium text-slate-900 mb-1">{payload[0].name}</p>
-              <p className="text-sm text-slate-600">Count: <span className="font-medium text-slate-900">{payload[0].value}</span></p>
-              <p className="text-sm text-slate-600">Share: <span className="font-medium text-slate-900">{payload[0].payload.percentage}%</span></p>
-            </div>
-          );
-        }
-        return null;
-      };
-
+      // Enhanced Donut Chart
       return (
         <div className="space-y-6">
-          <div className="flex items-center justify-between bg-slate-50 p-4 rounded-xl border border-slate-100">
+          <div className="flex items-center justify-between bg-slate-50 p-4 rounded-xl border border-slate-100 mb-2">
             <div>
               <p className="text-sm text-slate-500 font-medium mb-1">Total Responses</p>
               <p className="text-3xl font-bold text-slate-900">{textResponses.length}</p>
             </div>
             <div className="text-right">
               <p className="text-sm text-slate-500 font-medium mb-1">Most Popular</p>
-              <p className="text-lg font-bold text-slate-900 truncate max-w-[150px] sm:max-w-[200px]">
-                {data.length > 0 ? data[0].name : '-'}
-              </p>
+              {getMostPopular(data)}
             </div>
           </div>
           <div className="h-64 sm:h-80">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie
-                  data={data}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={window.innerWidth < 640 ? 40 : 60}
-                  outerRadius={window.innerWidth < 640 ? 60 : 80}
-                  paddingAngle={5}
+                <Pie 
+                  data={data} 
+                  cx="50%" 
+                  cy="50%" 
+                  innerRadius={60} 
+                  outerRadius={80} 
+                  paddingAngle={5} 
                   dataKey="value"
-                  labelLine={false}
                   label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
+                  labelLine={false}
                 >
-                  {data.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
+                  {data.map((_, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
                 </Pie>
-                <Tooltip content={<CustomPieTooltip />} />
-                <Legend 
-                  content={(props: any) => {
-                    const { payload } = props;
-                    return (
-                      <ul className="flex flex-wrap justify-center gap-2 text-xs sm:text-sm mt-4">
-                        {payload.map((entry: any, index: number) => {
-                          const dataItem = data.find(p => p.name === entry.value);
-                          return (
-                            <li key={`item-${index}`} className="flex items-center gap-1">
-                              <span className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }} />
-                              <span className="font-medium text-slate-700">{entry.value}</span>
-                              <span className="text-slate-500">({dataItem?.value})</span>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    );
-                  }} 
-                />
+                <Tooltip />
               </PieChart>
             </ResponsiveContainer>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {data.map((item, index) => (
+              <div key={index} className="bg-white p-3 rounded-xl border border-slate-200 flex items-center gap-3 shadow-sm">
+                <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-bold text-slate-500 truncate" title={item.name}>{item.name}</p>
+                  <p className="text-sm font-bold text-slate-900">{item.value} responses</p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       );
@@ -656,9 +651,7 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
             </div>
             <div className="text-right">
               <p className="text-sm text-slate-500 font-medium mb-1">Most Popular</p>
-              <p className="text-lg font-bold text-slate-900 truncate max-w-[150px] sm:max-w-[200px]">
-                {data.length > 0 ? data[0].name : '-'}
-              </p>
+              {getMostPopular(data)}
             </div>
           </div>
           <div className="h-64 sm:h-80">
