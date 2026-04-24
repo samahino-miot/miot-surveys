@@ -64,12 +64,16 @@ export default function Layout() {
                 <Link to="/admin/surveys" className={`text-sm font-medium ${location.pathname.includes('/admin/surveys') ? 'text-teal-400' : 'text-slate-300 hover:text-white'}`}>
                   Manage Surveys
                 </Link>
-                <Link to="/admin/editor-reports" className={`text-sm font-medium ${location.pathname.includes('/admin/editor-reports') ? 'text-teal-400' : 'text-slate-300 hover:text-white'}`}>
-                  Surveyor Reports
-                </Link>
-                <Link to="/admin/users" className={`text-sm font-medium ${location.pathname.includes('/admin/users') ? 'text-teal-400' : 'text-slate-300 hover:text-white'}`}>
-                  User Management
-                </Link>
+                {(adminUser.role === 'admin' || adminUser.role === 'superadmin') && (
+                  <>
+                    <Link to="/admin/editor-reports" className={`text-sm font-medium ${location.pathname.includes('/admin/editor-reports') ? 'text-teal-400' : 'text-slate-300 hover:text-white'}`}>
+                      Surveyor Reports
+                    </Link>
+                    <Link to="/admin/users" className={`text-sm font-medium ${location.pathname.includes('/admin/users') ? 'text-teal-400' : 'text-slate-300 hover:text-white'}`}>
+                      User Management
+                    </Link>
+                  </>
+                )}
               </nav>
             </div>
           </div>

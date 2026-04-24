@@ -37,12 +37,14 @@ export default function App() {
             </Route>
             <Route path="admin/login" element={<AdminLogin />} />
             <Route element={<ProtectedRoute allowedRoles={['admin', 'superadmin']} />}>
-              <Route path="admin" element={<AdminDashboard />} />
-              <Route path="admin/surveys" element={<AdminSurveys />} />
               <Route path="admin/editor-reports" element={<EditorReports />} />
               <Route path="admin/editor-reports/:editorId/:surveyId" element={<EditorSurveyRespondents />} />
-              <Route path="admin/surveys/:id/results" element={<SurveyResults />} />
               <Route path="admin/users" element={<UserManagement />} />
+            </Route>
+            <Route element={<ProtectedRoute allowedRoles={['admin', 'superadmin', 'viewer']} />}>
+              <Route path="admin" element={<AdminDashboard />} />
+              <Route path="admin/surveys" element={<AdminSurveys />} />
+              <Route path="admin/surveys/:id/results" element={<SurveyResults />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Route>
