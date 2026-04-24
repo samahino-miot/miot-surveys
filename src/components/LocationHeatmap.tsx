@@ -87,7 +87,7 @@ export const LocationHeatmap = ({ responses }: { responses: SurveyResponse[] }) 
       heatmapLayer.current = new google.maps.visualization.HeatmapLayer({
         data: heatmapPoints as any,
         map: map,
-        radius: 40,
+        radius: 20,
         opacity: 0.8
       });
     }
