@@ -606,7 +606,6 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
 
       // Filter to only include options defined in the survey
       const filteredData = Object.entries(counts)
-        .filter(([name]) => (q.options ? q.options.some((opt: string) => opt.toLowerCase().trim() === name.toLowerCase().trim()) : true))
         .map(([name, value]) => {
            // Normalize name to match the option provided in survey definition
            const matchedOption = q.options?.find((opt: string) => opt.toLowerCase().trim() === name.toLowerCase().trim());
@@ -620,8 +619,9 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
           }
           return acc;
         }, {} as Record<string, number>);
-        
-      const dataForProcessing = Object.entries(filteredData).map(([name, value]) => ({ name, value }));
+      
+      const dataForProcessing = Object.entries(filteredData)
+        .map(([name, value]) => ({ name, value }));
 
       // Calculate participants who answered this specific question
       let participantsWhoAnsweredThisQuestion = 0;
@@ -639,7 +639,7 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
       const data = dataForProcessing
         .map(item => ({ 
           ...item,
-          percentage: participantsWhoAnsweredThisQuestion > 0 ? ((item.value / participantsWhoAnsweredThisQuestion) * 100).toFixed(1) : '0.0'
+          percentage: sumOfSelections > 0 ? ((item.value / sumOfSelections) * 100).toFixed(1) : '0.0'
         }))
         .filter(d => d.value > 0)
         .sort((a, b) => b.value - a.value);
@@ -654,7 +654,7 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
             <div className="flex items-center justify-between bg-slate-50 p-4 rounded-xl border border-slate-100 mb-2">
               <div>
                 <p className="text-sm text-slate-500 font-medium mb-1">Total Responses</p>
-                <p className="text-3xl font-bold text-slate-900">{participantsWhoAnsweredThisQuestion}</p>
+                <p className="text-3xl font-bold text-slate-900">{sumOfSelections}</p>
               </div>
               <div className="text-right">
                 <p className="text-sm text-slate-500 font-medium mb-1">Most Popular</p>
@@ -663,7 +663,7 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
                 </p>
               </div>
             </div>
-            <SurveyBarChart data={data} responseCount={participantsWhoAnsweredThisQuestion} />
+            <SurveyBarChart data={data} responseCount={sumOfSelections} />
           </div>
         );
       }
@@ -674,7 +674,7 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
           <div className="flex items-center justify-between bg-slate-50 p-4 rounded-xl border border-slate-100 mb-2">
             <div>
               <p className="text-sm text-slate-500 font-medium mb-1">Total Responses</p>
-              <p className="text-3xl font-bold text-slate-900">{participantsWhoAnsweredThisQuestion}</p>
+              <p className="text-3xl font-bold text-slate-900">{sumOfSelections}</p>
             </div>
             <div className="text-right">
               <p className="text-sm text-slate-500 font-medium mb-1">Most Popular</p>
