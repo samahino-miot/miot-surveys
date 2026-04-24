@@ -468,17 +468,17 @@ export default function SurveyResults() {
     if (q.id === 'specialitiesAssociated') {
       const textResponses = responses.map(r => (r.answers || {})[q.id]).filter(Boolean);
       
-      const wordCounts: Record<string, number> = {};
+      const departmentCounts: Record<string, number> = {};
       textResponses.forEach(text => {
-        const words = String(text).toLowerCase().split(/[\s,]+/);
-        words.forEach(word => {
-          if (word.length > 3) {
-            wordCounts[word] = (wordCounts[word] || 0) + 1;
+        const lowerText = String(text).toLowerCase();
+        departments.forEach(dept => {
+          if (lowerText.includes(dept.toLowerCase())) {
+            departmentCounts[dept] = (departmentCounts[dept] || 0) + 1;
           }
         });
       });
 
-      const data = Object.entries(wordCounts)
+      const data = Object.entries(departmentCounts)
         .sort((a, b) => b[1] - a[1])
         .slice(0, 8)
         .map(([name, value]) => ({ 
@@ -591,28 +591,58 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
       const counts: Record<string, number> = {};
       q.options?.forEach((opt: string) => counts[opt] = 0);
       
-      let responseCount = 0;
-
       responses.forEach(r => {
         const answers = r.answers || {};
         const val = answers[q.id];
         if (Array.isArray(val) && val.length > 0) {
-          responseCount++;
           val.forEach(v => { 
             if (counts[v] !== undefined) { counts[v]++; } else { counts[v] = (counts[v] || 0) + 1; }
           });
         } else if (val !== undefined && val !== null && !Array.isArray(val)) {
-          responseCount++;
           const valStr = String(val);
           if (counts[valStr] !== undefined) { counts[valStr]++; } else { counts[valStr] = (counts[valStr] || 0) + 1; }
         }
       });
 
-      const data = Object.entries(counts).map(([name, value]) => ({ 
-        name, 
-        value,
-        percentage: responseCount > 0 ? ((value / responseCount) * 100).toFixed(1) : '0.0'
-      })).filter(d => d.value > 0).sort((a, b) => b.value - a.value);
+      // Filter to only include options defined in the survey
+      const filteredData = Object.entries(counts)
+        .filter(([name]) => (q.options ? q.options.some((opt: string) => opt.toLowerCase().trim() === name.toLowerCase().trim()) : true))
+        .map(([name, value]) => {
+           // Normalize name to match the option provided in survey definition
+           const matchedOption = q.options?.find((opt: string) => opt.toLowerCase().trim() === name.toLowerCase().trim());
+           return { name: matchedOption || name, value };
+        })
+        .reduce((acc, curr) => {
+          if (acc[curr.name]) {
+            acc[curr.name] += curr.value;
+          } else {
+            acc[curr.name] = curr.value;
+          }
+          return acc;
+        }, {} as Record<string, number>);
+        
+      const dataForProcessing = Object.entries(filteredData).map(([name, value]) => ({ name, value }));
+
+      // Calculate participants who answered this specific question
+      let participantsWhoAnsweredThisQuestion = 0;
+      responses.forEach(r => {
+        const val = (r.answers || {})[q.id];
+        if (val !== undefined && val !== null && val !== '') {
+          if (Array.isArray(val) && val.length === 0) return;
+          participantsWhoAnsweredThisQuestion++;
+        }
+      });
+
+      // Maintain sumOfSelections for percentages
+      const sumOfSelections = dataForProcessing.reduce((sum, item) => sum + item.value, 0);
+
+      const data = dataForProcessing
+        .map(item => ({ 
+          ...item,
+          percentage: participantsWhoAnsweredThisQuestion > 0 ? ((item.value / participantsWhoAnsweredThisQuestion) * 100).toFixed(1) : '0.0'
+        }))
+        .filter(d => d.value > 0)
+        .sort((a, b) => b.value - a.value);
 
       if (data.length === 0) return <p className="text-slate-500 italic">No selections made.</p>;
 
@@ -624,7 +654,7 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
             <div className="flex items-center justify-between bg-slate-50 p-4 rounded-xl border border-slate-100 mb-2">
               <div>
                 <p className="text-sm text-slate-500 font-medium mb-1">Total Responses</p>
-                <p className="text-3xl font-bold text-slate-900">{responseCount}</p>
+                <p className="text-3xl font-bold text-slate-900">{participantsWhoAnsweredThisQuestion}</p>
               </div>
               <div className="text-right">
                 <p className="text-sm text-slate-500 font-medium mb-1">Most Popular</p>
@@ -633,7 +663,7 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
                 </p>
               </div>
             </div>
-            <SurveyBarChart data={data} responseCount={responseCount} />
+            <SurveyBarChart data={data} responseCount={participantsWhoAnsweredThisQuestion} />
           </div>
         );
       }
@@ -644,7 +674,7 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
           <div className="flex items-center justify-between bg-slate-50 p-4 rounded-xl border border-slate-100 mb-2">
             <div>
               <p className="text-sm text-slate-500 font-medium mb-1">Total Responses</p>
-              <p className="text-3xl font-bold text-slate-900">{responseCount}</p>
+              <p className="text-3xl font-bold text-slate-900">{participantsWhoAnsweredThisQuestion}</p>
             </div>
             <div className="text-right">
               <p className="text-sm text-slate-500 font-medium mb-1">Most Popular</p>
@@ -811,6 +841,24 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
         </button>
       </div>
 
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        {survey.questions
+          .filter(q => !['evalCure', 'evalCare', 'evalCost', 'evalComm', 'evalComfort', 'evalConv'].includes(q.id))
+          .map((q, i) => (
+            <div key={q.id} className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200">
+              <h3 className="font-semibold text-slate-900 mb-6 line-clamp-2" title={q.text}>
+                {i + 1}. {
+                  q.id === 'otherHospital' ? 'Preferred Alternative Hospitals (if not MIOT)' :
+                  q.id === 'returnYesReasons' ? 'I will return to MIOT for further treatment – YES, because of:' :
+                  q.id === 'returnNoReason' ? 'I will not return to MIOT for further treatment – NO, because:' :
+                  q.text
+                }
+              </h3>
+              {renderChart(q, width)}
+            </div>
+          ))}
+      </div>
+
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mb-8">
         <h3 className="text-xl font-bold text-slate-900 mb-2">Patient Overall Experience</h3>
         <p className="text-teal-600 font-bold mb-6">Overall Average: {overallAverage} / 5.0</p>
@@ -849,24 +897,6 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
             </BarChart>
           </ResponsiveContainer>
         </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        {survey.questions
-          .filter(q => !['evalCure', 'evalCare', 'evalCost', 'evalComm', 'evalComfort', 'evalConv'].includes(q.id))
-          .map((q, i) => (
-            <div key={q.id} className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200">
-              <h3 className="font-semibold text-slate-900 mb-6 line-clamp-2" title={q.text}>
-                {i + 1}. {
-                  q.id === 'otherHospital' ? 'Preferred Alternative Hospitals (if not MIOT)' :
-                  q.id === 'returnYesReasons' ? 'I will return to MIOT for further treatment – YES, because of:' :
-                  q.id === 'returnNoReason' ? 'I will not return to MIOT for further treatment – NO, because:' :
-                  q.text
-                }
-              </h3>
-              {renderChart(q, width)}
-            </div>
-          ))}
       </div>
 
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mb-8">
