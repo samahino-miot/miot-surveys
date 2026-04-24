@@ -1070,6 +1070,25 @@ export default function TakeSurvey() {
                     </motion.div>
                   )}
 
+                  {formData.willReturn === 'No' && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      className="mt-4"
+                    >
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        If NO, please specify: <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Please specify why you will not return"
+                        value={formData.returnNoReason}
+                        onChange={(e) => setFormData({...formData, returnNoReason: e.target.value})}
+                        className="w-full p-4 text-lg border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all bg-slate-50 focus:bg-white"
+                      />
+                    </motion.div>
+                  )}
+
                   <div className="mt-8">
                     <label className="block text-sm font-medium text-slate-700 mb-2">
                       19. If not MIOT, which multispecialty or superspecialty hospital would you choose for your medical treatment?
@@ -1105,25 +1124,6 @@ export default function TakeSurvey() {
                       }}
                     />
                   </div>
-
-                  {formData.willReturn === 'No' && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      className="mt-4"
-                    >
-                      <label className="block text-sm font-medium text-slate-700 mb-2">
-                        If NO, please specify: <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="Please specify why you will not return"
-                        value={formData.returnNoReason}
-                        onChange={(e) => setFormData({...formData, returnNoReason: e.target.value})}
-                        className="w-full p-4 text-lg border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all bg-slate-50 focus:bg-white"
-                      />
-                    </motion.div>
-                  )}
                 </div>
               </div>
             </motion.div>
