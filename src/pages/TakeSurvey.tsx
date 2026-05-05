@@ -731,7 +731,7 @@ export default function TakeSurvey() {
                 {/* Q14 */}
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-3">
-                    14. How did you know about MIOT? (Choose one or more as applicable)* <span className="text-red-500">*</span>
+                    14. How did you know about MIOT? (Choose one or more as applicable) <span className="text-red-500">*</span>
                   </label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                     {['Apartment posters', 'Corporate Tie-up', 'Digital (Website/Google/Social Media)', 'Magazine', 'Neighborhood Hospital', 'Newspaper', 'Newspaper Inserts', 'Outdoor Hoardings / Bus Shelters', 'Outreach Clinics', 'Radio', 'Referred by Doctor', 'Television', 'Theatre Ads', 'Word of mouth (colleagues, relatives, friends)', 'Others'].map(option => {
@@ -782,7 +782,7 @@ export default function TakeSurvey() {
                 {/* Q15 */}
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-3">
-                    15. Who/What influenced your decision the most to choose MIOT? (Choose one)* <span className="text-red-500">*</span>
+                    15. Who/What influenced your decision the most to choose MIOT? (Choose one) <span className="text-red-500">*</span>
                   </label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                     {['Apartment posters', 'Brand Name', 'Corporate Tie-up', 'Digital (Website/Google/Social Media)', 'Emergency', 'Magazine', 'Neighborhood Hospitals', 'Newspaper', 'Newspaper Inserts', 'Outdoor Hoardings / Bus Shelters', 'Outreach Clinics', 'Radio', 'Referred by Doctor', 'Television', 'Theatre Ads', 'Treating Doctors (MIOT)', 'Word of mouth (colleagues, relatives, friends)', 'Others'].map(option => {
@@ -1015,7 +1015,7 @@ export default function TakeSurvey() {
                       className="space-y-4 bg-teal-50/50 p-6 rounded-2xl border border-teal-100"
                     >
                       <label className="block text-sm font-medium text-slate-700 mb-3">
-                        If YES, because of: <span className="text-red-500">*</span>
+                        If YES, because of: (Choose one or more as applicable) <span className="text-red-500">*</span>
                       </label>
                       <div className="grid grid-cols-1 gap-3">
                         {[
