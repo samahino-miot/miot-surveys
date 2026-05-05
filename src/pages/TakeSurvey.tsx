@@ -10,7 +10,7 @@ import { useSurveys } from '../hooks/useFirestore';
 import { useAuth } from '../components/AuthProvider';
 import { LocationInput } from '../components/LocationInput';
 import { Country, State, City } from 'country-state-city';
-import { departments } from '../data/departments';
+import { newSurveyDepartments } from '../data/departments';
 
 const CategoryRatingCard = ({ id, title, subPoints, value, onChange, error }: { id: string, title: string, subPoints: string, value: number, onChange: (val: number) => void, error?: boolean }) => {
   const points = subPoints.split(' - ');
@@ -678,7 +678,7 @@ export default function TakeSurvey() {
                       setError('');
                     }
                   }}
-                  suggestions={departments}
+                  suggestions={newSurveyDepartments}
                   placeholder="e.g. Cardiology, Orthopedics"
                   required={true}
                   error={invalidFields.includes('department')}
@@ -959,7 +959,7 @@ export default function TakeSurvey() {
                   <Select
                     inputId="specialitiesAssociated"
                     isMulti
-                    options={departments.map(d => ({ label: d, value: d }))}
+                    options={newSurveyDepartments.map(d => ({ label: d, value: d }))}
                     value={formData.specialitiesAssociated.map(s => ({ label: s, value: s }))}
                     onChange={(options) => {
                       if (options.length <= 5) {
