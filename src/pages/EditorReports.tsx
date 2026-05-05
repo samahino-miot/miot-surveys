@@ -1,15 +1,20 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useResponses, useSurveys } from '../hooks/useFirestore';
+import { useAuth } from '../components/AuthProvider';
 
 export default function EditorReports() {
   const navigate = useNavigate();
+  const { currentUser, adminUser } = useAuth();
   const { responses, loading: responsesLoading } = useResponses();
   const { surveys, loading: surveysLoading } = useSurveys(false);
   const [selectedEditorId, setSelectedEditorId] = useState<string | null>(null);
 
   const editorStats = responses.reduce((acc, response) => {
     const editorId = response.editorId || 'unknown';
+    // If role is editor, only include their own data
+    if (adminUser?.role === 'editor' && editorId !== currentUser?.uid) return acc;
+
     const editorName = response.editorName && response.editorName !== 'Unknown' ? response.editorName : 'Unknown (No Editor Info)';
     const survey = surveys.find(s => s.id === response.surveyId);
     const surveyTitle = survey?.title || 'Unknown Survey';
@@ -42,7 +47,7 @@ export default function EditorReports() {
     <div className="space-y-8">
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Surveyor Reports</h1>
-        <p className="text-slate-600 mt-1">Click on a surveyor to view their survey data.</p>
+        <p className="text-slate-600 mt-1">View your current survey performance.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -65,7 +70,7 @@ export default function EditorReports() {
         {/* Surveyor Details */}
         <div className="md:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
           <div className="bg-slate-50 border-b border-slate-200 px-6 py-4 font-semibold text-slate-700">
-            {selectedEditor ? `Surveys taken by ${selectedEditor.name}` : 'Select a surveyor to view details'}
+            {selectedEditor ? `Surveys taken by ${selectedEditor.name}` : 'No survey data available'}
           </div>
           {selectedEditor ? (
             <div className="overflow-x-auto">
@@ -101,7 +106,7 @@ export default function EditorReports() {
               </table>
             </div>
           ) : (
-            <div className="p-6 text-slate-500 text-center">No editor selected.</div>
+            <div className="p-6 text-slate-500 text-center">No survey data available or you have not taken any surveys yet.</div>
           )}
         </div>
       </div>
