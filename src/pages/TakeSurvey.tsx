@@ -83,7 +83,8 @@ export default function TakeSurvey() {
     willReturn: '',
     returnYesReasons: [] as string[],
     returnYesOther: '',
-    returnNoReason: '',
+    returnNoReasons: [] as string[],
+    returnNoReasonOther: '',
     otherHospital: ''
   });
 
@@ -133,7 +134,7 @@ export default function TakeSurvey() {
     );
   }
 
-  const handleCheckboxChange = (field: 'howDidYouKnow' | 'returnYesReasons', value: string) => {
+  const handleCheckboxChange = (field: 'howDidYouKnow' | 'returnYesReasons' | 'returnNoReasons', value: string) => {
     setFormData(prev => {
       const current = prev[field];
       if (current.includes(value)) {
@@ -284,10 +285,18 @@ export default function TakeSurvey() {
           return;
         }
       } else if (formData.willReturn === 'No') {
-        if (!formData.returnNoReason.trim()) {
-          setError('Please specify the reason for not returning.');
-          setInvalidFields(['returnNoReason']);
-          const firstField = document.getElementById('returnNoReason');
+        if (formData.returnNoReasons.length === 0) {
+          setError('Please select at least one reason for not returning.');
+          setInvalidFields(['returnNoReasons']);
+          // Scroll to the first checkbox - we'll need an ID for that
+          const firstField = document.getElementById('returnNoReasons');
+          firstField?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          return;
+        }
+        if (formData.returnNoReasons.includes('Others') && !formData.returnNoReasonOther.trim()) {
+          setError('Please specify the other reason for not returning.');
+          setInvalidFields(['returnNoReasonOther']);
+          const firstField = document.getElementById('returnNoReasonOther');
           firstField?.scrollIntoView({ behavior: 'smooth', block: 'center' });
           firstField?.focus();
           return;
@@ -1074,18 +1083,65 @@ export default function TakeSurvey() {
                     <motion.div
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}
-                      className="mt-4"
+                      className="space-y-4 p-6 rounded-2xl border border-slate-200 mt-4"
                     >
-                      <label className="block text-sm font-medium text-slate-700 mb-2">
-                        If NO, please specify: <span className="text-red-500">*</span>
+                      <label id="returnNoReasons" className="block text-sm font-medium text-slate-700 mb-3">
+                        If NO, please specify (Choose one or more as applicable): <span className="text-red-500">*</span>
                       </label>
-                      <input
-                        type="text"
-                        placeholder="Please specify why you will not return"
-                        value={formData.returnNoReason}
-                        onChange={(e) => setFormData({...formData, returnNoReason: e.target.value})}
-                        className="w-full p-4 text-lg border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all bg-slate-50 focus:bg-white"
-                      />
+                      <div className="grid grid-cols-1 gap-3">
+                        {[
+                          'Treating Doctors',
+                          'Nurses',
+                          'Support staff (Security, PRO, etc)',
+                          'Not my neighbourhood hospitals',
+                          'Treatment Cost',
+                          'Treatment outcome',
+                          'Waiting time',
+                          'Billing',
+                          'Insurance',
+                          'Cleanliness & Hygiene',
+                          'Others'
+                        ].map(option => {
+                          const isSelected = formData.returnNoReasons.includes(option);
+                          return (
+                            <label 
+                              key={option} 
+                              className={`flex items-start gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all bg-white ${
+                                isSelected 
+                                  ? 'border-teal-600 bg-teal-50' 
+                                  : 'border-slate-200 hover:border-teal-300'
+                              }`}
+                            >
+                              <div className={`mt-0.5 h-5 w-5 shrink-0 rounded border-2 flex items-center justify-center transition-colors ${
+                                isSelected ? 'bg-teal-600 border-teal-600' : 'border-slate-400 bg-white'
+                              }`}>
+                                {isSelected && <Check className="h-4 w-4 text-white" />}
+                              </div>
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => handleCheckboxChange('returnNoReasons', option)}
+                                className="hidden"
+                              />
+                              <span className={`text-sm font-medium ${isSelected ? 'text-teal-900' : 'text-slate-700'}`}>
+                                {option}
+                              </span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                      {formData.returnNoReasons.includes('Others') && (
+                        <div className="mt-4">
+                          <input
+                            id="returnNoReasonOther"
+                            type="text"
+                            placeholder="Please specify other reason"
+                            value={formData.returnNoReasonOther}
+                            onChange={(e) => setFormData({...formData, returnNoReasonOther: e.target.value})}
+                            className="w-full p-3 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all bg-white"
+                          />
+                        </div>
+                      )}
                     </motion.div>
                   )}
 

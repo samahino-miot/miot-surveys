@@ -58,25 +58,21 @@ export default function Layout() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-12">
               <nav className="flex gap-6 items-center whitespace-nowrap">
-                {(adminUser.role === 'admin' || adminUser.role === 'superadmin' || adminUser.role === 'viewer') && (
+                <Link to="/admin" className={`text-sm font-medium ${location.pathname === '/admin' ? 'text-teal-400' : 'text-slate-300 hover:text-white'}`}>
+                  Overview
+                </Link>
+                <Link to="/admin/surveys" className={`text-sm font-medium ${location.pathname.includes('/admin/surveys') ? 'text-teal-400' : 'text-slate-300 hover:text-white'}`}>
+                  Manage Surveys
+                </Link>
+                {(adminUser.role === 'admin' || adminUser.role === 'superadmin') && (
                   <>
-                    <Link to="/admin" className={`text-sm font-medium ${location.pathname === '/admin' ? 'text-teal-400' : 'text-slate-300 hover:text-white'}`}>
-                      Overview
+                    <Link to="/admin/editor-reports" className={`text-sm font-medium ${location.pathname.includes('/admin/editor-reports') ? 'text-teal-400' : 'text-slate-300 hover:text-white'}`}>
+                      Surveyor Reports
                     </Link>
-                    <Link to="/admin/surveys" className={`text-sm font-medium ${location.pathname.includes('/admin/surveys') ? 'text-teal-400' : 'text-slate-300 hover:text-white'}`}>
-                      Manage Surveys
+                    <Link to="/admin/users" className={`text-sm font-medium ${location.pathname.includes('/admin/users') ? 'text-teal-400' : 'text-slate-300 hover:text-white'}`}>
+                      User Management
                     </Link>
                   </>
-                )}
-                {(adminUser.role === 'admin' || adminUser.role === 'superadmin') && (
-                  <Link to="/admin/users" className={`text-sm font-medium ${location.pathname.includes('/admin/users') ? 'text-teal-400' : 'text-slate-300 hover:text-white'}`}>
-                    User Management
-                  </Link>
-                )}
-                {(adminUser.role === 'admin' || adminUser.role === 'superadmin' || adminUser.role === 'editor') && (
-                  <Link to="/admin/editor-reports" className={`text-sm font-medium ${location.pathname.includes('/admin/editor-reports') ? 'text-teal-400' : 'text-slate-300 hover:text-white'}`}>
-                    Surveyor Reports
-                  </Link>
                 )}
               </nav>
             </div>

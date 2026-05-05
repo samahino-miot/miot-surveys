@@ -36,11 +36,9 @@ export default function App() {
               <Route path="survey/:id" element={<TakeSurvey />} />
             </Route>
             <Route path="admin/login" element={<AdminLogin />} />
-            <Route element={<ProtectedRoute allowedRoles={['admin', 'superadmin', 'editor']} />}>
+            <Route element={<ProtectedRoute allowedRoles={['admin', 'superadmin']} />}>
               <Route path="admin/editor-reports" element={<EditorReports />} />
               <Route path="admin/editor-reports/:editorId/:surveyId" element={<EditorSurveyRespondents />} />
-            </Route>
-            <Route element={<ProtectedRoute allowedRoles={['admin', 'superadmin']} />}>
               <Route path="admin/users" element={<UserManagement />} />
             </Route>
             <Route element={<ProtectedRoute allowedRoles={['admin', 'superadmin', 'viewer']} />}>
