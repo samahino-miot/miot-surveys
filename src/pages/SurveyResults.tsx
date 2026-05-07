@@ -728,6 +728,24 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
               </div>
             ))}
           </div>
+          {q.options?.includes('Others') && (
+            <div className="mt-6 border-t border-slate-200 pt-4">
+              <h4 className="text-sm font-bold text-slate-900 mb-3">Other Responses</h4>
+              <ul className="space-y-2">
+                {responses
+                  .map(r => (r.answers || {})[q.id + 'Other'])
+                  .filter(val => val && typeof val === 'string' && val.trim() !== '')
+                  .map((val, idx) => (
+                    <li key={idx} className="p-3 bg-slate-50 rounded-lg text-sm text-slate-700 italic border border-slate-100">
+                      "{val}"
+                    </li>
+                  ))}
+                {responses
+                  .filter(r => (r.answers || {})[q.id + 'Other']).length === 0 
+                  && <p className="text-sm text-slate-400 italic">No other responses provided.</p>}
+              </ul>
+            </div>
+          )}
         </div>
       );
     }
