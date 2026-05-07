@@ -44,8 +44,8 @@ const hardcodedSurvey = {
     
     { id: 'specialitiesAssociated', text: 'What specialities do you associate with MIOT?', type: 'text' },
     { id: 'willReturn', text: 'I will return to MIOT for further treatment', type: 'multiple_choice', options: ['Yes', 'No'] },
-    { id: 'returnYesReasons', text: 'If YES, because of', type: 'checkbox', options: ['Treating Doctors', 'Treatment Outcome', 'Hassle free experience from appointment booking to consultation/discharge', 'Transparency in treatment, bills, etc', 'Responsible & Experienced support staff', 'Others, if any'] },
-    { id: 'returnNoReason', text: 'If NO, please specify', type: 'text' },
+    { id: 'returnYesReasons', text: 'If YES, because of', type: 'checkbox', options: ['Empathetic nurses', 'Hassle free experience from appointment booking to consultation/discharge', 'Responsible & Experienced support staff', 'Transparency in treatment, bills, etc', 'Treating Doctors', 'Treatment Outcome', 'Trusted neighborhood hospital', 'Others, if any'] },
+    { id: 'returnNoReasons', text: 'If NO, please specify', type: 'checkbox', options: ['Treating Doctors', 'Nurses', 'Support staff (Security, PRO, etc)', 'Not my neighbourhood hospitals', 'Treatment Cost', 'Treatment outcome', 'Waiting time', 'Billing', 'Insurance', 'Cleanliness & Hygiene', 'Others'] },
     { id: 'otherHospital', text: 'If not MIOT, which multispecialty or superspecialty hospital would you choose for your medical treatment?', type: 'text' }
   ]
 };
@@ -441,9 +441,11 @@ export default function SurveyResults() {
 
     if (q.id === 'otherHospital') {
       const counts: Record<string, number> = {};
+      let totalResponded = 0;
       responses.forEach(r => {
         const val = (r.answers || {})[q.id];
-        if (val && typeof val === 'string') {
+        if (val && typeof val === 'string' && val.trim() !== '') {
+          totalResponded++;
           const normalized = val.trim().toLowerCase();
           const capitalized = normalized.charAt(0).toUpperCase() + normalized.slice(1);
           counts[capitalized] = (counts[capitalized] || 0) + 1;
@@ -451,17 +453,31 @@ export default function SurveyResults() {
       });
       const data = Object.entries(counts).sort((a, b) => b[1] - a[1]);
       
-      if (data.length === 0) return <p className="text-slate-500 italic">No responses.</p>;
+      if (totalResponded === 0) return <p className="text-slate-500 italic">No responses.</p>;
 
       return (
-        <ul className="space-y-2">
-          {data.map(([name, count]) => (
-            <li key={name} className="flex justify-between items-center py-2 border-b border-slate-100">
-              <span className="font-bold text-slate-800">{name}</span>
-              <span className="text-teal-600 font-bold">{count}</span>
-            </li>
-          ))}
-        </ul>
+        <div className="space-y-6">
+          <div className="flex items-center justify-between bg-slate-50 p-4 rounded-xl border border-slate-100 mb-2">
+            <div>
+              <p className="text-sm text-slate-500 font-medium mb-1">Total Responses</p>
+              <p className="text-3xl font-bold text-slate-900">{totalResponded}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-sm text-slate-500 font-medium mb-1">Most Popular</p>
+              <p className="text-lg font-bold text-slate-900 truncate max-w-[150px] sm:max-w-[200px]">
+                {data.length > 0 ? data[0][0] : '-'}
+              </p>
+            </div>
+          </div>
+          <ul className="space-y-2">
+            {data.map(([name, count]) => (
+              <li key={name} className="flex justify-between items-center py-2 border-b border-slate-100">
+                <span className="font-bold text-slate-800">{name}</span>
+                <span className="text-teal-600 font-bold">{count}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
       );
     }
 
@@ -654,7 +670,7 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
             <div className="flex items-center justify-between bg-slate-50 p-4 rounded-xl border border-slate-100 mb-2">
               <div>
                 <p className="text-sm text-slate-500 font-medium mb-1">Total Responses</p>
-                <p className="text-3xl font-bold text-slate-900">{sumOfSelections}</p>
+                <p className="text-3xl font-bold text-slate-900">{participantsWhoAnsweredThisQuestion}</p>
               </div>
               <div className="text-right">
                 <p className="text-sm text-slate-500 font-medium mb-1">Most Popular</p>
@@ -663,7 +679,7 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
                 </p>
               </div>
             </div>
-            <SurveyBarChart data={data} responseCount={sumOfSelections} />
+            <SurveyBarChart data={data} responseCount={participantsWhoAnsweredThisQuestion} />
           </div>
         );
       }
@@ -674,7 +690,7 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
           <div className="flex items-center justify-between bg-slate-50 p-4 rounded-xl border border-slate-100 mb-2">
             <div>
               <p className="text-sm text-slate-500 font-medium mb-1">Total Responses</p>
-              <p className="text-3xl font-bold text-slate-900">{sumOfSelections}</p>
+              <p className="text-3xl font-bold text-slate-900">{participantsWhoAnsweredThisQuestion}</p>
             </div>
             <div className="text-right">
               <p className="text-sm text-slate-500 font-medium mb-1">Most Popular</p>
