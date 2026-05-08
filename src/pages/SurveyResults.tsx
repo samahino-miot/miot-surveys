@@ -441,42 +441,45 @@ export default function SurveyResults() {
 
     if (q.id === 'otherHospital') {
       const counts: Record<string, number> = {};
-      let totalResponded = 0;
+      
       responses.forEach(r => {
         const val = (r.answers || {})[q.id];
         if (val && typeof val === 'string' && val.trim() !== '') {
-          totalResponded++;
-          const normalized = val.trim().toLowerCase();
-          const capitalized = normalized.charAt(0).toUpperCase() + normalized.slice(1);
-          counts[capitalized] = (counts[capitalized] || 0) + 1;
+          const raw = val.trim();
+          const normalized = raw.toLowerCase().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+          counts[normalized] = (counts[normalized] || 0) + 1;
+        } else {
+          counts["Not specified"] = (counts["Not specified"] || 0) + 1;
         }
       });
       const data = Object.entries(counts).sort((a, b) => b[1] - a[1]);
       
-      if (totalResponded === 0) return <p className="text-slate-500 italic">No responses.</p>;
-
       return (
         <div className="space-y-6">
           <div className="flex items-center justify-between bg-slate-50 p-4 rounded-xl border border-slate-100 mb-2">
             <div>
               <p className="text-sm text-slate-500 font-medium mb-1">Total Responses</p>
-              <p className="text-3xl font-bold text-slate-900">{totalResponded}</p>
+              <p className="text-3xl font-bold text-slate-900">{responses.length}</p>
             </div>
             <div className="text-right">
               <p className="text-sm text-slate-500 font-medium mb-1">Most Popular</p>
               <p className="text-lg font-bold text-slate-900 truncate max-w-[150px] sm:max-w-[200px]">
-                {data.length > 0 ? data[0][0] : '-'}
+                {data.length > 0 ? (data[0][0] === "Not specified" && data.length > 1 ? data[1][0] : data[0][0]) : '-'}
               </p>
             </div>
           </div>
-          <ul className="space-y-2">
-            {data.map(([name, count]) => (
-              <li key={name} className="flex justify-between items-center py-2 border-b border-slate-100">
-                <span className="font-bold text-slate-800">{name}</span>
-                <span className="text-teal-600 font-bold">{count}</span>
-              </li>
-            ))}
-          </ul>
+          {data.length > 0 ? (
+            <ul className="space-y-2">
+              {data.map(([name, count]) => (
+                <li key={name} className="flex justify-between items-center py-2 border-b border-slate-100">
+                  <span className={`font-bold ${name === "Not specified" ? "text-slate-400 italic" : "text-slate-800"}`}>{name}</span>
+                  <span className="text-teal-600 font-bold">{count}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-center text-slate-500 italic py-4">No valid hospital names provided.</p>
+          )}
         </div>
       );
     }
@@ -643,10 +646,15 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
       let participantsWhoAnsweredThisQuestion = 0;
       responses.forEach(r => {
         const val = (r.answers || {})[q.id];
+        
+        // Conditional filtering based on the 'willReturn' answer
+        if (q.id === 'returnYesReasons' && (r.answers || {})['willReturn'] !== 'Yes') return;
+        if (q.id === 'returnNoReasons' && (r.answers || {})['willReturn'] !== 'No') return;
+
         if (val !== undefined && val !== null && val !== '') {
           if (Array.isArray(val) && val.length === 0) return;
           participantsWhoAnsweredThisQuestion++;
-        }
+        } 
       });
 
       // Maintain sumOfSelections for percentages
@@ -670,7 +678,7 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
             <div className="flex items-center justify-between bg-slate-50 p-4 rounded-xl border border-slate-100 mb-2">
               <div>
                 <p className="text-sm text-slate-500 font-medium mb-1">Total Responses</p>
-                <p className="text-3xl font-bold text-slate-900">{participantsWhoAnsweredThisQuestion}</p>
+                <p className="text-3xl font-bold text-slate-900">{q.type === 'checkbox' ? sumOfSelections : participantsWhoAnsweredThisQuestion}</p>
               </div>
               <div className="text-right">
                 <p className="text-sm text-slate-500 font-medium mb-1">Most Popular</p>
@@ -690,7 +698,7 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
           <div className="flex items-center justify-between bg-slate-50 p-4 rounded-xl border border-slate-100 mb-2">
             <div>
               <p className="text-sm text-slate-500 font-medium mb-1">Total Responses</p>
-              <p className="text-3xl font-bold text-slate-900">{participantsWhoAnsweredThisQuestion}</p>
+              <p className="text-3xl font-bold text-slate-900">{q.type === 'checkbox' ? sumOfSelections : participantsWhoAnsweredThisQuestion}</p>
             </div>
             <div className="text-right">
               <p className="text-sm text-slate-500 font-medium mb-1">Most Popular</p>
