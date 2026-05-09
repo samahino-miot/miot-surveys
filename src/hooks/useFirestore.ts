@@ -31,14 +31,18 @@ export const useSurveys = (activeOnly: boolean = false) => {
   return { surveys, loading };
 };
 
-export const useResponses = (surveyId?: string) => {
+export const useResponses = (surveyId?: string, editorId?: string) => {
   const [responses, setResponses] = useState<SurveyResponse[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let q = collection(db, 'responses');
-    if (surveyId) {
-      q = query(q, where('surveyId', '==', surveyId)) as any;
+    const constraints = [];
+    if (surveyId) constraints.push(where('surveyId', '==', surveyId));
+    if (editorId) constraints.push(where('editorId', '==', editorId));
+    
+    if (constraints.length > 0) {
+      q = query(q, ...constraints) as any;
     }
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -53,7 +57,7 @@ export const useResponses = (surveyId?: string) => {
     });
 
     return unsubscribe;
-  }, [surveyId]);
+  }, [surveyId, editorId]);
 
   return { responses, loading };
 };

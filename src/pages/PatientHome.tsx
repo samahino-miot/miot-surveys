@@ -1,12 +1,16 @@
 import { Link } from 'react-router';
-import { ChevronRight } from 'lucide-react';
-import { useSurveys } from '../hooks/useFirestore';
+import { ChevronRight, BarChart2 } from 'lucide-react';
+import { useSurveys, useResponses } from '../hooks/useFirestore';
+import { useAuth } from '../components/AuthProvider';
 
 export default function PatientHome() {
-  const { surveys, loading } = useSurveys(true);
+  const { surveys, loading: surveysLoading } = useSurveys(true);
+  const { currentUser, adminUser } = useAuth();
+  const editorId = adminUser?.id || currentUser?.uid;
+  const { responses, loading: responsesLoading } = useResponses(undefined, editorId);
 
-  if (loading) {
-    return <div className="flex items-center justify-center min-h-[60vh]">Loading surveys...</div>;
+  if (surveysLoading || responsesLoading) {
+    return <div className="flex items-center justify-center min-h-[60vh]">Loading...</div>;
   }
 
   return (
@@ -16,7 +20,12 @@ export default function PatientHome() {
           (e.target as HTMLImageElement).style.display = 'none';
         }} />
         <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 mb-4 tracking-tight">Welcome to MIOT International</h1>
-        <p className="text-lg text-slate-600">Help us make your experience better, share your feedback with us.</p>
+        <p className="text-lg text-slate-600 mb-8">Help us make your experience better, share your feedback with us.</p>
+        
+        <div className="inline-flex items-center gap-3 bg-teal-50 px-6 py-3 rounded-full text-teal-800 font-semibold shadow-sm border border-teal-100">
+          <BarChart2 className="w-5 h-5" />
+          <span>Surveys completed by you: {responses.length}</span>
+        </div>
       </div>
 
       <div className="space-y-4">
