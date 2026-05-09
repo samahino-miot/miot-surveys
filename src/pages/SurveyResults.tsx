@@ -27,8 +27,8 @@ const hardcodedSurvey = {
     { id: 'purposeOfVisit', text: 'Purpose of this visit', type: 'multiple_choice', options: ['OP Consultation', 'Review', 'Second opinion', 'Admission', 'MHC', 'Only Investigations'] },
     { id: 'department', text: 'For which Department', type: 'multiple_choice', options: departments },
     { id: 'consultingDuration', text: 'How long have you been consulting in MIOT?', type: 'multiple_choice', options: ['1st Visit', '<1 month', '1 month – 5yrs', '>5yrs'] },
-    { id: 'howDidYouKnow', text: 'How did you know about MIOT?', type: 'checkbox', options: ['Apartment posters', 'Corporate Tie-up', 'Digital (Website/Google/Social Media)', 'Magazine', 'Neighborhood Hospital', 'Newspaper', 'Newspaper Inserts', 'Outdoor Hoardings / Bus Shelters', 'Outreach Clinics', 'Radio', 'Referred by Doctor', 'Television', 'Theatre Ads', 'Word of mouth (colleagues, relatives, friends)', 'Others'] },
-    { id: 'whatInfluenced', text: 'Who/What influenced your decision to choose MIOT?', type: 'checkbox', options: ['Apartment posters', 'Brand Name', 'Corporate Tie-up', 'Digital (Website/Google/Social Media)', 'Emergency', 'Magazine', 'Neighborhood Hospitals', 'Newspaper', 'Newspaper Inserts', 'Outdoor Hoardings / Bus Shelters', 'Outreach Clinics', 'Radio', 'Referred by Doctor', 'Television', 'Theatre Ads', 'Treating Doctors (MIOT)', 'Word of mouth (colleagues, relatives, friends)', 'Others'] },
+    { id: 'howDidYouKnow', text: 'How did you know about MIOT?', type: 'checkbox', options: ['Apartment posters', 'CAMPS', 'CGHS', 'Corporate Tie-up', 'Digital (Website/Google/Social Media)', 'INSURANCE', 'Magazine', 'MIOT INFORMATION CENTRE', 'MIOT MEDICAL CENTER OVERSEAS', 'Neighborhood Hospital', 'Newspaper', 'Newspaper Inserts', 'Outdoor Hoardings / Bus Shelters', 'Outreach Clinics', 'Radio', 'Referred by Doctor', 'Television', 'Theatre Ads', 'Word of mouth (colleagues, relatives, friends)', 'Others'] },
+    { id: 'whatInfluenced', text: 'Who/What influenced your decision to choose MIOT?', type: 'checkbox', options: ['Apartment posters', 'Brand Name', 'CAMPS', 'CGHS', 'Corporate Tie-up', 'Digital (Website/Google/Social Media)', 'Emergency', 'INSURANCE', 'Magazine', 'MIOT INFORMATION CENTRE', 'MIOT MEDICAL CENTER OVERSEAS', 'Neighborhood Hospitals', 'Newspaper', 'Newspaper Inserts', 'Outdoor Hoardings / Bus Shelters', 'Outreach Clinics', 'Radio', 'Referred by Doctor', 'Television', 'Theatre Ads', 'Treating Doctors (MIOT)', 'Word of mouth (colleagues, relatives, friends)', 'Others'] },
     
     { id: 'evalCure', text: 'Cure', type: 'rating' },
     
@@ -44,8 +44,8 @@ const hardcodedSurvey = {
     
     { id: 'specialitiesAssociated', text: 'What specialities do you associate with MIOT?', type: 'text' },
     { id: 'willReturn', text: 'I will return to MIOT for further treatment', type: 'multiple_choice', options: ['Yes', 'No'] },
-    { id: 'returnYesReasons', text: 'If YES, because of', type: 'checkbox', options: ['Empathetic nurses', 'Hassle free experience from appointment booking to consultation/discharge', 'Responsible & Experienced support staff', 'Transparency in treatment, bills, etc', 'Treating Doctors', 'Treatment Outcome', 'Trusted neighborhood hospital', 'Others, if any'] },
-    { id: 'returnNoReasons', text: 'If NO, please specify', type: 'checkbox', options: ['Treating Doctors', 'Nurses', 'Support staff (Security, PRO, etc)', 'Not my neighbourhood hospitals', 'Treatment Cost', 'Treatment outcome', 'Waiting time', 'Billing', 'Insurance', 'Cleanliness & Hygiene', 'Others'] },
+    { id: 'returnYesReasons', text: 'If YES, because of', type: 'checkbox', options: ['Empathetic nurses', 'Hassle free experience from appointment booking to consultation/discharge', 'Neighborhood Hospital', 'Others, if any', 'Responsible & Experienced support staff', 'Transparency in treatment, bills, etc', 'Treating Doctors', 'Treatment Outcome', 'Trusted Hospital', 'ALL THE ABOVE'] },
+    { id: 'returnNoReasons', text: 'If NO, please specify', type: 'checkbox', options: ['Treating Doctors', 'Nurses', 'Support staff (Security, PRO, etc)', 'Not my neighbourhood hospitals', 'Treatment Cost', 'Higher Cost', 'Treatment outcome', 'Waiting time', 'Travel Time', 'Billing', 'Insurance', 'Cleanliness & Hygiene', 'Others'] },
     { id: 'otherHospital', text: 'If not MIOT, which multispecialty or superspecialty hospital would you choose for your medical treatment?', type: 'text' }
   ]
 };
@@ -788,8 +788,10 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
           } else {
             counts[val.toString()] = 1;
           }
-          responseCount++;
-          sum += val;
+          if (val > 0) {
+            responseCount++;
+            sum += val;
+          }
         }
       });
 

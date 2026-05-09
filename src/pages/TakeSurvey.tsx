@@ -12,14 +12,15 @@ import { LocationInput } from '../components/LocationInput';
 import { Country, State, City } from 'country-state-city';
 import { newSurveyDepartments } from '../data/departments';
 
-const CategoryRatingCard = ({ id, title, subPoints, value, onChange, error }: { id: string, title: string, subPoints: string, value: number, onChange: (val: number) => void, error?: boolean }) => {
+const CategoryRatingCard = ({ id, title, subPoints, value, onChange, error, allowZero = false }: { id: string, title: string, subPoints: string, value: number, onChange: (val: number) => void, error?: boolean, allowZero?: boolean }) => {
   const points = subPoints.split(' - ');
+  const options = allowZero ? [0, 1, 2, 3, 4, 5] : [1, 2, 3, 4, 5];
   return (
     <div id={id} className={`bg-white p-6 rounded-2xl shadow-sm border ${error ? 'border-red-500' : 'border-slate-200'} mb-6`}>
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
         <h3 className="text-xl font-bold text-slate-900">{title}</h3>
-        <div className="flex gap-2">
-          {[1, 2, 3, 4, 5].map(rating => (
+        <div className="flex flex-wrap gap-2">
+          {options.map(rating => (
             <button
               key={rating}
               type="button"
@@ -30,7 +31,7 @@ const CategoryRatingCard = ({ id, title, subPoints, value, onChange, error }: { 
                   : 'bg-slate-100 border border-slate-200 text-slate-600 hover:bg-slate-200'
               }`}
             >
-              {rating}
+              {rating === 0 ? 'N/A' : rating}
             </button>
           ))}
         </div>
@@ -743,7 +744,7 @@ export default function TakeSurvey() {
                     14. How did you know about MIOT? (Choose one or more as applicable) <span className="text-red-500">*</span>
                   </label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                    {['Apartment posters', 'Corporate Tie-up', 'Digital (Website/Google/Social Media)', 'Magazine', 'Neighborhood Hospital', 'Newspaper', 'Newspaper Inserts', 'Outdoor Hoardings / Bus Shelters', 'Outreach Clinics', 'Radio', 'Referred by Doctor', 'Television', 'Theatre Ads', 'Word of mouth (colleagues, relatives, friends)', 'Others'].map(option => {
+                    {['Apartment posters', 'CAMPS', 'CGHS', 'Corporate Tie-up', 'Digital (Website/Google/Social Media)', 'INSURANCE', 'Magazine', 'MIOT INFORMATION CENTRE', 'MIOT MEDICAL CENTER OVERSEAS', 'Neighborhood Hospital', 'Newspaper', 'Newspaper Inserts', 'Outdoor Hoardings / Bus Shelters', 'Outreach Clinics', 'Radio', 'Referred by Doctor', 'Television', 'Theatre Ads', 'Word of mouth (colleagues, relatives, friends)', 'Others'].map(option => {
                       const isSelected = formData.howDidYouKnow.includes(option);
                       const label = option;
                       return (
@@ -794,7 +795,7 @@ export default function TakeSurvey() {
                     15. Who/What influenced your decision the most to choose MIOT? (Choose one) <span className="text-red-500">*</span>
                   </label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                    {['Apartment posters', 'Brand Name', 'Corporate Tie-up', 'Digital (Website/Google/Social Media)', 'Emergency', 'Magazine', 'Neighborhood Hospitals', 'Newspaper', 'Newspaper Inserts', 'Outdoor Hoardings / Bus Shelters', 'Outreach Clinics', 'Radio', 'Referred by Doctor', 'Television', 'Theatre Ads', 'Treating Doctors (MIOT)', 'Word of mouth (colleagues, relatives, friends)', 'Others'].map(option => {
+                    {['Apartment posters', 'Brand Name', 'CAMPS', 'CGHS', 'Corporate Tie-up', 'Digital (Website/Google/Social Media)', 'Emergency', 'INSURANCE', 'Magazine', 'MIOT INFORMATION CENTRE', 'MIOT MEDICAL CENTER OVERSEAS', 'Neighborhood Hospitals', 'Newspaper', 'Newspaper Inserts', 'Outdoor Hoardings / Bus Shelters', 'Outreach Clinics', 'Radio', 'Referred by Doctor', 'Television', 'Theatre Ads', 'Treating Doctors (MIOT)', 'Word of mouth (colleagues, relatives, friends)', 'Others'].map(option => {
                       const isSelected = formData.whatInfluenced === option;
                       const label = option;
                       return (
@@ -854,7 +855,7 @@ export default function TakeSurvey() {
             >
               <div>
                 <h2 className="text-2xl font-bold text-slate-900 mb-2">16. How do you rate MIOT based on your Experience?</h2>
-                <p className="text-slate-600 mb-6">Please rate on a scale of 1 to 5, with 1 being the lowest and 5 being the highest.</p>
+                <p className="text-slate-600 mb-6">Please rate on a scale of 1 to 5, with 1 being the lowest and 5 being the highest. For the Convenience section only, 0 indicates Not Applicable.</p>
               </div>
 
               <CategoryRatingCard 
@@ -934,6 +935,7 @@ export default function TakeSurvey() {
                 value={formData.evalConv} 
                 onChange={(v) => setFormData({...formData, evalConv: v})} 
                 error={invalidFields.includes('evalConv')}
+                allowZero={true}
               />
 
             </motion.div>
@@ -1030,12 +1032,14 @@ export default function TakeSurvey() {
                         {[
                           'Empathetic nurses',
                           'Hassle free experience from appointment booking to consultation/discharge',
+                          'Neighborhood Hospital',
+                          'Others, if any',
                           'Responsible & Experienced support staff',
                           'Transparency in treatment, bills, etc',
                           'Treating Doctors',
                           'Treatment Outcome',
-                          'Trusted neighborhood hospital',
-                          'Others, if any'
+                          'Trusted Hospital',
+                          'ALL THE ABOVE'
                         ].map(option => {
                           const isSelected = formData.returnYesReasons.includes(option);
                           return (
@@ -1095,8 +1099,10 @@ export default function TakeSurvey() {
                           'Support staff (Security, PRO, etc)',
                           'Not my neighbourhood hospitals',
                           'Treatment Cost',
+                          'Higher Cost',
                           'Treatment outcome',
                           'Waiting time',
+                          'Travel Time',
                           'Billing',
                           'Insurance',
                           'Cleanliness & Hygiene',
