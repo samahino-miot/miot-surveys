@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
-import { useResponses, useSurveys } from '../hooks/useFirestore';
+import { useResponses, useSurveys, useUsers } from '../hooks/useFirestore';
 
 export default function EditorReports() {
   const navigate = useNavigate();
   const { responses, loading: responsesLoading } = useResponses();
   const { surveys, loading: surveysLoading } = useSurveys(false);
+  const { users } = useUsers();
   const [selectedEditorId, setSelectedEditorId] = useState<string | null>(null);
 
   const editorStats = responses.reduce((acc, response) => {
@@ -103,6 +104,42 @@ export default function EditorReports() {
           ) : (
             <div className="p-6 text-slate-500 text-center">No editor selected.</div>
           )}
+        </div>
+      </div>
+
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mb-8">
+        <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
+          Surveyor Daily Reports
+        </h2>
+        
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm text-slate-600">
+            <thead className="bg-slate-50 text-slate-700 font-medium border-b border-slate-200">
+              <tr>
+                <th className="px-6 py-4">Surveyor ID</th>
+                <th className="px-6 py-4">Date</th>
+                <th className="px-6 py-4">Count</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {Object.entries(responses.reduce((acc: Record<string, Record<string, number>>, r) => {
+                const surveyorId = r.editorId || 'Unknown';
+                const surveyorName = users.find(u => u.id === surveyorId)?.name || surveyorId;
+                if (!acc[surveyorName]) acc[surveyorName] = {};
+                const date = new Date(r.submittedAt instanceof Date ? r.submittedAt : (typeof r.submittedAt?.toDate === 'function' ? r.submittedAt.toDate() : new Date(r.submittedAt))).toLocaleDateString();
+                acc[surveyorName][date] = (acc[surveyorName][date] || 0) + 1;
+                return acc;
+              }, {})).flatMap(([surveyor, dates]) => 
+                Object.entries(dates).map(([date, count]) => ({ surveyor, date, count }))
+              ).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((report, idx) => (
+                <tr key={`${report.surveyor}-${report.date}-${idx}`} className="hover:bg-slate-50 transition-colors">
+                  <td className="px-6 py-4 font-medium text-slate-900">{report.surveyor}</td>
+                  <td className="px-6 py-4">{report.date}</td>
+                  <td className="px-6 py-4 font-bold text-teal-600">{report.count}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
