@@ -5,8 +5,8 @@ import { useAuth } from '../components/AuthProvider';
 
 export default function EditorReports() {
   const navigate = useNavigate();
-  const { currentUser } = useAuth();
-  const { users } = useUsers();
+  const { currentUser, loading: authLoading } = useAuth();
+  const { users, loading: usersLoading } = useUsers();
   
   const currentUserData = users.find(u => u.id === currentUser?.uid);
   const isEditor = currentUserData?.role === 'editor';
@@ -15,7 +15,7 @@ export default function EditorReports() {
   const { surveys, loading: surveysLoading } = useSurveys(false);
   const [selectedEditorId, setSelectedEditorId] = useState<string | null>(null);
 
-  const filteredResponses = isEditor ? responses.filter(r => r.editorId === currentUser?.uid) : responses;
+  const filteredResponses = responses;
 
   const editorStats = filteredResponses.reduce((acc, response) => {
     const editorId = response.editorId || 'unknown';
@@ -41,7 +41,7 @@ export default function EditorReports() {
     }
   }, [editorStats, selectedEditorId]);
 
-  if (responsesLoading || surveysLoading) {
+  if (authLoading || usersLoading || responsesLoading || surveysLoading) {
     return <div className="flex items-center justify-center min-h-[60vh]">Loading...</div>;
   }
 
