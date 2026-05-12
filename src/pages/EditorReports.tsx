@@ -11,11 +11,11 @@ export default function EditorReports() {
   const currentUserData = users.find(u => u.id === currentUser?.uid);
   const isEditor = currentUserData?.role === 'editor';
   
-  const { responses, loading: responsesLoading } = useResponses(undefined, isEditor ? currentUser?.uid : undefined);
+  const { responses, loading: responsesLoading } = useResponses();
   const { surveys, loading: surveysLoading } = useSurveys(false);
   const [selectedEditorId, setSelectedEditorId] = useState<string | null>(null);
 
-  const filteredResponses = responses; // Already filtered by useResponses hook if isEditor is true
+  const filteredResponses = isEditor ? responses.filter(r => r.editorId === currentUser?.uid) : responses;
 
   const editorStats = filteredResponses.reduce((acc, response) => {
     const editorId = response.editorId || 'unknown';
