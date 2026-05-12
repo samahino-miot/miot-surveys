@@ -334,8 +334,8 @@ export default function TakeSurvey() {
         surveyTitle: dbSurvey?.title || 'MIOT International Patient Experience Survey',
         answers: formData,
         submittedAt: serverTimestamp(),
-        editorId: adminUser?.id || currentUser?.uid || 'unknown',
-        editorName: adminUser?.name || currentUser?.displayName || currentUser?.email || 'Unknown'
+        editorId: currentUser?.uid || 'unknown',
+        editorName: currentUser?.displayName || currentUser?.email || 'Unknown'
       });
       setSubmitted(true);
     } catch (err) {
