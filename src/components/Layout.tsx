@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router';
-import { LayoutDashboard, Home, LogOut } from 'lucide-react';
+import { LayoutDashboard, Home, LogOut, ClipboardList } from 'lucide-react';
 import { useAuth } from './AuthProvider';
 import { logout } from '../firebase';
 
@@ -36,7 +36,7 @@ export default function Layout() {
                 )}
                 {(adminUser.role === 'admin' || adminUser.role === 'superadmin' || adminUser.role === 'editor') && (
                   <Link to="/admin/editor-reports" className={`flex items-center gap-2 text-sm font-medium ${location.pathname === '/admin/editor-reports' ? 'text-teal-600' : 'text-slate-500 hover:text-slate-900'}`}>
-                    <LayoutDashboard className="h-5 w-5 sm:h-4 sm:w-4" />
+                    <ClipboardList className="h-5 w-5 sm:h-4 sm:w-4" />
                     <span className="hidden sm:inline">Surveyor Reports</span>
                   </Link>
                 )}
