@@ -34,6 +34,12 @@ export default function Layout() {
                     <span className="hidden sm:inline">Survey Portal</span>
                   </Link>
                 )}
+                {(adminUser.role === 'admin' || adminUser.role === 'superadmin' || adminUser.role === 'editor') && (
+                  <Link to="/admin/editor-reports" className={`flex items-center gap-2 text-sm font-medium ${location.pathname === '/admin/editor-reports' ? 'text-teal-600' : 'text-slate-500 hover:text-slate-900'}`}>
+                    <LayoutDashboard className="h-5 w-5 sm:h-4 sm:w-4" />
+                    <span className="hidden sm:inline">Surveyor Reports</span>
+                  </Link>
+                )}
                 {(adminUser.role === 'admin' || adminUser.role === 'superadmin') && (
                   <Link to="/admin" className={`flex items-center gap-2 text-sm font-medium ${isAdminPath ? 'text-teal-600' : 'text-slate-500 hover:text-slate-900'}`}>
                     <LayoutDashboard className="h-5 w-5 sm:h-4 sm:w-4" />
@@ -64,15 +70,15 @@ export default function Layout() {
                 <Link to="/admin/surveys" className={`text-sm font-medium ${location.pathname.includes('/admin/surveys') ? 'text-teal-400' : 'text-slate-300 hover:text-white'}`}>
                   Manage Surveys
                 </Link>
+                {(adminUser.role === 'admin' || adminUser.role === 'superadmin' || adminUser.role === 'editor') && (
+                  <Link to="/admin/editor-reports" className={`text-sm font-medium ${location.pathname.includes('/admin/editor-reports') ? 'text-teal-400' : 'text-slate-300 hover:text-white'}`}>
+                    Surveyor Reports
+                  </Link>
+                )}
                 {(adminUser.role === 'admin' || adminUser.role === 'superadmin') && (
-                  <>
-                    <Link to="/admin/editor-reports" className={`text-sm font-medium ${location.pathname.includes('/admin/editor-reports') ? 'text-teal-400' : 'text-slate-300 hover:text-white'}`}>
-                      Surveyor Reports
-                    </Link>
-                    <Link to="/admin/users" className={`text-sm font-medium ${location.pathname.includes('/admin/users') ? 'text-teal-400' : 'text-slate-300 hover:text-white'}`}>
-                      User Management
-                    </Link>
-                  </>
+                  <Link to="/admin/users" className={`text-sm font-medium ${location.pathname.includes('/admin/users') ? 'text-teal-400' : 'text-slate-300 hover:text-white'}`}>
+                    User Management
+                  </Link>
                 )}
               </nav>
             </div>
