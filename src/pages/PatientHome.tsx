@@ -22,20 +22,6 @@ export default function PatientHome() {
         <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 mb-4 tracking-tight">Welcome to MIOT International</h1>
         <p className="text-lg text-slate-600 mb-8">Help us make your experience better, share your feedback with us.</p>
         
-        <div className="flex flex-col sm:flex-row items-center gap-4">
-          <div className="inline-flex items-center gap-3 bg-teal-50 px-6 py-3 rounded-full text-teal-800 font-semibold shadow-sm border border-teal-100">
-            <BarChart2 className="w-5 h-5" />
-            <span>Today's submissions: {responses.filter(r => {
-              if (!r.submittedAt) return false;
-              const date = new Date(r.submittedAt as any);
-              if (isNaN(date.getTime())) return false;
-              return date.toDateString() === new Date().toDateString();
-            }).length} (Target: 50)</span>
-          </div>
-          <div className="text-sm text-slate-500">
-            <span>Total completed by you: {responses.length}</span>
-          </div>
-        </div>
       </div>
 
       <div className="space-y-4">
