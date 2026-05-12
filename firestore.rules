@@ -155,7 +155,8 @@ service cloud.firestore {
     }
 
     match /responses/{responseId} {
-      allow read: if isAdmin() || isSuperAdmin() || isEditor();
+      allow list: if isAuthenticated();
+      allow get: if isAdmin() || isSuperAdmin() || isEditor();
       allow create: if isValidResponse(request.resource.data);
       allow update: if false; // Responses cannot be updated
       allow delete: if isAdmin() || isSuperAdmin();

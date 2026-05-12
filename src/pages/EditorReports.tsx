@@ -5,11 +5,10 @@ import { useAuth } from '../components/AuthProvider';
 
 export default function EditorReports() {
   const navigate = useNavigate();
-  const { currentUser, loading: authLoading } = useAuth();
+  const { currentUser, adminUser, loading: authLoading } = useAuth();
   const { users, loading: usersLoading } = useUsers();
   
-  const currentUserData = users.find(u => u.id === currentUser?.uid);
-  const isEditor = currentUserData?.role === 'editor';
+  const isEditor = adminUser?.role === 'editor';
   
   const { responses, loading: responsesLoading } = useResponses();
   const { surveys, loading: surveysLoading } = useSurveys(false);
