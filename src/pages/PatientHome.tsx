@@ -5,11 +5,11 @@ import { useAuth } from '../components/AuthProvider';
 
 export default function PatientHome() {
   const { surveys, loading: surveysLoading } = useSurveys(true);
-  const { currentUser, adminUser } = useAuth();
+  const { currentUser, adminUser, loading: authLoading } = useAuth();
   const editorId = adminUser?.id || currentUser?.uid;
   const { responses, loading: responsesLoading } = useResponses(undefined, editorId);
 
-  if (surveysLoading || responsesLoading) {
+  if (surveysLoading || responsesLoading || authLoading) {
     return <div className="flex items-center justify-center min-h-[60vh]">Loading...</div>;
   }
 
@@ -25,7 +25,10 @@ export default function PatientHome() {
         <div className="flex flex-col sm:flex-row items-center gap-4">
           <div className="inline-flex items-center gap-3 bg-teal-50 px-6 py-3 rounded-full text-teal-800 font-semibold shadow-sm border border-teal-100">
             <BarChart2 className="w-5 h-5" />
-            <span>Today's submissions: {responses.filter(r => new Date(r.submittedAt).toDateString() === new Date().toDateString()).length} (Target: 50)</span>
+            <span>Today's submissions: {responses.filter(r => {
+              const date = r.submittedAt instanceof Date ? r.submittedAt : (typeof r.submittedAt?.toDate === 'function' ? r.submittedAt.toDate() : new Date(r.submittedAt));
+              return date.toDateString() === new Date().toDateString();
+            }).length} (Target: 50)</span>
           </div>
           <div className="text-sm text-slate-500">
             <span>Total completed by you: {responses.length}</span>
