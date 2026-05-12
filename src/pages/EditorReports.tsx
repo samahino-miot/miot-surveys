@@ -1,15 +1,24 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useResponses, useSurveys, useUsers } from '../hooks/useFirestore';
+import { useAuth } from '../components/AuthProvider';
 
 export default function EditorReports() {
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
   const { responses, loading: responsesLoading } = useResponses();
   const { surveys, loading: surveysLoading } = useSurveys(false);
   const { users } = useUsers();
   const [selectedEditorId, setSelectedEditorId] = useState<string | null>(null);
 
-  const editorStats = responses.reduce((acc, response) => {
+  const currentUserData = users.find(u => u.id === currentUser?.uid);
+  const isEditor = currentUserData?.role === 'editor';
+  
+  const filteredResponses = isEditor 
+    ? responses.filter(r => r.editorId === currentUser?.uid)
+    : responses;
+
+  const editorStats = filteredResponses.reduce((acc, response) => {
     const editorId = response.editorId || 'unknown';
     const editorName = response.editorName && response.editorName !== 'Unknown' ? response.editorName : 'Unknown (No Editor Info)';
     const survey = surveys.find(s => s.id === response.surveyId);
@@ -122,7 +131,7 @@ export default function EditorReports() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {Object.entries(responses.reduce((acc: Record<string, Record<string, number>>, r) => {
+              {Object.entries(filteredResponses.reduce((acc: Record<string, Record<string, number>>, r) => {
                 const surveyorId = r.editorId || 'Unknown';
                 const surveyorName = users.find(u => u.id === surveyorId)?.name || surveyorId;
                 if (!acc[surveyorName]) acc[surveyorName] = {};

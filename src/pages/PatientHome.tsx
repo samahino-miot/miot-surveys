@@ -26,7 +26,9 @@ export default function PatientHome() {
           <div className="inline-flex items-center gap-3 bg-teal-50 px-6 py-3 rounded-full text-teal-800 font-semibold shadow-sm border border-teal-100">
             <BarChart2 className="w-5 h-5" />
             <span>Today's submissions: {responses.filter(r => {
-              const date = r.submittedAt instanceof Date ? r.submittedAt : (typeof r.submittedAt?.toDate === 'function' ? r.submittedAt.toDate() : new Date(r.submittedAt));
+              if (!r.submittedAt) return false;
+              const date = new Date(r.submittedAt as any);
+              if (isNaN(date.getTime())) return false;
               return date.toDateString() === new Date().toDateString();
             }).length} (Target: 50)</span>
           </div>
