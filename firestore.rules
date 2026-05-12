@@ -117,15 +117,11 @@ service cloud.firestore {
     }
 
     function isValidResponse(data) {
-      return hasRequiredFields(['id', 'surveyId', 'patientName', 'patientEmail', 'patientPlace', 'answers', 'submittedAt']) &&
-             hasOnlyAllowedFields(['id', 'surveyId', 'patientName', 'patientEmail', 'patientPlace', 'answers', 'submittedAt']) &&
-             data.id is string && data.id.size() > 0 && data.id.size() < 100 &&
-             data.surveyId is string && data.surveyId.size() > 0 && data.surveyId.size() < 100 &&
-             data.patientName is string && data.patientName.size() > 0 && data.patientName.size() < 100 &&
-             isValidEmail(data.patientEmail) &&
-             data.patientPlace is string && data.patientPlace.size() < 100 &&
+      return hasRequiredFields(['surveyId', 'answers', 'submittedAt']) &&
+             hasOnlyAllowedFields(['surveyId', 'surveyTitle', 'answers', 'submittedAt', 'editorId', 'editorName']) &&
+             data.surveyId is string && data.surveyId.size() > 0 &&
              data.answers is map &&
-             isValidDateString(data.submittedAt);
+             (data.submittedAt is timestamp || isValidDateString(data.submittedAt));
     }
 
     // ===============================================================
