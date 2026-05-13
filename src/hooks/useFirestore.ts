@@ -46,7 +46,12 @@ export const useResponses = (surveyId?: string, editorId?: string) => {
     }
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SurveyResponse));
+      console.log('--- DEBUG: useResponses snapshot size:', snapshot.size);
+      const data = snapshot.docs.map(doc => {
+          const d = doc.data();
+          console.log('--- DEBUG: doc.id:', doc.id, 'data:', d);
+          return { id: doc.id, ...d } as SurveyResponse;
+      });
       setResponses(data);
       setLoading(false);
     }, (error) => {

@@ -14,6 +14,10 @@ export default function EditorReports() {
   const { surveys, loading: surveysLoading } = useSurveys(false);
   const [selectedEditorId, setSelectedEditorId] = useState<string | null>(null);
 
+  useEffect(() => {
+    console.log('--- DEBUG: EditorReports --- currentUser:', currentUser?.uid, 'responses:', responses, 'responsesLoading:', responsesLoading, 'adminUser:', adminUser, 'authLoading:', authLoading);
+  }, [currentUser, responses, responsesLoading, adminUser, authLoading]);
+
   const filteredResponses = responses;
 
   const editorStats = filteredResponses.reduce((acc, response) => {
