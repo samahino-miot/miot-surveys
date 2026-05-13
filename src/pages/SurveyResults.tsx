@@ -671,7 +671,6 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
           ...item,
           percentage: sumOfSelections > 0 ? ((item.value / sumOfSelections) * 100).toFixed(1) : '0.0'
         }))
-        .filter(d => d.value > 0)
         .sort((a, b) => b.value - a.value);
 
       if (data.length === 0) return <p className="text-slate-500 italic">No selections made.</p>;
@@ -749,30 +748,28 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
                 {responses
                   .map(r => {
                     const answers = r.answers || {};
-                    let otherValue = null;
-                    if (answers[q.id] === 'Others' || (Array.isArray(answers[q.id]) && answers[q.id].includes('Others'))) {
-                        // Quick lookup for standard key names
-                        const primaryKey = q.id === 'returnNoReasons' ? 'returnNoReasonOther' : q.id + 'Other';
-                        const alternativeKey = q.id === 'returnNoReasons' ? 'returnNoReasonother' : q.id + 'other';
-                        otherValue = answers[primaryKey] || answers[alternativeKey] || answers['Other'];
-
-                        // If still not found, robust search for any key containing 'Other' (case-insensitive)
-                        if (!otherValue) {
-                            const keys = Object.keys(answers);
-                            const otherKey = keys.find(k => k.toLowerCase().includes('other'));
-                            if (otherKey) {
-                                otherValue = answers[otherKey];
-                            }
-                        }
-                    }
-                    return { id: r.id, val: otherValue };
+                    const primaryKey = q.id === 'returnNoReasons' ? 'returnNoReasonOther' : q.id + 'Other';
+                    const alternativeKey = q.id === 'returnNoReasons' ? 'returnNoReasonother' : q.id + 'other';
+                    const val = answers[primaryKey] || answers[alternativeKey];
+                    return { id: r.id, val, key: answers[primaryKey] ? primaryKey : (answers[alternativeKey] ? alternativeKey : 'none') };
                   })
                   .filter(item => item.val && typeof item.val === 'string' && item.val.trim() !== '')
                   .map((item, idx) => (
                     <li key={idx} className="p-3 bg-slate-50 rounded-lg text-sm text-slate-700 italic border border-slate-100 flex justify-between">
                       <span>"{item.val}"</span>
+                      <span className="text-xs text-slate-400">({item.key})</span>
                     </li>
                   ))}
+                {responses
+                  .filter(r => {
+                    const answers = r.answers || {};
+                    const primaryKey = q.id === 'returnNoReasons' ? 'returnNoReasonOther' : q.id + 'Other';
+                    const alternativeKey = q.id === 'returnNoReasons' ? 'returnNoReasonother' : q.id + 'other';
+                    const val = answers[primaryKey] || answers[alternativeKey];
+                    return (answers[q.id] === 'Others' || (Array.isArray(answers[q.id]) && answers[q.id].includes('Others'))) && !(val && typeof val === 'string' && val.trim() !== '');
+                  }).length > 0 && responses
+                  .filter(r => (r.answers || {})[q.id === 'returnNoReasons' ? 'returnNoReasonOther' : q.id + 'Other']).length === 0 
+                  && <p className="text-sm text-slate-400 italic">No other responses provided.</p>}
               </ul>
             </div>
           )}
