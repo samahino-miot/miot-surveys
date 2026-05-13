@@ -15,8 +15,8 @@ export default function EditorReports() {
   const [selectedEditorId, setSelectedEditorId] = useState<string | null>(null);
 
   useEffect(() => {
-    console.log('--- DEBUG: EditorReports --- currentUser:', currentUser?.uid, 'responses:', responses, 'responsesLoading:', responsesLoading, 'adminUser:', adminUser, 'authLoading:', authLoading);
-  }, [currentUser, responses, responsesLoading, adminUser, authLoading]);
+    console.log('--- DEBUG: EditorReports --- currentUser:', currentUser?.uid, 'responses:', responses, 'responsesLoading:', responsesLoading, 'adminUser:', adminUser);
+  }, [currentUser, responses, responsesLoading, adminUser]);
 
   const filteredResponses = responses;
 
