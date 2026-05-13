@@ -67,6 +67,7 @@ export default function SurveyResults() {
     if (!responsesLoading) {
       setLastFetched(new Date());
     }
+    console.log('--- DEBUG: SurveyResults Responses:', responses);
   }, [responses, responsesLoading]);
 
   if (responsesLoading || surveysLoading) return <div className="text-center py-12">Loading...</div>;
@@ -532,7 +533,7 @@ export default function SurveyResults() {
                   outerRadius={80} 
                   paddingAngle={5} 
                   dataKey="value"
-                  label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
+                  label={({ percent }) => (percent * 100 < 1 ? '' : `${(percent * 100).toFixed(0)}%`)}
                   labelLine={false}
                 >
                   {data.map((_, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
@@ -625,19 +626,24 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
 
       // Filter to only include options defined in the survey
       const filteredData = Object.entries(counts)
-        .map(([name, value]) => {
+        .reduce((acc, [name, value]) => {
            // Normalize name to match the option provided in survey definition
            const matchedOption = q.options?.find((opt: string) => opt.toLowerCase().trim() === name.toLowerCase().trim());
-           return { name: matchedOption || name, value };
-        })
-        .reduce((acc, curr) => {
-          if (acc[curr.name]) {
-            acc[curr.name] += curr.value;
-          } else {
-            acc[curr.name] = curr.value;
-          }
-          return acc;
+           const key = matchedOption || name;
+           if (acc[key]) {
+             acc[key] += value;
+           } else {
+             acc[key] = value;
+           }
+           return acc;
         }, {} as Record<string, number>);
+      
+      // Ensure all options are included, even with 0 responses
+      q.options?.forEach((opt: string) => {
+        if (!filteredData[opt]) {
+          filteredData[opt] = 0;
+        }
+      });
       
       const dataForProcessing = Object.entries(filteredData)
         .map(([name, value]) => ({ name, value }));
@@ -716,7 +722,7 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
                   outerRadius={80} 
                   paddingAngle={5} 
                   dataKey="value"
-                  label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
+                  label={({ percent }) => (percent * 100 < 1 ? '' : `${(percent * 100).toFixed(0)}%`)}
                   labelLine={false}
                 >
                   {data.map((_, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
@@ -741,16 +747,32 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
               <h4 className="text-sm font-bold text-slate-900 mb-3">Other Responses</h4>
               <ul className="space-y-2">
                 {responses
-                  .map(r => (r.answers || {})[q.id === 'returnNoReasons' ? 'returnNoReasonOther' : q.id + 'Other'])
-                  .filter(val => val && typeof val === 'string' && val.trim() !== '')
-                  .map((val, idx) => (
-                    <li key={idx} className="p-3 bg-slate-50 rounded-lg text-sm text-slate-700 italic border border-slate-100">
-                      "{val}"
+                  .map(r => {
+                    const answers = r.answers || {};
+                    let otherValue = null;
+                    if (answers[q.id] === 'Others' || (Array.isArray(answers[q.id]) && answers[q.id].includes('Others'))) {
+                        // Quick lookup for standard key names
+                        const primaryKey = q.id === 'returnNoReasons' ? 'returnNoReasonOther' : q.id + 'Other';
+                        const alternativeKey = q.id === 'returnNoReasons' ? 'returnNoReasonother' : q.id + 'other';
+                        otherValue = answers[primaryKey] || answers[alternativeKey] || answers['Other'];
+
+                        // If still not found, robust search for any key containing 'Other' (case-insensitive)
+                        if (!otherValue) {
+                            const keys = Object.keys(answers);
+                            const otherKey = keys.find(k => k.toLowerCase().includes('other'));
+                            if (otherKey) {
+                                otherValue = answers[otherKey];
+                            }
+                        }
+                    }
+                    return { id: r.id, val: otherValue };
+                  })
+                  .filter(item => item.val && typeof item.val === 'string' && item.val.trim() !== '')
+                  .map((item, idx) => (
+                    <li key={idx} className="p-3 bg-slate-50 rounded-lg text-sm text-slate-700 italic border border-slate-100 flex justify-between">
+                      <span>"{item.val}"</span>
                     </li>
                   ))}
-                {responses
-                  .filter(r => (r.answers || {})[q.id === 'returnNoReasons' ? 'returnNoReasonOther' : q.id + 'Other']).length === 0 
-                  && <p className="text-sm text-slate-400 italic">No other responses provided.</p>}
               </ul>
             </div>
           )}
