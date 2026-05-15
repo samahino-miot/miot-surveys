@@ -137,7 +137,10 @@ export default function EditorReports() {
                 const surveyorId = r.editorId || 'Unknown';
                 const surveyorName = users.find(u => u.id === surveyorId)?.name || surveyorId;
                 if (!acc[surveyorName]) acc[surveyorName] = {};
-                const date = new Date(r.submittedAt instanceof Date ? r.submittedAt : (typeof r.submittedAt?.toDate === 'function' ? r.submittedAt.toDate() : new Date(r.submittedAt))).toLocaleDateString();
+                const submittedAtAny = r.submittedAt as any;
+                const dateObj = submittedAtAny instanceof Date ? submittedAtAny : 
+                               (typeof submittedAtAny.toDate === 'function' ? submittedAtAny.toDate() : new Date(submittedAtAny));
+                const date = dateObj.toLocaleDateString();
                 acc[surveyorName][date] = (acc[surveyorName][date] || 0) + 1;
                 return acc;
               }, {})).flatMap(([surveyor, dates]) => 

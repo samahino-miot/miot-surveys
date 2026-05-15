@@ -624,23 +624,55 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
         }
       });
 
-      // Filter to only include options defined in the survey
+      // Filter and Normalize options
+      const allowedPurposeOptions = ["First time consultation", "Second opinion", "Review", "For Admission", "MHC", "Investigations", "First time admission", "Second time admission or Above"];
       const filteredData = Object.entries(counts)
         .reduce((acc, [name, value]) => {
-           // Normalize name to match the option provided in survey definition
-           const matchedOption = q.options?.find((opt: string) => opt.toLowerCase().trim() === name.toLowerCase().trim());
-           const key = matchedOption || name;
+           let key = name;
+           if (q.id === 'purposeOfVisit') {
+              const lowerName = name.toLowerCase().trim();
+              
+              // Mapping logic for required options
+              if (lowerName.includes('second') && lowerName.includes('opinion')) {
+                key = 'Second opinion';
+              } else if (lowerName.includes('second') && lowerName.includes('admission')) {
+                key = 'Second time admission or Above';
+              } else if (lowerName.includes('first') && lowerName.includes('consultation')) {
+                key = 'First time consultation';
+              } else if (lowerName.includes('first') && lowerName.includes('admission')) {
+                key = 'First time admission';
+              } else if (lowerName.includes('admission')) {
+                key = 'For Admission';
+              } else if (lowerName.includes('review')) {
+                key = 'Review';
+              } else if (lowerName.includes('investigation')) {
+                key = 'Investigations';
+              } else if (lowerName.includes('mhc')) {
+                key = 'MHC';
+              } else {
+                return acc; // Ignore this option, it's not one of our allowed ones
+              }
+           }
+
+           // Check if the resulting key is allowed
+           if (q.id === 'purposeOfVisit' && !allowedPurposeOptions.includes(key)) {
+             return acc;
+           }
+
+           // Add to accumulator
            if (acc[key]) {
              acc[key] += value;
            } else {
              acc[key] = value;
            }
            return acc;
+
         }, {} as Record<string, number>);
       
       // Ensure all options are included, even with 0 responses
-      q.options?.forEach((opt: string) => {
-        if (!filteredData[opt]) {
+      const optionsToInclude = q.id === 'purposeOfVisit' ? allowedPurposeOptions : q.options;
+      optionsToInclude?.forEach((opt: string) => {
+        if (filteredData[opt] === undefined) {
           filteredData[opt] = 0;
         }
       });
@@ -766,7 +798,8 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
                     const primaryKey = q.id === 'returnNoReasons' ? 'returnNoReasonOther' : q.id + 'Other';
                     const alternativeKey = q.id === 'returnNoReasons' ? 'returnNoReasonother' : q.id + 'other';
                     const val = answers[primaryKey] || answers[alternativeKey];
-                    return (answers[q.id] === 'Others' || (Array.isArray(answers[q.id]) && answers[q.id].includes('Others'))) && !(val && typeof val === 'string' && val.trim() !== '');
+                    const answer = answers[q.id];
+                    return (answer === 'Others' || (Array.isArray(answer) && (answer as string[]).includes('Others'))) && !(val && typeof val === 'string' && val.trim() !== '');
                   }).length > 0 && responses
                   .filter(r => (r.answers || {})[q.id === 'returnNoReasons' ? 'returnNoReasonOther' : q.id + 'Other']).length === 0 
                   && <p className="text-sm text-slate-400 italic">No other responses provided.</p>}
