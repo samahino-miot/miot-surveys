@@ -450,6 +450,8 @@ export default function SurveyResults() {
           const normalized = raw.toLowerCase().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
           counts[normalized] = (counts[normalized] || 0) + 1;
         } else {
+          // If the patient didn't specify, we shouldn't show it as a hospital name,
+          // but the user seems to want to keep track of these as "Not specified"
           counts["Not specified"] = (counts["Not specified"] || 0) + 1;
         }
       });
@@ -473,13 +475,15 @@ export default function SurveyResults() {
             <ul className="space-y-2">
               {data.map(([name, count]) => (
                 <li key={name} className="flex justify-between items-center py-2 border-b border-slate-100">
-                  <span className={`font-bold ${name === "Not specified" ? "text-slate-400 italic" : "text-slate-800"}`}>{name}</span>
+                  <span className={`font-bold ${name === "Not specified" ? "text-slate-400 italic" : "text-slate-800"}`}>
+                    {name === "Not specified" ? "Not specified" : name}
+                  </span>
                   <span className="text-teal-600 font-bold">{count}</span>
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="text-center text-slate-500 italic py-4">No valid hospital names provided.</p>
+            <p className="text-center text-slate-500 italic py-4">No data available.</p>
           )}
         </div>
       );
@@ -652,10 +656,32 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
               } else {
                 return acc; // Ignore this option, it's not one of our allowed ones
               }
+           } else if (q.id === 'department') {
+              const lowerName = name.toLowerCase().trim();
+              const matchedDept = departments.find(d => lowerName.includes(d.toLowerCase()));
+              if (matchedDept) {
+                key = matchedDept;
+              } else {
+                return acc; // Ignore if not a valid department
+              }
+           } else if (q.id === 'specialitiesAssociated') {
+              const lowerName = name.toLowerCase().trim();
+              const matchedSpeciality = departments.find(d => lowerName.includes(d.toLowerCase()));
+              if (matchedSpeciality) {
+                key = matchedSpeciality;
+              } else {
+                return acc; // Ignore if not a valid speciality
+              }
            }
 
            // Check if the resulting key is allowed
            if (q.id === 'purposeOfVisit' && !allowedPurposeOptions.includes(key)) {
+             return acc;
+           }
+           if (q.id === 'department' && !departments.includes(key)) {
+             return acc;
+           }
+           if (q.id === 'specialitiesAssociated' && !departments.includes(key)) {
              return acc;
            }
 
@@ -670,7 +696,7 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
         }, {} as Record<string, number>);
       
       // Ensure all options are included, even with 0 responses
-      const optionsToInclude = q.id === 'purposeOfVisit' ? allowedPurposeOptions : q.options;
+      const optionsToInclude = q.id === 'purposeOfVisit' ? allowedPurposeOptions : (q.id === 'department' || q.id === 'specialitiesAssociated' ? departments : q.options);
       optionsToInclude?.forEach((opt: string) => {
         if (filteredData[opt] === undefined) {
           filteredData[opt] = 0;

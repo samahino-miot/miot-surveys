@@ -268,6 +268,14 @@ export default function TakeSurvey() {
         firstField?.focus();
         return;
       }
+      if (!formData.otherHospital) {
+        setError('Please select or enter the preferred alternative hospital.');
+        setInvalidFields(['otherHospital']);
+        const firstField = document.getElementById('otherHospital');
+        firstField?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        firstField?.focus();
+        return;
+      }
       if (formData.willReturn === 'Yes') {
         if (formData.returnYesReasons.length === 0) {
           setError('Please select at least one reason for returning.');
@@ -1177,9 +1185,9 @@ export default function TakeSurvey() {
                         control: (provided) => ({
                           ...provided,
                           borderRadius: '0.75rem',
-                          borderColor: '#cbd5e1',
+                          borderColor: invalidFields.includes('otherHospital') ? '#ef4444' : '#cbd5e1',
                           padding: '0.5rem',
-                          '&:hover': { borderColor: '#14b8a6' },
+                          '&:hover': { borderColor: invalidFields.includes('otherHospital') ? '#ef4444' : '#14b8a6' },
                           boxShadow: 'none',
                         }),
                         menuPortal: (provided) => ({ ...provided, zIndex: 9999 }),
