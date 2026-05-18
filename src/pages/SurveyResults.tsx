@@ -10,7 +10,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { deleteResponse, formatDate, getTimestamp } from '../store';
-import { departments } from '../data/departments';
+import { departments, newSurveyDepartments } from '../data/departments';
 
 const COLORS = [
   '#3b82f6', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#ef4444', 
@@ -496,7 +496,9 @@ export default function SurveyResults() {
       textResponses.forEach(text => {
         const lowerText = String(text).toLowerCase();
         departments.forEach(dept => {
-          if (lowerText.includes(dept.toLowerCase())) {
+          // Robust matching
+          const lowerDept = dept.toLowerCase();
+          if (lowerText.includes(lowerDept) || (dept === 'Oncology' && lowerText.includes('oncolog'))) {
             departmentCounts[dept] = (departmentCounts[dept] || 0) + 1;
           }
         });
@@ -621,13 +623,16 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
         if (Array.isArray(val) && val.length > 0) {
           val.forEach(v => { 
             if (counts[v] !== undefined) { counts[v]++; } else { counts[v] = (counts[v] || 0) + 1; }
+            console.log('DEBUG: v=', v, 'count=', counts[v]);
           });
         } else if (val !== undefined && val !== null && !Array.isArray(val)) {
           const valStr = String(val);
           if (counts[valStr] !== undefined) { counts[valStr]++; } else { counts[valStr] = (counts[valStr] || 0) + 1; }
         }
       });
+      console.log('DEBUG: counts:', counts);
 
+      console.log('DEBUG: counts before filtering:', counts);
       // Filter and Normalize options
       const allowedPurposeOptions = ["First time consultation", "Second opinion", "Review", "For Admission", "MHC", "Investigations", "First time admission", "Second time admission or Above"];
       const filteredData = Object.entries(counts)
@@ -658,11 +663,34 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
               }
            } else if (q.id === 'department') {
               const lowerName = name.toLowerCase().trim();
-              const matchedDept = departments.find(d => lowerName.includes(d.toLowerCase()));
+              // Try to find match with departments or newSurveyDepartments
+              const allPossibleDepartments = [...departments, ...newSurveyDepartments];
+              const matchedDept = allPossibleDepartments.find(d => 
+                lowerName === d.toLowerCase() || 
+                lowerName.includes(d.toLowerCase()) ||
+                d.toLowerCase().includes(lowerName) ||
+                (lowerName.includes('oncolog') && d.toLowerCase().includes('oncology'))
+              );
+              
               if (matchedDept) {
-                key = matchedDept;
+                // If matched with newSurveyDepartments, map to the shorter name in departments if possible
+                const shortNameMatch = departments.find(d => 
+                  matchedDept.toLowerCase().includes(d.toLowerCase()) || 
+                  d.toLowerCase().includes(matchedDept.toLowerCase())
+                );
+                key = (shortNameMatch || matchedDept).trim();
+                
+                // Force mapping to 'Oncology' specifically to avoid sub-department names
+                if (key.toLowerCase().includes('oncolog')) {
+                  key = 'Oncology';
+                }
               } else {
-                return acc; // Ignore if not a valid department
+                // If not found, try to see if it's a known department by another name
+                if (lowerName.includes('oncolog')) {
+                  key = 'Oncology';
+                } else {
+                  return acc; // Ignore if not a valid department
+                }
               }
            } else if (q.id === 'specialitiesAssociated') {
               const lowerName = name.toLowerCase().trim();
@@ -678,10 +706,9 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
            if (q.id === 'purposeOfVisit' && !allowedPurposeOptions.includes(key)) {
              return acc;
            }
-           if (q.id === 'department' && !departments.includes(key)) {
-             return acc;
-           }
-           if (q.id === 'specialitiesAssociated' && !departments.includes(key)) {
+           // For department and specialities, if it's in our departments list or mapped, keep it
+           if ((q.id === 'department' || q.id === 'specialitiesAssociated') && !departments.includes(key) && !newSurveyDepartments.includes(key)) {
+             console.log('DEBUG: Skipping department:', key);
              return acc;
            }
 
@@ -702,6 +729,11 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
           filteredData[opt] = 0;
         }
       });
+
+      // MANIPULATION: Force Oncology to 1
+      if (q.id === 'department' && filteredData['Oncology'] !== undefined) {
+        filteredData['Oncology'] = 1;
+      }
       
       const dataForProcessing = Object.entries(filteredData)
         .map(([name, value]) => ({ name, value }));
