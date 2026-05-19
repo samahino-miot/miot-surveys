@@ -67,7 +67,7 @@ export default function SurveyResults() {
     if (!responsesLoading) {
       setLastFetched(new Date());
     }
-    console.log('--- DEBUG: SurveyResults Responses:', responses);
+    console.log('--- DEBUG: All SurveyResponses:', JSON.stringify(responses, null, 2));
   }, [responses, responsesLoading]);
 
   if (responsesLoading || surveysLoading) return <div className="text-center py-12">Loading...</div>;
@@ -637,6 +637,7 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
       const allowedPurposeOptions = ["First time consultation", "Second opinion", "Review", "For Admission", "MHC", "Investigations", "First time admission", "Second time admission or Above"];
       const filteredData = Object.entries(counts)
         .reduce((acc, [name, value]) => {
+           console.log('DEBUG: Processing item:', name, value);
            let key = name;
            if (q.id === 'purposeOfVisit') {
               const lowerName = name.toLowerCase().trim();
@@ -659,56 +660,68 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
               } else if (lowerName.includes('mhc')) {
                 key = 'MHC';
               } else {
-                return acc; // Ignore this option, it's not one of our allowed ones
+                key = 'Others'; // Categorize unmatched as Others
               }
            } else if (q.id === 'department') {
               const lowerName = name.toLowerCase().trim();
               // Try to find match with departments or newSurveyDepartments
               const allPossibleDepartments = [...departments, ...newSurveyDepartments];
-              const matchedDept = allPossibleDepartments.find(d => 
-                lowerName === d.toLowerCase() || 
-                lowerName.includes(d.toLowerCase()) ||
-                d.toLowerCase().includes(lowerName) ||
-                (lowerName.includes('oncolog') && d.toLowerCase().includes('oncology'))
+              const baseName = lowerName.split('(')[0].trim();
+              
+              // 1. Try exact or start-of-string match with canonical departments first
+              let matchedDept = departments.find(d => 
+                baseName === d.toLowerCase() || 
+                d.toLowerCase().startsWith(baseName)
               );
+
+              // 2. If no match, try matching with newSurveyDepartments and map back to canonical
+              if (!matchedDept) {
+                const nsMatchedDept = newSurveyDepartments.find(d => 
+                  baseName === d.toLowerCase().split('(')[0].trim() ||
+                  d.toLowerCase().split('(')[0].trim().startsWith(baseName)
+                );
+                if (nsMatchedDept) {
+                    const idx = newSurveyDepartments.indexOf(nsMatchedDept);
+                    if (idx !== -1 && departments[idx]) {
+                        matchedDept = departments[idx];
+                    }
+                }
+              }
               
               if (matchedDept) {
-                // If matched with newSurveyDepartments, map to the shorter name in departments if possible
-                const shortNameMatch = departments.find(d => 
-                  matchedDept.toLowerCase().includes(d.toLowerCase()) || 
-                  d.toLowerCase().includes(matchedDept.toLowerCase())
-                );
-                key = (shortNameMatch || matchedDept).trim();
+                key = matchedDept;
                 
-                // Force mapping to 'Oncology' specifically to avoid sub-department names
+                // Force mapping to 'Oncology' specifically
                 if (key.toLowerCase().includes('oncolog')) {
                   key = 'Oncology';
                 }
               } else {
-                // If not found, try to see if it's a known department by another name
-                if (lowerName.includes('oncolog')) {
-                  key = 'Oncology';
-                } else {
-                  return acc; // Ignore if not a valid department
-                }
+                 // Try to catch variations
+                 if (lowerName.includes('oncolog')) {
+                   key = 'Oncology';
+                 } else {
+                   console.log('DEBUG: Skipping (no match):', name);
+                   return acc;
+                 }
               }
+              console.log('DEBUG: Mapped department:', name, '->', key);
+              console.log('DEBUG: departments.includes(key):', departments.includes(key));
            } else if (q.id === 'specialitiesAssociated') {
               const lowerName = name.toLowerCase().trim();
               const matchedSpeciality = departments.find(d => lowerName.includes(d.toLowerCase()));
               if (matchedSpeciality) {
                 key = matchedSpeciality;
               } else {
-                return acc; // Ignore if not a valid speciality
+                return acc;
               }
            }
 
-           // Check if the resulting key is allowed
-           if (q.id === 'purposeOfVisit' && !allowedPurposeOptions.includes(key)) {
+           // Check if the resulting key is allowed (allow "Others")
+           if (q.id === 'purposeOfVisit' && key !== 'Others' && !allowedPurposeOptions.includes(key)) {
              return acc;
            }
-           // For department and specialities, if it's in our departments list or mapped, keep it
-           if ((q.id === 'department' || q.id === 'specialitiesAssociated') && !departments.includes(key) && !newSurveyDepartments.includes(key)) {
-             console.log('DEBUG: Skipping department:', key);
+           // For department and specialities, if it's not in our departments list, skip it.
+           if ((q.id === 'department' || q.id === 'specialitiesAssociated') && !departments.includes(key)) {
              return acc;
            }
 
@@ -729,11 +742,6 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
           filteredData[opt] = 0;
         }
       });
-
-      // MANIPULATION: Force Oncology to 1
-      if (q.id === 'department' && filteredData['Oncology'] !== undefined) {
-        filteredData['Oncology'] = 1;
-      }
       
       const dataForProcessing = Object.entries(filteredData)
         .map(([name, value]) => ({ name, value }));
