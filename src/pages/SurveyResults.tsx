@@ -622,9 +622,17 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
         const answers = r.answers || {};
         const val = answers[q.id];
         if (Array.isArray(val) && val.length > 0) {
-          val.forEach(v => { 
-            if (counts[v] !== undefined) { counts[v]++; } else { counts[v] = (counts[v] || 0) + 1; }
-            console.log('DEBUG: v=', v, 'count=', counts[v]);
+          val.forEach(v => {
+            if (v === 'Others') {
+              const primaryKey = q.id + 'Other';
+              const alternativeKey = q.id + 'other';
+              const text = answers[primaryKey] || answers[alternativeKey];
+              if (text && typeof text === 'string' && text.trim() !== '') {
+                counts[v] = (counts[v] || 0) + 1;
+              }
+            } else {
+              if (counts[v] !== undefined) { counts[v]++; } else { counts[v] = (counts[v] || 0) + 1; }
+            }
           });
         } else if (val !== undefined && val !== null && !Array.isArray(val)) {
           const valStr = String(val);
@@ -665,63 +673,33 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
               }
            } else if (q.id === 'department') {
               const lowerName = name.toLowerCase().trim();
-              // Try to find match with departments or newSurveyDepartments
-              const allPossibleDepartments = [...departments, ...newSurveyDepartments];
-              const baseName = lowerName.split('(')[0].trim();
               
-              // 1. Try exact or start-of-string match with canonical departments first
-              let matchedDept = departments.find(d => 
-                baseName === d.toLowerCase() || 
-                d.toLowerCase().startsWith(baseName)
-              );
+              // Mapping old names to new canonical names
+              const mapping: Record<string, string> = {
+                'oncology': 'Oncology (Cancer diagnosis & treatment)',
+                'neurology & neurosciences': 'Neurology & Neuro surgery (Brain, spine & nerve care)',
+                'neurosurgery': 'Neurology & Neuro surgery (Brain, spine & nerve care)',
+                'cardiology': 'Cardiology – Adult (Heart & blood vessel care)',
+              };
+              
+              key = mapping[lowerName] || name;
 
-              // 2. If no match, try matching with newSurveyDepartments and map back to canonical
-              if (!matchedDept) {
-                const nsMatchedDept = newSurveyDepartments.find(d => 
-                  baseName === d.toLowerCase().split('(')[0].trim() ||
-                  d.toLowerCase().split('(')[0].trim().startsWith(baseName)
+              // Check if the resulting key is in the allowed departments list
+              if (!departments.includes(key)) {
+                // Try to find a partial match
+                const matchedDept = departments.find(d => 
+                   d.toLowerCase().includes(key.toLowerCase()) || 
+                   key.toLowerCase().includes(d.toLowerCase().split('(')[0].trim())
                 );
-                if (nsMatchedDept) {
-                    const idx = newSurveyDepartments.indexOf(nsMatchedDept);
-                    if (idx !== -1 && departments[idx]) {
-                        matchedDept = departments[idx];
-                    }
-                }
+                key = matchedDept || key;
               }
               
-              if (matchedDept) {
-                key = matchedDept;
-                
-                // Force mapping to 'Oncology' specifically
-                if (key.toLowerCase().includes('oncolog')) {
-                  key = 'Oncology';
-                }
-                // Combine Neurosurgery into Neurology & Neurosciences
-                if (key === 'Neurosurgery') {
-                  key = 'Neurology & Neurosciences';
-                }
-              } else {
-                 // Try to catch variations
-                 if (lowerName.includes('oncolog')) {
-                   key = 'Oncology';
-                 } else if (lowerName.includes('neurosurger')) {
-                   key = 'Neurology & Neurosciences';
-                 } else {
-                   console.log('DEBUG: Skipping (no match):', name);
-                   return acc;
-                 }
-              }
               console.log('DEBUG: Mapped department:', name, '->', key);
-              console.log('DEBUG: departments.includes(key):', departments.includes(key));
-           } else if (q.id === 'specialitiesAssociated') {
+             } else if (q.id === 'specialitiesAssociated') {
               const lowerName = name.toLowerCase().trim();
               const matchedSpeciality = departments.find(d => lowerName.includes(d.toLowerCase()));
               if (matchedSpeciality) {
                 key = matchedSpeciality;
-                // Combine Neurosurgery into Neurology & Neurosciences
-                if (key === 'Neurosurgery') {
-                  key = 'Neurology & Neurosciences';
-                }
               } else {
                 return acc;
               }
@@ -732,7 +710,7 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
              return acc;
            }
            // For department and specialities, if it's not in our departments list, skip it.
-           if ((q.id === 'department' || q.id === 'specialitiesAssociated') && !departments.includes(key) && key !== 'Neurology & Neurosciences') {
+           if ((q.id === 'department' || q.id === 'specialitiesAssociated') && !departments.includes(key)) {
              return acc;
            }
 
@@ -747,7 +725,7 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
         }, {} as Record<string, number>);
       
       // Ensure all options are included, even with 0 responses
-      const deptOptions = departments.filter(d => d !== 'Neurosurgery');
+      const deptOptions = departments;
       const optionsToInclude = q.id === 'purposeOfVisit' ? allowedPurposeOptions : (q.id === 'department' || q.id === 'specialitiesAssociated' ? deptOptions : q.options);
       optionsToInclude?.forEach((opt: string) => {
         if (filteredData[opt] === undefined) {
@@ -852,37 +830,32 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
             ))}
           </div>
           {q.options?.includes('Others') && (
-            <div className="mt-6 border-t border-slate-200 pt-4">
-              <h4 className="text-sm font-bold text-slate-900 mb-3">Other Responses</h4>
-              <ul className="space-y-2">
-                {responses
-                  .map(r => {
-                    const answers = r.answers || {};
-                    const primaryKey = q.id === 'returnNoReasons' ? 'returnNoReasonOther' : q.id + 'Other';
-                    const alternativeKey = q.id === 'returnNoReasons' ? 'returnNoReasonother' : q.id + 'other';
-                    const val = answers[primaryKey] || answers[alternativeKey];
-                    return { id: r.id, val, key: answers[primaryKey] ? primaryKey : (answers[alternativeKey] ? alternativeKey : 'none') };
-                  })
-                  .filter(item => item.val && typeof item.val === 'string' && item.val.trim() !== '')
-                  .map((item, idx) => (
-                    <li key={idx} className="p-3 bg-slate-50 rounded-lg text-sm text-slate-700 italic border border-slate-100 flex justify-between">
-                      <span>"{item.val}"</span>
-                      <span className="text-xs text-slate-400">({item.key})</span>
-                    </li>
-                  ))}
-                {responses
-                  .filter(r => {
-                    const answers = r.answers || {};
-                    const primaryKey = q.id === 'returnNoReasons' ? 'returnNoReasonOther' : q.id + 'Other';
-                    const alternativeKey = q.id === 'returnNoReasons' ? 'returnNoReasonother' : q.id + 'other';
-                    const val = answers[primaryKey] || answers[alternativeKey];
-                    const answer = answers[q.id];
-                    return (answer === 'Others' || (Array.isArray(answer) && (answer as string[]).includes('Others'))) && !(val && typeof val === 'string' && val.trim() !== '');
-                  }).length > 0 && responses
-                  .filter(r => (r.answers || {})[q.id === 'returnNoReasons' ? 'returnNoReasonOther' : q.id + 'Other']).length === 0 
-                  && <p className="text-sm text-slate-400 italic">No other responses provided.</p>}
-              </ul>
-            </div>
+            (() => {
+              const otherResponses = responses
+                .map(r => {
+                  const answers = r.answers || {};
+                  const primaryKey = q.id === 'returnNoReasons' ? 'returnNoReasonOther' : q.id + 'Other';
+                  const alternativeKey = q.id === 'returnNoReasons' ? 'returnNoReasonother' : q.id + 'other';
+                  const val = answers[primaryKey] || answers[alternativeKey];
+                  return { id: r.id, val, key: answers[primaryKey] ? primaryKey : (answers[alternativeKey] ? alternativeKey : 'none') };
+                })
+                .filter(item => item.val && typeof item.val === 'string' && item.val.trim() !== '');
+              
+              if (otherResponses.length === 0) return null;
+
+              return (
+                <div className="mt-6 border-t border-slate-200 pt-4">
+                  <h4 className="text-sm font-bold text-slate-900 mb-3">Other Responses</h4>
+                  <ul className="space-y-2">
+                    {otherResponses.map((item, idx) => (
+                      <li key={idx} className="p-3 bg-slate-50 rounded-lg text-sm text-slate-700 italic border border-slate-100 flex justify-between">
+                        <span>"{item.val}"</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })()
           )}
         </div>
       );
