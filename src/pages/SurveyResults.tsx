@@ -46,7 +46,8 @@ const hardcodedSurvey = {
     { id: 'willReturn', text: 'I will return to MIOT for further treatment', type: 'multiple_choice', options: ['Yes', 'No'] },
     { id: 'returnYesReasons', text: 'If YES, because of', type: 'checkbox', options: ['Empathetic nurses', 'Hassle free experience from appointment booking to consultation/discharge', 'Neighborhood Hospital', 'Others, if any', 'Responsible & Experienced support staff', 'Transparency in treatment, bills, etc', 'Treating Doctors', 'Treatment Outcome', 'Trusted Hospital', 'ALL THE ABOVE'] },
     { id: 'returnNoReasons', text: 'If NO, please specify', type: 'checkbox', options: ['Treating Doctors', 'Nurses', 'Support staff (Security, PRO, etc)', 'Not my neighbourhood hospitals', 'Treatment Cost', 'Higher Cost', 'Treatment outcome', 'Waiting time', 'Travel Time', 'Billing', 'Insurance', 'Cleanliness & Hygiene', 'Others'] },
-    { id: 'otherHospital', text: 'If not MIOT, which multispecialty or superspecialty hospital would you choose for your medical treatment?', type: 'text' }
+    { id: 'otherHospital', text: 'If not MIOT, which multispecialty or superspecialty hospital would you choose for your medical treatment?', type: 'text' },
+    { id: 'comments', text: '20. Suggestions or Comments', type: 'text' }
   ]
 };
 
@@ -695,10 +696,16 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
                 if (key.toLowerCase().includes('oncolog')) {
                   key = 'Oncology';
                 }
+                // Combine Neurosurgery into Neurology & Neurosciences
+                if (key === 'Neurosurgery') {
+                  key = 'Neurology & Neurosciences';
+                }
               } else {
                  // Try to catch variations
                  if (lowerName.includes('oncolog')) {
                    key = 'Oncology';
+                 } else if (lowerName.includes('neurosurger')) {
+                   key = 'Neurology & Neurosciences';
                  } else {
                    console.log('DEBUG: Skipping (no match):', name);
                    return acc;
@@ -711,6 +718,10 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
               const matchedSpeciality = departments.find(d => lowerName.includes(d.toLowerCase()));
               if (matchedSpeciality) {
                 key = matchedSpeciality;
+                // Combine Neurosurgery into Neurology & Neurosciences
+                if (key === 'Neurosurgery') {
+                  key = 'Neurology & Neurosciences';
+                }
               } else {
                 return acc;
               }
@@ -721,7 +732,7 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
              return acc;
            }
            // For department and specialities, if it's not in our departments list, skip it.
-           if ((q.id === 'department' || q.id === 'specialitiesAssociated') && !departments.includes(key)) {
+           if ((q.id === 'department' || q.id === 'specialitiesAssociated') && !departments.includes(key) && key !== 'Neurology & Neurosciences') {
              return acc;
            }
 
@@ -736,7 +747,8 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
         }, {} as Record<string, number>);
       
       // Ensure all options are included, even with 0 responses
-      const optionsToInclude = q.id === 'purposeOfVisit' ? allowedPurposeOptions : (q.id === 'department' || q.id === 'specialitiesAssociated' ? departments : q.options);
+      const deptOptions = departments.filter(d => d !== 'Neurosurgery');
+      const optionsToInclude = q.id === 'purposeOfVisit' ? allowedPurposeOptions : (q.id === 'department' || q.id === 'specialitiesAssociated' ? deptOptions : q.options);
       optionsToInclude?.forEach((opt: string) => {
         if (filteredData[opt] === undefined) {
           filteredData[opt] = 0;

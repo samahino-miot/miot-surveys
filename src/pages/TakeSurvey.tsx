@@ -86,7 +86,8 @@ export default function TakeSurvey() {
     returnYesOther: '',
     returnNoReasons: [] as string[],
     returnNoReasonOther: '',
-    otherHospital: ''
+    otherHospital: '',
+    comments: ''
   });
 
   const [currentStep, setCurrentStep] = useState(0);
@@ -1176,6 +1177,7 @@ export default function TakeSurvey() {
                         { label: 'MGM Healthcare', value: 'MGM Healthcare' },
                         { label: 'Kauvery Hospital', value: 'Kauvery Hospital' },
                         { label: 'Vijaya Hospital', value: 'Vijaya Hospital' },
+                        { label: 'Rela Hospital', value: 'Rela Hospital' },
                       ]}
                       value={formData.otherHospital ? { label: formData.otherHospital, value: formData.otherHospital } : null}
                       onChange={(option) => setFormData({...formData, otherHospital: option ? option.value : ''})}
@@ -1193,6 +1195,18 @@ export default function TakeSurvey() {
                         menuPortal: (provided) => ({ ...provided, zIndex: 9999 }),
                       }}
                     />
+                  </div>
+                  <div className="mt-8">
+                     <label className="block text-sm font-medium text-slate-700 mb-2">
+                       20. Suggestions or Comments
+                     </label>
+                     <textarea
+                       value={formData.comments}
+                       onChange={(e) => setFormData({...formData, comments: e.target.value})}
+                       placeholder="Please enter your suggestions or comments"
+                       className="w-full p-3 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all bg-white"
+                       rows={4}
+                     />
                   </div>
                 </div>
               </div>
