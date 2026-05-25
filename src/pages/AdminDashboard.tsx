@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { ErrorBoundary } from '../components/ErrorBoundary';
 import { useResponses, useSurveys } from '../hooks/useFirestore';
 import { getTimestamp, formatDate } from '../store';
 import { Users, FileText, Activity } from 'lucide-react';
@@ -43,7 +44,8 @@ export default function AdminDashboard() {
   const activeSurveysCount = allSurveys.filter(s => s.isActive).length;
 
   return (
-    <div className="space-y-8">
+    <ErrorBoundary>
+      <div className="space-y-8">
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Dashboard Overview</h1>
         <p className="text-slate-600 mt-1">Monitor survey performance and patient feedback.</p>
@@ -126,7 +128,8 @@ export default function AdminDashboard() {
             )}
           </div>
         </div>
+        </div>
       </div>
-    </div>
+    </ErrorBoundary>
   );
 }

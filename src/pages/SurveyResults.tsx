@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router';
+import { ErrorBoundary } from '../components/ErrorBoundary';
 import { useResponses, useSurveys } from '../hooks/useFirestore';
 import { useWindowWidth } from '../hooks/useWindowWidth';
 import { LocationHeatmap } from '../components/LocationHeatmap';
@@ -639,7 +640,7 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
           if (counts[valStr] !== undefined) { counts[valStr]++; } else { counts[valStr] = (counts[valStr] || 0) + 1; }
         }
       });
-      console.log('DEBUG: counts:', counts);
+      // console.log('DEBUG: counts:', counts);
 
       console.log('DEBUG: counts before filtering:', counts);
       // Filter and Normalize options
@@ -950,8 +951,9 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-2">
+    <ErrorBoundary>
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-2">
         <Link to="/admin/surveys" className="p-2 hover:bg-slate-200 rounded-full transition-colors text-slate-600 shrink-0">
           <ArrowLeft className="h-5 w-5" />
         </Link>
@@ -1185,7 +1187,8 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
             </div>
           </div>
         )}
+        </div>
       </div>
-    </div>
+    </ErrorBoundary>
   );
 }
