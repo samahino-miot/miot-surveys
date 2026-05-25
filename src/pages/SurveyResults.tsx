@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router';
 import { useResponses, useSurveys } from '../hooks/useFirestore';
 import { useWindowWidth } from '../hooks/useWindowWidth';
-import { LocationHeatmap } from '../components/LocationHeatmap';
 import { ArrowLeft, Download, FileText, ChevronLeft, ChevronRight, FileSpreadsheet, Trash2, MapPin } from 'lucide-react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Treemap } from 'recharts';
 import { motion } from 'motion/react';
@@ -1065,7 +1064,6 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
           <MapPin className="h-5 w-5 text-teal-600" />
           Patient Location Heatmap
         </h2>
-        <LocationHeatmap responses={responses} />
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">

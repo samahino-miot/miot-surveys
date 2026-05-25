@@ -25,7 +25,6 @@ import { AuthProvider } from './components/AuthProvider';
 export default function App() {
   // Force system redeploy
   return (
-    <ErrorBoundary>
       <AuthProvider>
         <BrowserRouter>
           <Routes>
@@ -53,6 +52,5 @@ export default function App() {
         </Routes>
         </BrowserRouter>
       </AuthProvider>
-    </ErrorBoundary>
   );
 }
