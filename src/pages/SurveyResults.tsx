@@ -68,7 +68,6 @@ export default function SurveyResults() {
     if (!responsesLoading) {
       setLastFetched(new Date());
     }
-    console.log('--- DEBUG: All SurveyResponses:', JSON.stringify(responses, null, 2));
   }, [responses, responsesLoading]);
 
   if (responsesLoading || surveysLoading) return <div className="text-center py-12">Loading...</div>;
@@ -76,14 +75,29 @@ export default function SurveyResults() {
   const dbSurvey = surveys.find(s => s.id === id);
   let survey = dbSurvey || (id === 'miot-registration-survey' ? hardcodedSurvey : null);
 
-  // If the survey is the hardcoded one but was saved to DB without questions, restore them
-  if (survey && survey.id === 'miot-registration-survey' && (!survey.questions || survey.questions.length === 0)) {
-    survey = { ...survey, questions: hardcodedSurvey.questions };
+  // If the survey has no questions, initialize them as an empty array to prevent crashes
+  if (survey && (!survey.questions || survey.questions.length === 0)) {
+     survey = { ...survey, questions: (id === 'miot-registration-survey' ? hardcodedSurvey.questions : []) };
   }
 
   if (!survey) return <div className="text-center py-12">Survey not found.</div>;
 
-  const sortedResponses = [...responses].sort((a, b) => getTimestamp(b.submittedAt) - getTimestamp(a.submittedAt));
+  const validResponses = responses.filter(r => {
+    if (!r || !r.id) return false;
+    return true;
+  });
+  
+  const sortedResponses = [...validResponses].sort((a, b) => {
+    try {
+      const timeA = getTimestamp(a.submittedAt || 0);
+      const timeB = getTimestamp(b.submittedAt || 0);
+      return timeB - timeA;
+    } catch (e) {
+      console.error('Error sorting responses:', e);
+      return 0;
+    }
+  });
+  
   const totalPages = Math.max(1, Math.ceil(sortedResponses.length / rowsPerPage));
   const paginatedResponses = sortedResponses.slice(
     (currentPage - 1) * rowsPerPage,
