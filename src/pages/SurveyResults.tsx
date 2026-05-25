@@ -507,6 +507,11 @@ export default function SurveyResults() {
       const textResponses = responses.map(r => (r.answers || {})[q.id]).filter(Boolean);
       
       const departmentCounts: Record<string, number> = {};
+      // Initialize all departments with 0 count
+      departments.forEach(dept => {
+        departmentCounts[dept] = 0;
+      });
+
       textResponses.forEach(text => {
         const lowerText = String(text).toLowerCase();
         departments.forEach(dept => {
@@ -520,14 +525,11 @@ export default function SurveyResults() {
 
       const data = Object.entries(departmentCounts)
         .sort((a, b) => b[1] - a[1])
-        .slice(0, 8)
         .map(([name, value]) => ({ 
           name, 
           value,
           percentage: textResponses.length > 0 ? ((value / textResponses.length) * 100).toFixed(1) : '0.0'
         }));
-
-      if (data.length === 0) return <p className="text-slate-500 italic">No responses.</p>;
 
       // Enhanced Donut Chart
       return (
@@ -553,7 +555,7 @@ export default function SurveyResults() {
                   outerRadius={80} 
                   paddingAngle={5} 
                   dataKey="value"
-                  label={({ percent }) => (percent * 100 < 1 ? '' : `${(percent * 100).toFixed(0)}%`)}
+                  label={({ percent }) => (percent * 100 < 5 ? '' : `${(percent * 100).toFixed(0)}%`)}
                   labelLine={false}
                 >
                   {data.map((_, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
