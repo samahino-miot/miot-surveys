@@ -26,8 +26,8 @@ export default function App() {
   // Force system redeploy
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <ErrorBoundary>
+      <ErrorBoundary>
+        <BrowserRouter>
           <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
@@ -51,8 +51,8 @@ export default function App() {
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
-        </ErrorBoundary>
-      </BrowserRouter>
+        </BrowserRouter>
+      </ErrorBoundary>
     </AuthProvider>
   );
 }

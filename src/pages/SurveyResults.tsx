@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router';
-import { ErrorBoundary } from '../components/ErrorBoundary';
 import { useResponses, useSurveys } from '../hooks/useFirestore';
 import { useWindowWidth } from '../hooks/useWindowWidth';
 import { LocationHeatmap } from '../components/LocationHeatmap';
@@ -951,7 +950,6 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
   };
 
   return (
-    <ErrorBoundary>
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-2">
         <Link to="/admin/surveys" className="p-2 hover:bg-slate-200 rounded-full transition-colors text-slate-600 shrink-0">
@@ -1189,6 +1187,5 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
         )}
         </div>
       </div>
-    </ErrorBoundary>
   );
 }
