@@ -51,8 +51,8 @@ service cloud.firestore {
     }
 
     function getUserData() {
-      let userDoc = isAuthenticated() ? get(/databases/$(database)/documents/users/$(request.auth.uid)) : null;
-      return userDoc != null ? userDoc.data : null;
+      let path = /databases/$(database)/documents/users/$(request.auth.uid);
+      return isAuthenticated() && exists(path) ? get(path).data : null;
     }
 
     function isAdmin() {
