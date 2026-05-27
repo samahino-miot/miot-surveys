@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { GoogleMap, useJsApiLoader } from '@react-google-maps/api';
-import { GoogleMapsOverlay } from '@deck.gl/google-maps';
-import { HeatmapLayer } from '@deck.gl/aggregation-layers';
+import { GoogleMap, useJsApiLoader, Marker, MarkerClusterer } from '@react-google-maps/api';
 import { SurveyResponse } from '../store';
 import pincodeData from '../data/pincodes.json';
 
@@ -36,6 +34,7 @@ export const LocationHeatmap = ({ responses }: { responses: SurveyResponse[] }) 
   useEffect(() => {
     if (!isLoaded || !window.google?.maps) return;
 
+    const geocoder = new window.google.maps.Geocoder();
     const processLocations = async () => {
       const newPoints: [number, number, number][] = [];
       const locationCounts: Record<string, number> = {};
@@ -49,14 +48,32 @@ export const LocationHeatmap = ({ responses }: { responses: SurveyResponse[] }) 
         }
       });
 
-      // 2. Second pass: map pincodes to local coordinates
+      // 2. Second pass: geocode unique locations
+      const geocodeLocation = (address: string): Promise<any | null> => {
+        return new Promise((resolve) => {
+          geocoder.geocode({ address }, (results, status) => {
+            if (status === window.google.maps.GeocoderStatus.OK && results && results[0]) {
+              resolve(results[0]);
+            } else {
+              resolve(null);
+            }
+          });
+        });
+      };
+
       for (const key of Object.keys(locationCounts)) {
-        const [pinCode] = key.split('-');
+        const [pinCode, city, country] = key.split('-');
         
-        const coords = getLatLongFromPincode(pinCode);
-        if (coords) {
-          const [lat, lng] = coords;
-          newPoints.push([lat, lng, locationCounts[key]] as [number, number, number]);
+        // Always use Google Geocoder
+        try {
+          const result = await geocodeLocation(`${pinCode}, ${city}, ${country}`);
+          if (result) {
+            const lat = result.geometry.location.lat();
+            const lng = result.geometry.location.lng();
+            newPoints.push([lat, lng, locationCounts[key]] as [number, number, number]);
+          }
+        } catch (e) {
+          console.error('--- Geocoding error ---', e);
         }
       }
       setPoints(newPoints);
@@ -64,41 +81,6 @@ export const LocationHeatmap = ({ responses }: { responses: SurveyResponse[] }) 
 
     processLocations();
   }, [responses, isLoaded]);
-
-  useEffect(() => {
-    if (!map || points.length === 0) return;
-
-    try {
-      const heatmapLayer = new HeatmapLayer({
-        data: points.map(p => ({ position: [p[1], p[0]], weight: p[2] })),
-        getPosition: (d: any) => d.position,
-        getWeight: (d: any) => d.weight,
-        radiusPixels: 30,
-        intensity: 1,
-        threshold: 0.05,
-        colorRange: [
-          [0, 0, 255],      // Blue (Cold)
-          [0, 255, 255],    // Cyan
-          [0, 255, 0],      // Green
-          [255, 255, 0],    // Yellow
-          [255, 0, 0]       // Red (Hot)
-        ],
-      });
-
-      const overlay = new GoogleMapsOverlay({
-        layers: [heatmapLayer],
-      });
-
-      overlay.setMap(map);
-
-      return () => {
-        overlay.setMap(null);
-      };
-    } catch (error) {
-      console.error('Error setting up Deck.gl heatmap:', error);
-      return;
-    }
-  }, [map, points]);
 
   if (!isLoaded) return <div className="h-96 w-full flex items-center justify-center bg-slate-50 rounded-xl text-slate-500">Loading Map...</div>;
   if (points.length === 0) return <div className="h-96 w-full flex items-center justify-center bg-slate-50 rounded-xl text-slate-500">No location data available.</div>;
@@ -110,7 +92,15 @@ export const LocationHeatmap = ({ responses }: { responses: SurveyResponse[] }) 
         center={center}
         zoom={12}
         onLoad={(map) => setMap(map)}
-      />
+      >
+        <MarkerClusterer>
+          {(clusterer) =>
+            points.map((p, i) => (
+              <Marker key={i} position={{ lat: p[0], lng: p[1] }} clusterer={clusterer} />
+            ))
+          }
+        </MarkerClusterer>
+      </GoogleMap>
     </div>
   );
 };

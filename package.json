@@ -5,16 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite --port=3000 --host=0.0.0.0",
-    "build": "npx vite build",
+    "build": "VITE_GOOGLE_MAPS_API_KEY='AIzaSyAMmXz9boLCl8APH6nkEnBlxPO6ST0AlnE' vite build",
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit"
   },
   "dependencies": {
-    "@deck.gl/aggregation-layers": "^9.3.2",
-    "@deck.gl/core": "^9.3.2",
-    "@deck.gl/google-maps": "^9.3.2",
-    "@deck.gl/layers": "^9.3.2",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
@@ -24,7 +20,6 @@
     "@tailwindcss/vite": "^4.1.14",
     "@vitejs/plugin-react": "^5.0.4",
     "country-state-city": "^3.2.1",
-    "deck.gl": "^9.3.2",
     "dotenv": "^17.2.3",
     "express": "^4.21.2",
     "firebase": "^12.11.0",
