@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { GoogleMap, useJsApiLoader } from '@react-google-maps/api';
 import { SurveyResponse } from '../store';
 import pincodeData from '../data/pincodes.json';
@@ -22,7 +22,8 @@ const center = {
   lng: 80.2707,
 };
 
-const LIBRARIES: ("drawing" | "geometry" | "localContext" | "places" | "visualization")[] = ['visualization', 'places'];
+// We need to cast this because Libraries is a specific union of strings
+const LIBRARIES = ['visualization'] as any;
 
 export const LocationHeatmap = ({ responses }: { responses: SurveyResponse[] }) => {
   const [points, setPoints] = useState<[number, number, number][]>([]);
@@ -46,8 +47,8 @@ export const LocationHeatmap = ({ responses }: { responses: SurveyResponse[] }) 
       // 1. First pass: count locations (Pincode + City + Country)
       responses.forEach(r => {
         const { pinCode, city, country } = r.answers || {};
-        if (city && country) {
-          const key = `${pinCode || 'none'}-${city}-${country}`;
+        if (pinCode && city && country) {
+          const key = `${pinCode}-${city}-${country}`;
           locationCounts[key] = (locationCounts[key] || 0) + 1;
         }
       });
@@ -58,8 +59,7 @@ export const LocationHeatmap = ({ responses }: { responses: SurveyResponse[] }) 
         
         // Always use Google Geocoder
         try {
-          const address = `${pinCode ? pinCode + ', ' : ''}${city}, ${country}`;
-          const result = await geocoder.geocode({ address });
+          const result = await geocoder.geocode({ address: `${pinCode}, ${city}, ${country}` });
           if (result.results && result.results[0]) {
             const { lat, lng } = result.results[0].geometry.location;
             newPoints.push([lat(), lng(), locationCounts[key]] as [number, number, number]);

@@ -8,7 +8,6 @@ import { motion } from 'motion/react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
-import { LocationHeatmap } from '../components/LocationHeatmap';
 import { deleteResponse, formatDate, getTimestamp } from '../store';
 import { departments, newSurveyDepartments } from '../data/departments';
 
@@ -1067,7 +1066,6 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
           <MapPin className="h-5 w-5 text-teal-600" />
           Patient Location Heatmap
         </h2>
-        <LocationHeatmap responses={responses} />
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
