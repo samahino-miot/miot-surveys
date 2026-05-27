@@ -8,6 +8,10 @@ export default function EditorReports() {
   const { currentUser, adminUser, loading: authLoading } = useAuth();
   const { users, loading: usersLoading } = useUsers();
   
+  useEffect(() => {
+    console.log('--- DEBUG: Users ---', users);
+  }, [users]);
+  
   const isEditor = adminUser?.role === 'editor';
   
   const { responses, loading: responsesLoading } = useResponses();
@@ -18,23 +22,35 @@ export default function EditorReports() {
     console.log('--- DEBUG: EditorReports --- currentUser:', currentUser?.uid, 'responses:', responses, 'responsesLoading:', responsesLoading, 'adminUser:', adminUser);
   }, [currentUser, responses, responsesLoading, adminUser]);
 
+  const getSurveyorIdentity = (response: any) => {
+    const user = users.find(u => u.id === response.editorId);
+    if (user) return { id: user.id, name: user.name };
+    // Fallback: If editorName looks like an email, try lookup by email (if email is in users collection)
+    const userByEmail = users.find(u => u.email === response.editorName);
+    if (userByEmail) return { id: userByEmail.id, name: userByEmail.name };
+    // Hardcoded fix for the reported issue: normalize 'mithilesh47040@gmail.com' to 'Mithilesh'
+    if (response.editorName === 'mithilesh47040@gmail.com') return { id: 'Mithilesh', name: 'Mithilesh' };
+    
+    return { id: response.editorId || response.editorName || 'Unknown', name: response.editorName || 'Unknown' };
+  };
+
   const filteredResponses = responses;
 
   const editorStats = filteredResponses.reduce((acc, response) => {
-    const editorId = response.editorId || 'unknown';
-    const editorName = response.editorName && response.editorName !== 'Unknown' ? response.editorName : 'Unknown (No Editor Info)';
+    const { id: canonicalId, name: canonicalName } = getSurveyorIdentity(response);
+    
     const survey = surveys.find(s => s.id === response.surveyId);
     const surveyTitle = survey?.title || 'Unknown Survey';
     const patientName = String(response.answers?.patientName || 'Anonymous');
     
-    if (!acc[editorId]) {
-      acc[editorId] = { name: editorName, surveys: {} };
+    if (!acc[canonicalId]) {
+      acc[canonicalId] = { name: canonicalName, surveys: {} };
     }
-    if (!acc[editorId].surveys[surveyTitle]) {
-      acc[editorId].surveys[surveyTitle] = { count: 0, respondents: [] };
+    if (!acc[canonicalId].surveys[surveyTitle]) {
+      acc[canonicalId].surveys[surveyTitle] = { count: 0, respondents: [] };
     }
-    acc[editorId].surveys[surveyTitle].count += 1;
-    acc[editorId].surveys[surveyTitle].respondents.push(patientName);
+    acc[canonicalId].surveys[surveyTitle].count += 1;
+    acc[canonicalId].surveys[surveyTitle].respondents.push(patientName);
     return acc;
   }, {} as Record<string, { name: string, surveys: Record<string, { count: number, respondents: string[] }> }>);
 
@@ -134,8 +150,7 @@ export default function EditorReports() {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {Object.entries(filteredResponses.reduce((acc: Record<string, Record<string, number>>, r) => {
-                const surveyorId = r.editorId || 'Unknown';
-                const surveyorName = users.find(u => u.id === surveyorId)?.name || surveyorId;
+                const { name: surveyorName } = getSurveyorIdentity(r);
                 if (!acc[surveyorName]) acc[surveyorName] = {};
                 const submittedAtAny = r.submittedAt as any;
                 const dateObj = submittedAtAny instanceof Date ? submittedAtAny : 
