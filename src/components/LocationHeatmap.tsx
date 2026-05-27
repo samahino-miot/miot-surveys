@@ -22,7 +22,7 @@ const center = {
   lng: 80.2707,
 };
 
-const LIBRARIES: ("drawing" | "geometry" | "localContext" | "places" | "visualization")[] = ['visualization', 'places', 'geocoding'];
+const LIBRARIES: ("drawing" | "geometry" | "localContext" | "places" | "visualization")[] = ['visualization', 'places'];
 
 export const LocationHeatmap = ({ responses }: { responses: SurveyResponse[] }) => {
   const [points, setPoints] = useState<[number, number, number][]>([]);
