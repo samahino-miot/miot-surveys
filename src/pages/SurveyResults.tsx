@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router';
 import { useResponses, useSurveys } from '../hooks/useFirestore';
+import { LocationHeatmap } from '../components/LocationHeatmap';
+import { ErrorBoundary } from '../components/ErrorBoundary';
 import { useWindowWidth } from '../hooks/useWindowWidth';
 import { ArrowLeft, Download, FileText, ChevronLeft, ChevronRight, FileSpreadsheet, Trash2, MapPin } from 'lucide-react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Treemap } from 'recharts';
@@ -1066,6 +1068,9 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
           <MapPin className="h-5 w-5 text-teal-600" />
           Patient Location Heatmap
         </h2>
+        <ErrorBoundary fallback={<div className="h-96 w-full flex items-center justify-center bg-slate-50 rounded-xl text-slate-500">Map could not be loaded.</div>}>
+          <LocationHeatmap responses={validResponses} />
+        </ErrorBoundary>
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
