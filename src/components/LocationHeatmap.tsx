@@ -39,7 +39,6 @@ export const LocationHeatmap = ({ responses }: { responses: SurveyResponse[] }) 
       const newPoints: [number, number, number][] = [];
       const locationCounts: Record<string, number> = {};
 
-      // 1. First pass: count locations (Pincode + City + Country)
       responses.forEach(r => {
         const { pinCode, city, country } = r.answers || {};
         if (pinCode && city && country) {
@@ -48,7 +47,6 @@ export const LocationHeatmap = ({ responses }: { responses: SurveyResponse[] }) 
         }
       });
 
-      // 2. Second pass: geocode unique locations
       const geocodeLocation = (address: string): Promise<any | null> => {
         return new Promise((resolve) => {
           geocoder.geocode({ address }, (results, status) => {
@@ -64,7 +62,12 @@ export const LocationHeatmap = ({ responses }: { responses: SurveyResponse[] }) 
       for (const key of Object.keys(locationCounts)) {
         const [pinCode, city, country] = key.split('-');
         
-        // Always use Google Geocoder
+        const localCoords = getLatLongFromPincode(pinCode);
+        if (localCoords) {
+          newPoints.push([localCoords[0], localCoords[1], locationCounts[key]] as [number, number, number]);
+          continue;
+        }
+
         try {
           const result = await geocodeLocation(`${pinCode}, ${city}, ${country}`);
           if (result) {

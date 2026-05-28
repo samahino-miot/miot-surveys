@@ -474,7 +474,7 @@ export default function SurveyResults() {
       const data = Object.entries(counts).sort((a, b) => b[1] - a[1]);
       
       return (
-        <div className="space-y-6">
+        <div className="space-y-6 max-h-[600px] overflow-y-auto pr-2">
           <div className="flex items-center justify-between bg-slate-50 p-4 rounded-xl border border-slate-100 mb-2">
             <div>
               <p className="text-sm text-slate-500 font-medium mb-1">Total Responses</p>
@@ -885,11 +885,13 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
           {textResponses.length === 0 ? (
             <p className="text-slate-500 italic">No responses.</p>
           ) : (
-            textResponses.map((text, i) => (
-              <div key={i} className="p-4 bg-white rounded-xl border border-slate-200 shadow-sm text-slate-700 text-sm leading-relaxed">
-                "{text}"
-              </div>
-            ))
+            <div className={`${q.id === 'comments' ? 'max-h-[600px] overflow-y-auto' : ''} space-y-3 pr-2 border border-slate-100 rounded-xl p-2`}>
+              {textResponses.map((text, i) => (
+                <div key={i} className="p-4 bg-white rounded-xl border border-slate-200 shadow-sm text-slate-700 text-sm leading-relaxed">
+                  "{text}"
+                </div>
+              ))}
+            </div>
           )}
         </div>
       );
@@ -1015,10 +1017,13 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
                   q.id === 'otherHospital' ? 'Preferred Alternative Hospitals (if not MIOT)' :
                   q.id === 'returnYesReasons' ? 'I will return to MIOT for further treatment – YES, because of:' :
                   q.id === 'returnNoReason' ? 'I will not return to MIOT for further treatment – NO, because:' :
+                  q.id === 'comments' ? 'Suggestions or Comments' :
                   q.text
                 }
               </h3>
-              {renderChart(q, width)}
+              <div>
+                {renderChart(q, width)}
+              </div>
             </div>
           ))}
       </div>
