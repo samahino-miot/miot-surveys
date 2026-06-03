@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { saveSurvey, Survey, Question, QuestionType, QuestionCondition } from '../store';
-import { useSurveys } from '../hooks/useFirestore';
+import { useSurveys, useUsers } from '../hooks/useFirestore';
 import { generateSurveyFromText, generateSurveyFromFile } from '../lib/gemini';
-import { Plus, Trash2, GripVertical, Upload, Sparkles, Loader2, Eye, X } from 'lucide-react';
+import { Plus, Trash2, GripVertical, Upload, Sparkles, Loader2, Eye, X, Users } from 'lucide-react';
 import {
   DndContext,
   closestCenter,
@@ -167,13 +167,16 @@ export default function CreateSurvey() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const { surveys } = useSurveys();
+  const { users } = useUsers();
   
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [questions, setQuestions] = useState<Question[]>([]);
+  const [assignedSurveyors, setAssignedSurveyors] = useState<string[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState('');
   const [isPreview, setIsPreview] = useState(false);
+  const [showSurveyorModal, setShowSurveyorModal] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -202,6 +205,7 @@ export default function CreateSurvey() {
         setTitle(existing.title);
         setDescription(existing.description);
         setQuestions(existing.questions);
+        setAssignedSurveyors(existing.assignedSurveyorIds || []);
       }
     }
   }, [id, surveys]);
@@ -323,7 +327,8 @@ export default function CreateSurvey() {
       description,
       questions,
       createdAt: new Date().toISOString(),
-      isActive: true
+      isActive: true,
+      assignedSurveyorIds: assignedSurveyors
     };
 
     try {
@@ -417,18 +422,79 @@ export default function CreateSurvey() {
               {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
               {isGenerating ? 'Generating...' : 'Upload Document'}
             </button>
+            <button
+              onClick={() => {
+                setTitle('MIOT Liver Gym – Patient Feedback Form');
+                setDescription('');
+                setQuestions([
+                  { id: 'q1', text: 'Name', type: 'text', required: true },
+                  { id: 'q2', text: 'Mobile Number', type: 'text', required: true },
+                  { id: 'q3', text: 'MR Number', type: 'text', required: true },
+                  { id: 'q4', text: 'Date of Visit', type: 'date', required: true },
+                  { id: 'q5', text: 'What was the most beneficial aspect of the MIOT Liver Gym Programme?', type: 'checkbox', required: true, options: ['Health assessment and screening', 'Doctor consultation', 'Diet and nutrition guidance', 'Exercise and lifestyle advice', 'Overall awareness about liver health', 'Other (please specify)'] },
+                  { id: 'q6', text: 'Has the programme motivated you to make positive lifestyle changes?', type: 'multiple_choice', required: true, options: ['Yes', 'No', 'Partly'] },
+                  { id: 'q7', text: 'Would you continue to take care of your liver as advised by MIOT doctor?', type: 'multiple_choice', required: true, options: ['Yes', 'No', 'Not Sure'] },
+                  { id: 'q8', text: 'On a scale of 1 to 5, how satisfied are you with the MIOT Liver Gym Programme?', type: 'rating', required: true },
+                  { id: 'q9', text: 'Would you recommend the MIOT Liver-Gym Programme to your family and friends?', type: 'multiple_choice', required: true, options: ['Yes', 'No', 'Maybe'] },
+                  { id: 'q10', text: 'Would you be interested in attending future liver health programmes or follow-up sessions?', type: 'multiple_choice', required: true, options: ['Yes', 'No'] },
+                  { id: 'q11', text: 'How did you first hear about the MIOT Liver Gym Programme?', type: 'multiple_choice', required: true, options: ['Doctor recommendation', 'Newspaper advertisement', 'Social media / Website', 'Family/Friends', 'Apartment Posters', 'Corporate Led', 'Outdoor LED', 'Other (please specify)'] },
+                  { id: 'q12', text: 'Any additional comments or suggestions?', type: 'text', required: false }
+                ]);
+              }}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 font-medium rounded-lg hover:bg-slate-200 transition-colors mt-2"
+            >
+              Load MIOT Liver Gym Template
+            </button>
           </div>
         </div>
       </div>
 
-      <div className="space-y-4">
+      <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold text-slate-900">Questions</h2>
-        
-        <DndContext 
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
+        <button
+          onClick={() => setShowSurveyorModal(true)}
+          className="flex items-center gap-2 px-4 py-2 text-teal-600 font-medium bg-teal-50 hover:bg-teal-100 rounded-xl transition-colors"
         >
+          <Users className="h-4 w-4" />
+          Assign Surveyors ({assignedSurveyors.length})
+        </button>
+      </div>
+
+      {showSurveyorModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="bg-white w-full max-w-lg rounded-2xl p-6 shadow-xl space-y-4">
+            <h3 className="text-lg font-bold">Assign Surveyors</h3>
+            <div className="space-y-2 max-h-96 overflow-y-auto">
+              {users.filter(u => u.role !== 'superadmin').map(user => (
+                <label key={user.id} className="flex items-center gap-2 p-2 hover:bg-slate-50 rounded-lg">
+                  <input
+                    type="checkbox"
+                    checked={assignedSurveyors.includes(user.id)}
+                    onChange={(e) => {
+                      if (e.target.checked) setAssignedSurveyors([...assignedSurveyors, user.id]);
+                      else setAssignedSurveyors(assignedSurveyors.filter(id => id !== user.id));
+                    }}
+                    className="h-4 w-4 text-teal-600 rounded"
+                  />
+                  <span>{user.name} ({user.email})</span>
+                </label>
+              ))}
+            </div>
+            <button
+              onClick={() => setShowSurveyorModal(false)}
+              className="w-full py-2 bg-teal-600 text-white rounded-lg font-medium"
+            >
+              Done
+            </button>
+          </div>
+        </div>
+      )}
+      
+      <DndContext 
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
           <SortableContext 
             items={questions.map(q => q.id)}
             strategy={verticalListSortingStrategy}

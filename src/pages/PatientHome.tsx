@@ -4,9 +4,9 @@ import { useSurveys, useResponses } from '../hooks/useFirestore';
 import { useAuth } from '../components/AuthProvider';
 
 export default function PatientHome() {
-  const { surveys, loading: surveysLoading } = useSurveys(true);
   const { currentUser, adminUser, loading: authLoading } = useAuth();
   const editorId = adminUser?.id || currentUser?.uid;
+  const { surveys, loading: surveysLoading } = useSurveys(true, editorId);
   const { responses, loading: responsesLoading } = useResponses(undefined, editorId);
 
   if (surveysLoading || responsesLoading || authLoading) {

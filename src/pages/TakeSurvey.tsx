@@ -90,6 +90,8 @@ export default function TakeSurvey() {
     comments: ''
   });
 
+  const [liverAnswers, setLiverAnswers] = useState<Record<string, any>>({});
+
   const [currentStep, setCurrentStep] = useState(0);
   const [direction, setDirection] = useState(1);
   const [submitted, setSubmitted] = useState(false);
@@ -105,6 +107,152 @@ export default function TakeSurvey() {
   }
 
   const dbSurvey = surveys.find(s => s.id === surveyId);
+  
+  if (dbSurvey && dbSurvey.id === 'liver-gym-feedback-form') {
+    const handleInputChange = (id: string, value: any) => {
+      setLiverAnswers(prev => ({ ...prev, [id]: value }));
+    };
+
+    const submitSurvey = async () => {
+      setIsSubmitting(true);
+      try {
+        await addDoc(collection(db, 'responses'), {
+          surveyId: dbSurvey.id,
+          surveyTitle: dbSurvey.title,
+          answers: liverAnswers,
+          submittedAt: serverTimestamp(),
+          editorId: currentUser?.uid || 'unknown',
+          editorName: currentUser?.displayName || currentUser?.email || 'Unknown'
+        });
+        setSubmitted(true);
+      } catch (err) {
+        console.error(err);
+        setError('Failed to submit survey.');
+      } finally {
+        setIsSubmitting(false);
+      }
+    };
+
+    if (submitted) {
+      return (
+        <div className="min-h-[80vh] flex items-center justify-center px-4">
+          <motion.div 
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="max-w-lg w-full text-center py-16 px-8 bg-white rounded-3xl shadow-sm border border-slate-200"
+          >
+            <motion.div 
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+            >
+              <CheckCircle2 className="h-24 w-24 text-teal-500 mx-auto mb-6" />
+            </motion.div>
+            <h2 className="text-3xl font-bold text-slate-900 mb-4">Thank You!</h2>
+            <p className="text-lg text-slate-600 mb-8">Your feedback is incredibly valuable to us and helps improve patient care at MIOT International.</p>
+            <button 
+              onClick={() => navigate('/')}
+              className="px-8 py-4 bg-teal-600 text-white font-semibold rounded-xl hover:bg-teal-700 transition-colors shadow-sm"
+            >
+              Return to Home
+            </button>
+          </motion.div>
+        </div>
+      );
+    }
+
+    return (
+        <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="max-w-3xl mx-auto p-6 sm:p-10"
+        >
+            <h1 className="text-3xl font-bold text-slate-900 mb-2">{dbSurvey.title}</h1>
+            <p className="text-slate-600 mb-8">Please fill out the following questions to share your feedback.</p>
+            
+            <div className="space-y-6">
+                {dbSurvey.questions.map(q => (
+                    <div key={q.id} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                        <label className="block text-lg font-medium text-slate-900 mb-4">{q.text} {q.required && '*'}</label>
+                        
+                        {q.type === 'text' && (
+                            <input 
+                                type="text" 
+                                value={liverAnswers[q.id] || ''}
+                                onChange={(e) => handleInputChange(q.id, e.target.value)}
+                                className="w-full p-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-teal-500" 
+                            />
+                        )}
+                        {q.type === 'date' && (
+                            <input 
+                                type="date" 
+                                value={liverAnswers[q.id] || ''}
+                                onChange={(e) => handleInputChange(q.id, e.target.value)}
+                                className="w-full p-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-teal-500" 
+                            />
+                        )}
+                        {q.type === 'multiple_choice' && q.options?.map(o => (
+                            <label key={o} className="flex items-center gap-3 p-3 hover:bg-slate-50 rounded-lg cursor-pointer">
+                                <input 
+                                    type="radio" 
+                                    value={o} 
+                                    name={q.id}
+                                    checked={liverAnswers[q.id] === o}
+                                    onChange={() => handleInputChange(q.id, o)}
+                                    className="h-5 w-5 text-teal-600"
+                                />
+                                {o}
+                            </label>
+                        ))}
+                        {q.type === 'checkbox' && q.options?.map(o => (
+                            <label key={o} className="flex items-center gap-3 p-3 hover:bg-slate-50 rounded-lg cursor-pointer">
+                                <input 
+                                    type="checkbox" 
+                                    value={o} 
+                                    checked={(liverAnswers[q.id] || []).includes(o)}
+                                    onChange={(e) => {
+                                        const current = liverAnswers[q.id] || [];
+                                        const next = e.target.checked ? [...current, o] : current.filter((x: string) => x !== o);
+                                        handleInputChange(q.id, next);
+                                    }}
+                                    className="h-5 w-5 text-teal-600 rounded"
+                                />
+                                {o}
+                            </label>
+                        ))}
+                        {q.type === 'rating' && (
+                            <div className="flex gap-4">
+                                {[1, 2, 3, 4, 5].map(r => (
+                                    <button
+                                        key={r}
+                                        type="button"
+                                        onClick={() => handleInputChange(q.id, r)}
+                                        className={`h-12 w-12 rounded-xl font-bold text-lg transition-all ${
+                                            liverAnswers[q.id] === r 
+                                            ? 'bg-teal-600 text-white' 
+                                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                        }`}
+                                    >
+                                        {r}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                ))}
+                
+                <button 
+                  onClick={submitSurvey}
+                  disabled={isSubmitting}
+                  className="w-full py-4 bg-teal-600 text-white font-bold rounded-xl hover:bg-teal-700 transition-colors shadow-sm disabled:opacity-50"
+                >
+                  {isSubmitting ? 'Submitting...' : 'Submit Feedback'}
+                </button>
+            </div>
+        </motion.div>
+    );
+  }
+
   const isActive = dbSurvey ? dbSurvey.isActive : true; // Default to true if not in DB
 
   const countries = Country.getAllCountries().filter(c => !['Aland Islands', 'American Samoa', 'Anguilla', 'Antarctica'].includes(c.name));

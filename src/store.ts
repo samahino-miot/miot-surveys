@@ -75,6 +75,7 @@ export interface Survey {
   questions: Question[];
   createdAt: string;
   isActive: boolean;
+  assignedSurveyorIds?: string[];
 }
 
 export interface SurveyResponse {

@@ -4,14 +4,25 @@ import { db, auth } from '../firebase';
 import { Survey, SurveyResponse, User } from '../store';
 import { handleFirestoreError, OperationType } from '../lib/firebaseUtils';
 
-export const useSurveys = (activeOnly: boolean = false) => {
+export const useSurveys = (activeOnly: boolean = false, surveyorId?: string) => {
   const [surveys, setSurveys] = useState<Survey[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let q = collection(db, 'surveys');
+    const constraints = [];
+    
     if (activeOnly) {
-      q = query(q, where('isActive', '==', true)) as any;
+      constraints.push(where('isActive', '==', true));
+    }
+    
+    // If a surveyorId is provided, filter by it
+    if (surveyorId) {
+      constraints.push(where('assignedSurveyorIds', 'array-contains', surveyorId));
+    }
+
+    if (constraints.length > 0) {
+      q = query(q, ...constraints) as any;
     }
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -26,7 +37,7 @@ export const useSurveys = (activeOnly: boolean = false) => {
     });
 
     return unsubscribe;
-  }, [activeOnly]);
+  }, [activeOnly, surveyorId]);
 
   return { surveys, loading };
 };

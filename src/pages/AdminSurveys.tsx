@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router';
 import { useSurveys, useResponses } from '../hooks/useFirestore';
-import { BarChart2, CheckCircle2, XCircle } from 'lucide-react';
+import { BarChart2, CheckCircle2, XCircle, Plus } from 'lucide-react';
 import { saveSurvey, Survey } from '../store';
+import { seedLiverSurvey } from '../lib/seed';
 import ConfirmationModal from '../components/ConfirmationModal';
 
 export default function AdminSurveys() {
@@ -12,6 +13,12 @@ export default function AdminSurveys() {
   const [selectedSurveys, setSelectedSurveys] = useState<string[]>([]);
   const [surveyToToggle, setSurveyToToggle] = useState<Survey | null>(null);
   const [bulkToggleStatus, setBulkToggleStatus] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (!surveysLoading && !surveys.some(s => s.id === 'liver-gym-feedback-form')) {
+      seedLiverSurvey();
+    }
+  }, [surveys, surveysLoading]);
 
   if (surveysLoading || responsesLoading) {
     return <div className="flex items-center justify-center min-h-[60vh]">Loading...</div>;
@@ -99,6 +106,19 @@ export default function AdminSurveys() {
           <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Manage Surveys</h1>
           <p className="text-slate-600 mt-1">View and manage your surveys and their responses.</p>
         </div>
+        <Link 
+          to="/admin/surveys/create"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-teal-600 text-white font-medium rounded-xl hover:bg-teal-700 transition-colors"
+        >
+          <Plus className="h-5 w-5" />
+          Create New Survey
+        </Link>
+        <button 
+          onClick={async () => { await seedLiverSurvey(); alert('Updated!'); }}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-slate-600 text-white font-medium rounded-xl hover:bg-slate-700 transition-colors"
+        >
+          Refresh Liver Survey
+        </button>
         {selectedSurveys.length > 0 && (
           <div className="flex items-center gap-2 bg-slate-100 p-2 rounded-xl">
             <span className="text-sm font-medium text-slate-700 px-2">{selectedSurveys.length} selected</span>

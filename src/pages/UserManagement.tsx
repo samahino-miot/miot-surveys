@@ -1,17 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { saveUser, deleteUser, User } from '../store';
-import { useUsers } from '../hooks/useFirestore';
+import { saveUser, deleteUser, User, Survey, saveSurvey } from '../store';
+import { useUsers, useSurveys } from '../hooks/useFirestore';
 import { useAuth } from '../components/AuthProvider';
-import { Plus, Edit2, Trash2, Shield, AlertTriangle, CheckCircle2, X } from 'lucide-react';
+import { Plus, Edit2, Trash2, Shield, AlertTriangle, CheckCircle2, X, ClipboardList } from 'lucide-react';
 
 export default function UserManagement() {
-  const { users, loading } = useUsers();
+  const { users, loading: usersLoading } = useUsers();
+  const { surveys, loading: surveysLoading } = useSurveys();
   const { adminUser } = useAuth();
   const isSuperAdmin = adminUser?.role === 'superadmin';
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [tempAssignments, setTempAssignments] = useState<string[]>([]);
+  const [isAssignmentsModalOpen, setIsAssignmentsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [userToDelete, setUserToDelete] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const loading = usersLoading || surveysLoading;
 
   // Form state
   const [name, setName] = useState('');
@@ -43,9 +47,45 @@ export default function UserManagement() {
     setIsModalOpen(true);
   };
 
+  const openAssignmentsModal = (user: User) => {
+    setEditingUser(user);
+    setTempAssignments(surveys.filter(s => (s.assignedSurveyorIds || []).includes(user.id)).map(s => s.id));
+    setIsAssignmentsModalOpen(true);
+  };
+
   const closeModal = () => {
     setIsModalOpen(false);
+    setIsAssignmentsModalOpen(false);
     setEditingUser(null);
+    setTempAssignments([]);
+  };
+
+  const saveAssignments = async () => {
+    if (!editingUser) return;
+    
+    // Identified surveys that were previously assigned but now are not
+    const originalAssignments = surveys.filter(s => (s.assignedSurveyorIds || []).includes(editingUser.id)).map(s => s.id);
+    
+    // Surveys to remove
+    const toRemove = originalAssignments.filter(id => !tempAssignments.includes(id));
+    // Surveys to add
+    const toAdd = tempAssignments.filter(id => !originalAssignments.includes(id));
+
+    try {
+      for (const id of toRemove) {
+        const survey = surveys.find(s => s.id === id);
+        if (survey) await saveSurvey({ ...survey, assignedSurveyorIds: (survey.assignedSurveyorIds || []).filter(uid => uid !== editingUser.id) });
+      }
+      for (const id of toAdd) {
+        const survey = surveys.find(s => s.id === id);
+        if (survey) await saveSurvey({ ...survey, assignedSurveyorIds: [...(survey.assignedSurveyorIds || []), editingUser.id] });
+      }
+      showToast('Assignments saved successfully.');
+      closeModal();
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to save survey assignments.');
+    }
   };
 
   const handleSaveUser = async (e: React.FormEvent) => {
@@ -134,6 +174,51 @@ export default function UserManagement() {
                 className="px-4 py-2 bg-red-600 text-white font-medium hover:bg-red-700 rounded-xl transition-colors"
               >
                 Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isAssignmentsModalOpen && editingUser && (
+        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-lg w-full shadow-xl">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-slate-900">Manage Surveys for {editingUser.name}</h3>
+              <button onClick={closeModal} className="text-slate-400 hover:text-slate-600">
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <div className="space-y-2 max-h-96 overflow-y-auto pr-2">
+              {surveys.map(survey => (
+                <label key={survey.id} className="flex items-center gap-3 p-3 hover:bg-slate-50 rounded-lg cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={tempAssignments.includes(survey.id)}
+                    onChange={() => {
+                        setTempAssignments(prev => prev.includes(survey.id) ? prev.filter(id => id !== survey.id) : [...prev, survey.id]);
+                    }}
+                    className="h-5 w-5 text-teal-600 rounded"
+                  />
+                  <div>
+                    <p className="font-medium text-slate-900">{survey.title}</p>
+                  </div>
+                </label>
+              ))}
+            </div>
+            <div className="flex justify-end gap-3 mt-6">
+              <button 
+                onClick={closeModal}
+                className="px-4 py-2 text-slate-600 font-medium hover:bg-slate-100 rounded-xl transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={saveAssignments}
+                className="px-4 py-2 bg-teal-600 text-white font-medium hover:bg-teal-700 rounded-xl transition-colors"
+              >
+                Save
               </button>
             </div>
           </div>
@@ -288,6 +373,13 @@ export default function UserManagement() {
                     </td>
                     <td className="px-4 sm:px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-1 sm:gap-2">
+                        <button 
+                          onClick={() => openAssignmentsModal(user)}
+                          className="p-2 text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
+                          title="Manage Survey Assignments"
+                        >
+                          <ClipboardList className="h-5 w-5" />
+                        </button>
                         <button 
                           onClick={() => openModal(user)}
                           className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"

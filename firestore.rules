@@ -106,14 +106,18 @@ service cloud.firestore {
     }
 
     function isValidSurvey(data) {
-      return hasRequiredFields(['id', 'title', 'description', 'questions', 'createdAt', 'isActive']) &&
-             hasOnlyAllowedFields(['id', 'title', 'description', 'questions', 'createdAt', 'isActive']) &&
+      let allowedFields = ['id', 'title', 'description', 'questions', 'createdAt', 'isActive', 'assignedSurveyorIds'];
+      let requiredFields = ['id', 'title', 'description', 'questions', 'createdAt', 'isActive'];
+      
+      return data.keys().hasAll(requiredFields) &&
+             data.keys().hasOnly(allowedFields) &&
              data.id is string && data.id.size() > 0 && data.id.size() < 100 &&
              data.title is string && data.title.size() > 0 && data.title.size() < 200 &&
              data.description is string && data.description.size() < 1000 &&
              data.questions is list && data.questions.size() < 100 &&
              isValidDateString(data.createdAt) &&
-             data.isActive is bool;
+             data.isActive is bool &&
+             (data.assignedSurveyorIds is list || data.assignedSurveyorIds == null);
     }
 
     function isValidResponse(data) {
@@ -128,38 +132,47 @@ service cloud.firestore {
     // Rules
     // ===============================================================
 
-    match /users/{userId} {
-      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin() || isSuperAdmin());
-      
-      // A user can create their own pending profile, or a superadmin can create one
-      allow create: if isAuthenticated() && isValidUser(request.resource.data) && (
-        (isOwner(userId) && request.resource.data.id == userId && request.resource.data.role == 'admin' && request.resource.data.status == 'pending') ||
-        isSuperAdmin()
-      );
+    match /users {
+      allow read: if isAuthenticated();
+      match /{userId} {
+        allow read: if isAuthenticated();
+        
+        // A user can create their own pending profile, or a superadmin can create one
+        allow create: if isAuthenticated() && isValidUser(request.resource.data) && (
+          (isOwner(userId) && request.resource.data.id == userId && request.resource.data.role == 'admin' && request.resource.data.status == 'pending') ||
+          isSuperAdmin()
+        );
 
-      // A user can update their own profile (but not role/status), or a superadmin can update anything
-      allow update: if isAuthenticated() && isValidUser(request.resource.data) && (
-        (isOwner(userId) && request.resource.data.id == resource.data.id && request.resource.data.role == resource.data.role && request.resource.data.status == resource.data.status) ||
-        isSuperAdmin()
-      );
+        // A user can update their own profile (but not role/status), or a superadmin can update anything
+        allow update: if isAuthenticated() && isValidUser(request.resource.data) && (
+          (isOwner(userId) && request.resource.data.id == resource.data.id && request.resource.data.role == resource.data.role && request.resource.data.status == resource.data.status) ||
+          isSuperAdmin()
+        );
 
-      allow delete: if isSuperAdmin();
+        allow delete: if isSuperAdmin();
+      }
     }
 
-    match /surveys/{surveyId} {
-      allow read: if resource.data.isActive == true;
-      allow read: if isAdmin() || isSuperAdmin() || isEditor();
-      allow create: if (isAdmin() || isSuperAdmin() || isEditor()) && isValidSurvey(request.resource.data);
-      allow update: if (isAdmin() || isSuperAdmin() || isEditor()) && isValidSurvey(request.resource.data);
-      allow delete: if isAdmin() || isSuperAdmin();
+    match /surveys {
+      allow read: if isAuthenticated(); 
+      match /{surveyId} {
+        allow read: if isAdmin() || isSuperAdmin() || isEditor() ||
+                       (resource.data.isActive == true &&
+                        (resource.data.assignedSurveyorIds != null &&
+                         request.auth.uid in resource.data.assignedSurveyorIds));
+        allow create: if (isAdmin() || isSuperAdmin() || isEditor()) && isValidSurvey(request.resource.data);
+        allow update: if (isAdmin() || isSuperAdmin() || isEditor()) && isValidSurvey(request.resource.data);
+        allow delete: if isAdmin() || isSuperAdmin();
+      }
     }
 
-    match /responses/{responseId} {
-      allow list: if true;
-      allow get: if true;
-      allow create: if isValidResponse(request.resource.data);
-      allow update: if false; // Responses cannot be updated
-      allow delete: if isAdmin() || isSuperAdmin();
+    match /responses {
+      allow read: if isAuthenticated();
+      match /{responseId} {
+        allow create: if isValidResponse(request.resource.data);
+        allow update: if false; // Responses cannot be updated
+        allow delete: if isAdmin() || isSuperAdmin();
+      }
     }
   }
 }

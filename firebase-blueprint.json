@@ -37,7 +37,8 @@
           }
         },
         "createdAt": { "type": "string", "format": "date-time" },
-        "isActive": { "type": "boolean" }
+        "isActive": { "type": "boolean" },
+        "assignedSurveyorIds": { "type": "array", "items": { "type": "string" } }
       },
       "required": ["id", "title", "description", "questions", "createdAt", "isActive"]
     },
