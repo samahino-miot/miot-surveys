@@ -165,7 +165,7 @@ export default function TakeSurvey() {
         <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="max-w-3xl mx-auto p-6 sm:p-10"
+            className="max-w-3xl mx-auto px-2.5 sm:px-10 py-6 sm:p-10"
         >
             <h1 className="text-3xl font-bold text-slate-900 mb-2">{dbSurvey.title}</h1>
             <p className="text-slate-600 mb-8">Please fill out the following questions to share your feedback.</p>
@@ -191,35 +191,71 @@ export default function TakeSurvey() {
                                 className="w-full p-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-teal-500" 
                             />
                         )}
-                        {q.type === 'multiple_choice' && q.options?.map(o => (
-                            <label key={o} className="flex items-center gap-3 p-3 hover:bg-slate-50 rounded-lg cursor-pointer">
-                                <input 
-                                    type="radio" 
-                                    value={o} 
-                                    name={q.id}
-                                    checked={liverAnswers[q.id] === o}
-                                    onChange={() => handleInputChange(q.id, o)}
-                                    className="h-5 w-5 text-teal-600"
-                                />
-                                {o}
-                            </label>
-                        ))}
-                        {q.type === 'checkbox' && q.options?.map(o => (
-                            <label key={o} className="flex items-center gap-3 p-3 hover:bg-slate-50 rounded-lg cursor-pointer">
-                                <input 
-                                    type="checkbox" 
-                                    value={o} 
-                                    checked={(liverAnswers[q.id] || []).includes(o)}
-                                    onChange={(e) => {
-                                        const current = liverAnswers[q.id] || [];
-                                        const next = e.target.checked ? [...current, o] : current.filter((x: string) => x !== o);
-                                        handleInputChange(q.id, next);
-                                    }}
-                                    className="h-5 w-5 text-teal-600 rounded"
-                                />
-                                {o}
-                            </label>
-                        ))}
+                        {q.type === 'multiple_choice' && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                {q.options?.map(o => (
+                                    <label 
+                                        key={o} 
+                                        className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                                            liverAnswers[q.id] === o 
+                                            ? 'border-teal-600 bg-teal-50' 
+                                            : 'border-slate-200 hover:border-teal-300 hover:bg-slate-50'
+                                        }`}
+                                    >
+                                        <input 
+                                            type="radio" 
+                                            value={o} 
+                                            name={q.id}
+                                            checked={liverAnswers[q.id] === o}
+                                            onChange={() => handleInputChange(q.id, o)}
+                                            className="hidden"
+                                        />
+                                        <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                                            liverAnswers[q.id] === o ? 'border-teal-600' : 'border-slate-400'
+                                        }`}>
+                                            {liverAnswers[q.id] === o && <div className="h-2.5 w-2.5 rounded-full bg-teal-600" />}
+                                        </div>
+                                        <span className={`font-medium ${liverAnswers[q.id] === o ? 'text-teal-900' : 'text-slate-700'}`}>
+                                            {o}
+                                        </span>
+                                    </label>
+                                ))}
+                            </div>
+                        )}
+                        {q.type === 'checkbox' && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                {q.options?.map(o => (
+                                    <label 
+                                        key={o} 
+                                        className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                                            (liverAnswers[q.id] || []).includes(o)
+                                            ? 'border-teal-600 bg-teal-50' 
+                                            : 'border-slate-200 hover:border-teal-300 hover:bg-slate-50'
+                                        }`}
+                                    >
+                                        <input 
+                                            type="checkbox" 
+                                            value={o} 
+                                            checked={(liverAnswers[q.id] || []).includes(o)}
+                                            onChange={(e) => {
+                                                const current = liverAnswers[q.id] || [];
+                                                const next = e.target.checked ? [...current, o] : current.filter((x: string) => x !== o);
+                                                handleInputChange(q.id, next);
+                                            }}
+                                            className="hidden"
+                                        />
+                                        <div className={`h-5 w-5 rounded border-2 flex items-center justify-center transition-colors ${
+                                            (liverAnswers[q.id] || []).includes(o) ? 'bg-teal-600 border-teal-600' : 'border-slate-400'
+                                        }`}>
+                                            {(liverAnswers[q.id] || []).includes(o) && <Check className="h-3 w-3 text-white" />}
+                                        </div>
+                                        <span className={`font-medium ${(liverAnswers[q.id] || []).includes(o) ? 'text-teal-900' : 'text-slate-700'}`}>
+                                            {o}
+                                        </span>
+                                    </label>
+                                ))}
+                            </div>
+                        )}
                         {q.type === 'rating' && (
                             <div className="flex gap-4">
                                 {[1, 2, 3, 4, 5].map(r => (
@@ -592,7 +628,7 @@ export default function TakeSurvey() {
               animate="center"
               exit="exit"
               transition={{ duration: 0.3, ease: "easeInOut" }}
-              className="p-6 sm:p-10 xl:pb-0 space-y-6"
+              className="p-2.5 sm:p-10 xl:pb-0 space-y-6"
             >
               <h2 className="text-2xl font-bold text-slate-900 mb-6">Patient Details</h2>
               
@@ -743,7 +779,7 @@ export default function TakeSurvey() {
               animate="center"
               exit="exit"
               transition={{ duration: 0.3, ease: "easeInOut" }}
-              className="p-6 sm:p-10 space-y-6"
+              className="p-2.5 sm:p-10 space-y-6"
             >
               <h2 className="text-2xl font-bold text-slate-900 mb-6">Visit Details</h2>
               
@@ -1008,7 +1044,7 @@ export default function TakeSurvey() {
               animate="center"
               exit="exit"
               transition={{ duration: 0.3, ease: "easeInOut" }}
-              className="p-6 sm:p-10 space-y-8"
+              className="p-2.5 sm:p-10 space-y-8"
             >
               <div>
                 <h2 className="text-2xl font-bold text-slate-900 mb-2">16. How do you rate MIOT based on your Experience?</h2>

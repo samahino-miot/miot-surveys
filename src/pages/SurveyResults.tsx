@@ -52,6 +52,56 @@ const hardcodedSurvey = {
   ]
 };
 
+
+const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: number }) => {
+  const [showAll, setShowAll] = useState(false);
+  const sortedData = [...data].sort((a, b) => b.value - a.value);
+  const displayData = showAll ? sortedData : sortedData.slice(0, 5);
+  const hasMore = sortedData.length > 5;
+
+  return (
+    <div className="space-y-3">
+      {displayData.map((item, index) => {
+        const percentage = ((item.value / responseCount) * 100).toFixed(1);
+        const isTop = index === 0 && !showAll;
+        
+        return (
+          <motion.div 
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: index * 0.05 }}
+            key={item.name} 
+            className="space-y-1.5 p-3 rounded-xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100"
+          >
+            <div className="flex justify-between text-sm font-bold text-slate-800">
+              <span className="truncate pr-4 leading-tight">{item.name}</span>
+              <span className="font-mono text-slate-900 whitespace-nowrap">
+                {item.value} <span className="text-slate-400 font-normal">({percentage}%)</span>
+              </span>
+            </div>
+            <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${(item.value / responseCount) * 100}%` }}
+                transition={{ duration: 0.5, delay: index * 0.05 }}
+                className={`h-full rounded-full ${isTop ? 'bg-gradient-to-r from-teal-500 to-emerald-400' : 'bg-gradient-to-r from-blue-500 to-indigo-400'}`}
+              />
+            </div>
+          </motion.div>
+        );
+      })}
+      {hasMore && (
+        <button 
+          onClick={() => setShowAll(!showAll)}
+          className="w-full py-2 text-sm font-semibold text-teal-600 hover:text-teal-700 bg-teal-50 hover:bg-teal-100 rounded-lg transition-colors mt-2"
+        >
+          {showAll ? 'Show Fewer' : 'Show All Options'}
+        </button>
+      )}
+    </div>
+  );
+};
+
 export default function SurveyResults() {
   const { id } = useParams();
   const { responses, loading: responsesLoading } = useResponses(id || '');
@@ -456,6 +506,34 @@ export default function SurveyResults() {
   const renderChart = (q: any, width: number) => {
     if (responses.length === 0) return <p className="text-slate-500 italic">No responses yet.</p>;
 
+    if (
+      (q.id === 'q3' || q.text.includes('Date of Visit')) &&
+      id === 'liver-gym-feedback-form'
+    ) {
+      const dateCounts: Record<string, number> = {};
+      responses.forEach(r => {
+        const val = (r.answers || {})[q.id];
+        if (val) dateCounts[val] = (dateCounts[val] || 0) + 1;
+      });
+      const data = Object.entries(dateCounts)
+        .map(([name, value]) => ({ name, value }))
+        .sort((a, b) => new Date(a.name).getTime() - new Date(b.name).getTime());
+      
+      const totalResponses = responses.length;
+
+      return (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between bg-slate-50 p-4 rounded-xl border border-slate-100 mb-2">
+            <div>
+              <p className="text-sm text-slate-500 font-medium mb-1">Total Responses</p>
+              <p className="text-3xl font-bold text-slate-900">{totalResponses}</p>
+            </div>
+          </div>
+          <SurveyBarChart data={data} responseCount={totalResponses} />
+        </div>
+      );
+    }
+
     if (q.id === 'otherHospital') {
       const counts: Record<string, number> = {};
       
@@ -581,54 +659,6 @@ export default function SurveyResults() {
       );
     }
 
-const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: number }) => {
-  const [showAll, setShowAll] = useState(false);
-  const sortedData = [...data].sort((a, b) => b.value - a.value);
-  const displayData = showAll ? sortedData : sortedData.slice(0, 5);
-  const hasMore = sortedData.length > 5;
-
-  return (
-    <div className="space-y-3">
-      {displayData.map((item, index) => {
-        const percentage = ((item.value / responseCount) * 100).toFixed(1);
-        const isTop = index === 0 && !showAll;
-        
-        return (
-          <motion.div 
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: index * 0.05 }}
-            key={item.name} 
-            className="space-y-1.5 p-3 rounded-xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100"
-          >
-            <div className="flex justify-between text-sm font-bold text-slate-800">
-              <span className="truncate pr-4 leading-tight">{item.name}</span>
-              <span className="font-mono text-slate-900 whitespace-nowrap">
-                {item.value} <span className="text-slate-400 font-normal">({percentage}%)</span>
-              </span>
-            </div>
-            <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${(item.value / responseCount) * 100}%` }}
-                transition={{ duration: 0.5, delay: index * 0.05 }}
-                className={`h-full rounded-full ${isTop ? 'bg-gradient-to-r from-teal-500 to-emerald-400' : 'bg-gradient-to-r from-blue-500 to-indigo-400'}`}
-              />
-            </div>
-          </motion.div>
-        );
-      })}
-      {hasMore && (
-        <button 
-          onClick={() => setShowAll(!showAll)}
-          className="w-full py-2 text-sm font-semibold text-teal-600 hover:text-teal-700 bg-teal-50 hover:bg-teal-100 rounded-lg transition-colors mt-2"
-        >
-          {showAll ? 'Show Fewer' : 'Show All Options'}
-        </button>
-      )}
-    </div>
-  );
-};
 
 // ... inside renderChart function:
     if (q.type === 'multiple_choice' || q.type === 'checkbox') {
@@ -969,8 +999,8 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
   };
 
   return (
-      <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-2">
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-2">
         <Link to="/admin/surveys" className="p-2 hover:bg-slate-200 rounded-full transition-colors text-slate-600 shrink-0">
           <ArrowLeft className="h-5 w-5" />
         </Link>
@@ -1009,7 +1039,12 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         {survey.questions
-          .filter(q => !['evalCure', 'evalCare', 'evalCost', 'evalComm', 'evalComfort', 'evalConv'].includes(q.id))
+          .filter(q => {
+            if (id === 'liver-gym-feedback-form') {
+              if (q.text.includes('Name') || q.text.includes('Mobile Number') || q.text.includes('MR Number')) return false;
+            }
+            return !['evalCure', 'evalCare', 'evalCost', 'evalComm', 'evalComfort', 'evalConv'].includes(q.id);
+          })
           .map((q, i) => (
             <div key={q.id} className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200">
               <h3 className="font-semibold text-slate-900 mb-6 line-clamp-2" title={q.text}>
@@ -1028,6 +1063,7 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
           ))}
       </div>
 
+      {id !== 'liver-gym-feedback-form' && (
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mb-8">
         <h3 className="text-xl font-bold text-slate-900 mb-2">Patient Overall Experience</h3>
         <p className="text-teal-600 font-bold mb-6">Overall Average: {overallAverage} / 5.0</p>
@@ -1067,16 +1103,19 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
           </ResponsiveContainer>
         </div>
       </div>
+      )}
 
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mb-8">
-        <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
-          <MapPin className="h-5 w-5 text-teal-600" />
-          Patient Location Heatmap
-        </h2>
-        <ErrorBoundary fallback={<div className="h-96 w-full flex items-center justify-center bg-slate-50 rounded-xl text-slate-500">Map could not be loaded.</div>}>
-          <LocationHeatmap responses={validResponses} />
-        </ErrorBoundary>
-      </div>
+      {id !== 'liver-gym-feedback-form' && (
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mb-8">
+            <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
+              <MapPin className="h-5 w-5 text-teal-600" />
+              Patient Location Heatmap
+            </h2>
+            <ErrorBoundary fallback={<div className="h-96 w-full flex items-center justify-center bg-slate-50 rounded-xl text-slate-500">Map could not be loaded.</div>}>
+              <LocationHeatmap responses={validResponses} />
+            </ErrorBoundary>
+          </div>
+        )}
 
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="p-4 sm:p-6 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -1106,9 +1145,9 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
                   <input type="checkbox" checked={selectedResponses.length === sortedResponses.length && sortedResponses.length > 0} onChange={toggleSelectAll} className="rounded border-slate-300 text-teal-600 focus:ring-teal-500" />
                 </th>
                 <th className="px-6 py-4">Date</th>
-                <th className="px-6 py-4">Name</th>
-                <th className="px-6 py-4">Age</th>
-                <th className="px-6 py-4">City</th>
+                <th className="px-6 py-4">{survey.id === 'liver-gym-feedback-form' ? 'Name' : 'Name'}</th>
+                <th className="px-6 py-4">{survey.id === 'liver-gym-feedback-form' ? 'Mobile Number' : 'Age'}</th>
+                <th className="px-6 py-4">{survey.id === 'liver-gym-feedback-form' ? 'MR Number' : 'City'}</th>
                 <th className="px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
@@ -1127,9 +1166,9 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
                         <input type="checkbox" checked={isSelected} onChange={() => toggleSelectResponse(r.id)} className="rounded border-slate-300 text-teal-600 focus:ring-teal-500" />
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">{formatDate(r.submittedAt, true)}</td>
-                      <td className="px-6 py-4 font-medium text-slate-900">{answers.patientName || 'N/A'}</td>
-                      <td className="px-6 py-4">{answers.age || 'N/A'}</td>
-                      <td className="px-6 py-4">{answers.city || 'N/A'}</td>
+                      <td className="px-6 py-4 font-medium text-slate-900">{survey.id === 'liver-gym-feedback-form' ? (answers.q1 || 'N/A') : (answers.patientName || 'N/A')}</td>
+                      <td className="px-6 py-4">{survey.id === 'liver-gym-feedback-form' ? (answers.q2 || 'N/A') : (answers.age || 'N/A')}</td>
+                      <td className="px-6 py-4">{survey.id === 'liver-gym-feedback-form' ? (answers.q3 || 'N/A') : (answers.city || 'N/A')}</td>
                       <td className="px-6 py-4 text-right">
                         <button
                           onClick={() => handleDelete(r.id)}
@@ -1146,6 +1185,7 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
               )}
             </tbody>
           </table>
+        </div>
 
           {/* Mobile Card Layout */}
           <div className="sm:hidden divide-y divide-slate-200">
@@ -1160,10 +1200,10 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
                     <div className="flex items-start gap-3">
                       <input type="checkbox" checked={isSelected} onChange={() => toggleSelectResponse(r.id)} className="mt-1 rounded border-slate-300 text-teal-600 focus:ring-teal-500" />
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-slate-900 truncate">{answers.patientName || 'N/A'}</p>
+                        <p className="font-medium text-slate-900 truncate">{survey.id === 'liver-gym-feedback-form' ? (answers.q1 || 'N/A') : (answers.patientName || 'N/A')}</p>
                         <p className="text-sm text-slate-500">{formatDate(r.submittedAt, true)}</p>
                         <div className="mt-2 text-sm text-slate-600">
-                          <span className="font-medium">Age:</span> {answers.age || 'N/A'} | <span className="font-medium">City:</span> {answers.city || 'N/A'}
+                          <span className="font-medium">{survey.id === 'liver-gym-feedback-form' ? 'Mobile:' : 'Age:'}</span> {survey.id === 'liver-gym-feedback-form' ? (answers.q2 || 'N/A') : (answers.age || 'N/A')} | <span className="font-medium">{survey.id === 'liver-gym-feedback-form' ? 'MR:' : 'City:'}</span> {survey.id === 'liver-gym-feedback-form' ? (answers.q3 || 'N/A') : (answers.city || 'N/A')}
                         </div>
                       </div>
                       <button
@@ -1209,7 +1249,6 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
             </div>
           </div>
         )}
-        </div>
       </div>
   );
 }

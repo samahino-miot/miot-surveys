@@ -131,7 +131,7 @@ export default function AdminDashboard() {
                   <div key={response.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border border-slate-100 bg-slate-50">
                     <div>
                       <p className="font-medium text-slate-900">{survey?.title || 'Unknown Survey'}</p>
-                      <p className="text-sm text-slate-600 mt-1">From: {response.patientName || 'Anonymous'}</p>
+                      <p className="text-sm text-slate-600 mt-1">From: {response.surveyId === 'liver-gym-feedback-form' ? (response.answers?.q1 || 'Anonymous') : (response.patientName || 'Anonymous')}</p>
                       <p className="text-xs text-slate-500 mt-0.5">{formatDate(response.submittedAt, true)}</p>
                     </div>
                     <div className="text-sm font-medium text-teal-600 bg-teal-50 px-3 py-1 rounded-full self-start sm:self-auto">
