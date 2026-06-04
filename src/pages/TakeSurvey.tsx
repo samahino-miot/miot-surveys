@@ -134,17 +134,27 @@ export default function TakeSurvey() {
     };
 
     const submitSurvey = async () => {
+      const newInvalidFields: string[] = [];
       // Validate
       for (const q of dbSurvey.questions) {
         if (q.required) {
           const answer = surveyAnswers[q.id];
           if (answer === undefined || answer === null || answer === '' || (Array.isArray(answer) && answer.length === 0)) {
-            setError(`Please answer the required question: "${q.text}".`);
-            return;
+            newInvalidFields.push(q.id);
           }
         }
       }
       
+      if (newInvalidFields.length > 0) {
+        setInvalidFields(newInvalidFields);
+        setError("Please fill all required fields correctly.");
+        const firstField = document.getElementById(newInvalidFields[0]);
+        firstField?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+      
+      setInvalidFields([]);
+      setError('');
       setIsSubmitting(true);
       try {
         await addDoc(collection(db, 'responses'), {
@@ -203,8 +213,11 @@ export default function TakeSurvey() {
             
             <div className="space-y-6">
                 {dbSurvey.questions.map(q => (
-                    <div key={q.id} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                        <label className="block text-lg font-medium text-slate-900 mb-4">{q.text} {q.required && '*'}</label>
+                    <div id={q.id} key={q.id} className={`bg-white p-6 rounded-2xl shadow-sm border ${invalidFields.includes(q.id) ? 'border-red-500' : 'border-slate-200'}`}>
+                        <label className="block text-lg font-medium text-slate-900 mb-4">
+                            {q.text} {q.required && '*'}
+                            {invalidFields.includes(q.id) && <span className="text-red-500 text-sm ml-2 font-normal">(Required)</span>}
+                        </label>
                         
                         {q.type === 'text' && (
                             <input 
@@ -223,6 +236,7 @@ export default function TakeSurvey() {
                             />
                         )}
                         {q.type === 'multiple_choice' && (
+                            <>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 {q.options?.map(o => (
                                     <label 
@@ -252,8 +266,20 @@ export default function TakeSurvey() {
                                     </label>
                                 ))}
                             </div>
+                            {surveyAnswers[q.id] === 'Other (please specify)' && (
+                                <div className="mt-4">
+                                  <input
+                                    placeholder="Please specify"
+                                    value={surveyAnswers[q.id + 'Other'] || ''}
+                                    onChange={(e) => handleInputChange(q.id + 'Other', e.target.value)}
+                                    className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500"
+                                  />
+                                </div>
+                            )}
+                            </>
                         )}
                         {q.type === 'checkbox' && (
+                            <>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 {q.options?.map(o => (
                                     <label 
@@ -286,8 +312,20 @@ export default function TakeSurvey() {
                                     </label>
                                 ))}
                             </div>
+                            {(surveyAnswers[q.id] || []).includes('Other (please specify)') && (
+                                <div className="mt-4">
+                                  <input
+                                    placeholder="Please specify"
+                                    value={surveyAnswers[q.id + 'Other'] || ''}
+                                    onChange={(e) => handleInputChange(q.id + 'Other', e.target.value)}
+                                    className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500"
+                                  />
+                                </div>
+                            )}
+                            </>
                         )}
                         {q.type === 'rating' && (
+
                             <div className="flex gap-4">
                                 {[1, 2, 3, 4, 5].map(r => (
                                     <button

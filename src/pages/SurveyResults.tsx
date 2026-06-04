@@ -876,7 +876,7 @@ export default function SurveyResults() {
               </div>
             ))}
           </div>
-          {q.options?.includes('Others') && (
+          {q.options?.some(o => o === 'Others' || o === 'Other (please specify)') && (
             (() => {
               const otherResponses = responses
                 .map(r => {
