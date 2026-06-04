@@ -886,8 +886,9 @@ export default function SurveyResults() {
                   const answers = r.answers || {};
                   const primaryKey = q.id === 'returnNoReasons' ? 'returnNoReasonOther' : q.id + 'Other';
                   const alternativeKey = q.id === 'returnNoReasons' ? 'returnNoReasonother' : q.id + 'other';
-                  const val = answers[primaryKey] || answers[alternativeKey];
-                  return { id: r.id, val, key: answers[primaryKey] ? primaryKey : (answers[alternativeKey] ? alternativeKey : 'none') };
+                  const thirdKey = q.id + '_other';
+                  const val = answers[primaryKey] || answers[alternativeKey] || answers[thirdKey];
+                  return { id: r.id, val, key: answers[primaryKey] ? primaryKey : (answers[alternativeKey] ? alternativeKey : (answers[thirdKey] ? thirdKey : 'none')) };
                 })
                 .filter(item => item.val && typeof item.val === 'string' && item.val.trim() !== '');
               

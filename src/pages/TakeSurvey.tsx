@@ -178,6 +178,9 @@ export default function TakeSurvey() {
                 {dbSurvey.questions.map((q: any) => (
                     <div key={q.id} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
                         <label className="block text-lg font-medium text-slate-900 mb-4">{q.text} {q.required && '*'}</label>
+                        {q.type === 'checkbox' && (
+                            <p className="text-base text-slate-600 mb-4 font-medium">Choose one or more as appropriate.</p>
+                        )}
                         
                         {q.type === 'text' && (
                             <input 
@@ -224,6 +227,17 @@ export default function TakeSurvey() {
                                         </span>
                                     </label>
                                 ))}
+                                {liverAnswers[q.id] && liverAnswers[q.id].toLowerCase().includes('other') && (
+                                    <div className="col-span-1 md:col-span-2">
+                                        <input 
+                                            type="text" 
+                                            placeholder="Please specify"
+                                            value={liverAnswers[`${q.id}_other`] || ''}
+                                            onChange={(e: any) => handleInputChange(`${q.id}_other`, e.target.value)}
+                                            className="w-full p-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-teal-500"
+                                        />
+                                    </div>
+                                )}
                             </div>
                         )}
                         {q.type === 'checkbox' && (
@@ -258,6 +272,17 @@ export default function TakeSurvey() {
                                         </span>
                                     </label>
                                 ))}
+                                {(liverAnswers[q.id] || []).some((o: string) => o.toLowerCase().includes('other')) && (
+                                    <div className="col-span-1 md:col-span-2">
+                                        <input 
+                                            type="text" 
+                                            placeholder="Please specify"
+                                            value={liverAnswers[`${q.id}_other`] || ''}
+                                            onChange={(e: any) => handleInputChange(`${q.id}_other`, e.target.value)}
+                                            className="w-full p-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-teal-500"
+                                        />
+                                    </div>
+                                )}
                             </div>
                         )}
                         {q.type === 'rating' && (
