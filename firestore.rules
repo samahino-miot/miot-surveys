@@ -154,12 +154,9 @@ service cloud.firestore {
     }
 
     match /surveys {
-      allow read: if isAuthenticated(); 
+      allow read: if true; 
       match /{surveyId} {
-        allow read: if isAdmin() || isSuperAdmin() || isEditor() ||
-                       (resource.data.isActive == true &&
-                        (resource.data.assignedSurveyorIds != null &&
-                         request.auth.uid in resource.data.assignedSurveyorIds));
+        allow read: if true;
         allow create: if (isAdmin() || isSuperAdmin() || isEditor()) && isValidSurvey(request.resource.data);
         allow update: if (isAdmin() || isSuperAdmin() || isEditor()) && isValidSurvey(request.resource.data);
         allow delete: if isAdmin() || isSuperAdmin();

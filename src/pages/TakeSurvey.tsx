@@ -110,6 +110,10 @@ export default function TakeSurvey() {
 
   const dbSurvey = surveys.find(s => s.id === surveyId);
   
+  if (!dbSurvey) {
+    return <div className="text-center py-10 text-slate-500">Survey not found.</div>;
+  }
+
   if (dbSurvey.id === 'liver-gym-feedback-form') {
     // Liver Gym Logic
     const handleInputChange = (id: string, value: any) => {
