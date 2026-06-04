@@ -4,7 +4,7 @@ import { useResponses, useSurveys } from '../hooks/useFirestore';
 import { LocationHeatmap } from '../components/LocationHeatmap';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { useWindowWidth } from '../hooks/useWindowWidth';
-import { ArrowLeft, Download, FileText, ChevronLeft, ChevronRight, FileSpreadsheet, Trash2, MapPin } from 'lucide-react';
+import { ArrowLeft, Download, FileText, ChevronLeft, ChevronRight, FileSpreadsheet, Trash2, MapPin, Star } from 'lucide-react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Treemap } from 'recharts';
 import { motion } from 'motion/react';
 import jsPDF from 'jspdf';
@@ -617,7 +617,7 @@ export default function SurveyResults() {
           <div className="flex items-center justify-between bg-slate-50 p-4 rounded-xl border border-slate-100 mb-2">
             <div>
               <p className="text-sm text-slate-500 font-medium mb-1">Total Responses</p>
-              <p className="text-3xl font-bold text-slate-900">{textResponses.length}</p>
+              <p className="text-3xl font-bold text-slate-900">{id === 'liver-gym-feedback-form' || id === 'miot-registration-survey' ? responses.length : textResponses.length}</p>
             </div>
             <div className="text-right">
               <p className="text-sm text-slate-500 font-medium mb-1">Most Popular</p>
@@ -818,7 +818,7 @@ export default function SurveyResults() {
             <div className="flex items-center justify-between bg-slate-50 p-4 rounded-xl border border-slate-100 mb-2">
               <div>
                 <p className="text-sm text-slate-500 font-medium mb-1">Total Responses</p>
-                <p className="text-3xl font-bold text-slate-900">{q.type === 'checkbox' ? sumOfSelections : participantsWhoAnsweredThisQuestion}</p>
+                <p className="text-3xl font-bold text-slate-900">{id === 'liver-gym-feedback-form' || id === 'miot-registration-survey' ? responses.length : (q.type === 'checkbox' ? sumOfSelections : participantsWhoAnsweredThisQuestion)}</p>
               </div>
               <div className="text-right">
                 <p className="text-sm text-slate-500 font-medium mb-1">Most Popular</p>
@@ -838,7 +838,7 @@ export default function SurveyResults() {
           <div className="flex items-center justify-between bg-slate-50 p-4 rounded-xl border border-slate-100 mb-2">
             <div>
               <p className="text-sm text-slate-500 font-medium mb-1">Total Responses</p>
-              <p className="text-3xl font-bold text-slate-900">{q.type === 'checkbox' ? sumOfSelections : participantsWhoAnsweredThisQuestion}</p>
+              <p className="text-3xl font-bold text-slate-900">{id === 'liver-gym-feedback-form' || id === 'miot-registration-survey' ? responses.length : (q.type === 'checkbox' ? sumOfSelections : participantsWhoAnsweredThisQuestion)}</p>
             </div>
             <div className="text-right">
               <p className="text-sm text-slate-500 font-medium mb-1">Most Popular</p>
@@ -950,46 +950,39 @@ export default function SurveyResults() {
       const data = Object.entries(counts).map(([name, value]) => ({ name, value }));
       const average = responseCount > 0 ? (sum / responseCount).toFixed(1) : '0.0';
 
-      const CustomBarTooltip = ({ active, payload }: any) => {
-        if (active && payload && payload.length) {
-          return (
-            <div className="bg-white p-3 border border-slate-200 shadow-lg rounded-xl">
-              <p className="font-medium text-slate-900 mb-1">Rating: {payload[0].payload.name} Stars</p>
-              <p className="text-sm text-slate-600">Count: <span className="font-medium text-slate-900">{payload[0].value}</span></p>
-            </div>
-          );
-        }
-        return null;
-      };
-
       return (
         <div className="space-y-6">
           <div className="flex items-center justify-between bg-slate-50 p-4 rounded-xl border border-slate-100">
             <div>
               <p className="text-sm text-slate-500 font-medium mb-1">Total Ratings</p>
-              <p className="text-3xl font-bold text-slate-900">{responseCount}</p>
+              <p className="text-3xl font-bold text-slate-900">{id === 'liver-gym-feedback-form' || id === 'miot-registration-survey' ? responses.length : responseCount}</p>
             </div>
             <div className="text-right">
               <p className="text-sm text-slate-500 font-medium mb-1">Average Rating</p>
               <p className="text-3xl font-bold text-teal-600">{average} <span className="text-lg text-slate-400">/ 5</span></p>
             </div>
           </div>
-          <div className="h-64 sm:h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                <XAxis 
-                  dataKey="name" 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fill: '#64748b', fontSize: width < 640 ? 10 : 12 }} 
-                  interval={width < 640 ? 'preserveStartEnd' : 0}
-                />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
-                <Tooltip cursor={{ fill: '#f1f5f9' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                <Bar dataKey="value" fill="#0d9488" radius={[4, 4, 0, 0]} barSize={width < 640 ? 20 : 40} />
-              </BarChart>
-            </ResponsiveContainer>
+          <div className="space-y-3">
+            {[5, 4, 3, 2, 1].map(stars => {
+              const item = data.find(d => d.name === stars.toString());
+              const count = item ? item.value : 0;
+              return (
+                <div key={stars} className="flex items-center gap-3">
+                  <div className="flex items-center gap-1 w-40">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Star key={i} className={`h-6 w-6 ${i < stars ? 'text-amber-400 fill-amber-400' : 'text-slate-200'}`} />
+                    ))}
+                  </div>
+                  <div className="flex-1 h-3 bg-slate-200 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-amber-400 rounded-full" 
+                      style={{ width: `${responseCount > 0 ? (count / responseCount) * 100 : 0}%` }}
+                    />
+                  </div>
+                  <span className="text-xl font-bold text-slate-900 w-12 text-right">{count}</span>
+                </div>
+              );
+            })}
           </div>
         </div>
       );

@@ -216,6 +216,7 @@ export default function TakeSurvey() {
                     <div id={q.id} key={q.id} className={`bg-white p-6 rounded-2xl shadow-sm border ${invalidFields.includes(q.id) ? 'border-red-500' : 'border-slate-200'}`}>
                         <label className="block text-lg font-medium text-slate-900 mb-4">
                             {q.text} {q.required && '*'}
+                            {q.id === 'q5' && <span className="block text-sm font-normal text-slate-500 mt-1">(choose one or more as applicable)</span>}
                             {invalidFields.includes(q.id) && <span className="text-red-500 text-sm ml-2 font-normal">(Required)</span>}
                         </label>
                         

@@ -42,14 +42,6 @@ export default function AdminDashboard() {
 
   const activeSurveysCount = allSurveys.filter(s => s.isActive).length;
 
-  // Duplicate MR Check
-  const mrCounts = responses.reduce((acc, resp) => {
-    if (!resp.mrNo) return acc;
-    acc[resp.mrNo] = (acc[resp.mrNo] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
-  const duplicateMRs = Object.entries(mrCounts).filter(([_, count]) => count > 1);
-
   return (
     <div className="space-y-8">
       <div>
@@ -57,7 +49,7 @@ export default function AdminDashboard() {
         <p className="text-slate-600 mt-1">Monitor survey performance and patient feedback.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-4">
           <div className="h-12 w-12 bg-teal-100 text-teal-600 rounded-xl flex items-center justify-center">
             <FileText className="h-6 w-6" />
@@ -83,15 +75,6 @@ export default function AdminDashboard() {
           <div>
             <p className="text-sm font-medium text-slate-500">Active Surveys</p>
             <p className="text-2xl font-bold text-slate-900">{activeSurveysCount}</p>
-          </div>
-        </div>
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-4">
-          <div className="h-12 w-12 bg-rose-100 text-rose-600 rounded-xl flex items-center justify-center">
-            <Users className="h-6 w-6" />
-          </div>
-          <div>
-            <p className="text-sm font-medium text-slate-500">Duplicate MRs</p>
-            <p className="text-2xl font-bold text-slate-900">{duplicateMRs.length}</p>
           </div>
         </div>
       </div>
@@ -145,19 +128,6 @@ export default function AdminDashboard() {
         </div>
       </div>
       
-      {duplicateMRs.length > 0 && (
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-          <h2 className="text-lg font-bold text-rose-900 mb-4">Duplicate MR Numbers Found</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {duplicateMRs.map(([mr, count]) => (
-              <div key={mr} className="flex justify-between items-center p-3 bg-rose-50 rounded-lg">
-                <span className="font-mono text-rose-800 font-medium">{mr}</span>
-                <span className="font-bold text-rose-900">{count}x</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
