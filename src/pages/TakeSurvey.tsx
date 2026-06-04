@@ -90,7 +90,7 @@ export default function TakeSurvey() {
     comments: ''
   });
 
-  const [liverAnswers, setLiverAnswers] = useState<Record<string, any>>({});
+  const [surveyAnswers, setSurveyAnswers] = useState<Record<string, any>>({});
 
   const [currentStep, setCurrentStep] = useState(0);
   const [direction, setDirection] = useState(1);
@@ -108,9 +108,9 @@ export default function TakeSurvey() {
 
   const dbSurvey = surveys.find(s => s.id === surveyId);
   
-  if (dbSurvey && dbSurvey.id === 'liver-gym-feedback-form') {
+  if (dbSurvey && Array.isArray(dbSurvey.questions) && dbSurvey.questions.length > 0) {
     const handleInputChange = (id: string, value: any) => {
-      setLiverAnswers(prev => ({ ...prev, [id]: value }));
+      setSurveyAnswers(prev => ({ ...prev, [id]: value }));
     };
 
     const submitSurvey = async () => {
@@ -119,7 +119,7 @@ export default function TakeSurvey() {
         await addDoc(collection(db, 'responses'), {
           surveyId: dbSurvey.id,
           surveyTitle: dbSurvey.title,
-          answers: liverAnswers,
+          answers: surveyAnswers,
           submittedAt: serverTimestamp(),
           editorId: currentUser?.uid || 'unknown',
           editorName: currentUser?.displayName || currentUser?.email || 'Unknown'
@@ -178,7 +178,7 @@ export default function TakeSurvey() {
                         {q.type === 'text' && (
                             <input 
                                 type="text" 
-                                value={liverAnswers[q.id] || ''}
+                                value={surveyAnswers[q.id] || ''}
                                 onChange={(e) => handleInputChange(q.id, e.target.value)}
                                 className="w-full p-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-teal-500" 
                             />
@@ -186,7 +186,7 @@ export default function TakeSurvey() {
                         {q.type === 'date' && (
                             <input 
                                 type="date" 
-                                value={liverAnswers[q.id] || ''}
+                                value={surveyAnswers[q.id] || ''}
                                 onChange={(e) => handleInputChange(q.id, e.target.value)}
                                 className="w-full p-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-teal-500" 
                             />
@@ -197,7 +197,7 @@ export default function TakeSurvey() {
                                     <label 
                                         key={o} 
                                         className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                                            liverAnswers[q.id] === o 
+                                            surveyAnswers[q.id] === o 
                                             ? 'border-teal-600 bg-teal-50' 
                                             : 'border-slate-200 hover:border-teal-300 hover:bg-slate-50'
                                         }`}
@@ -206,16 +206,16 @@ export default function TakeSurvey() {
                                             type="radio" 
                                             value={o} 
                                             name={q.id}
-                                            checked={liverAnswers[q.id] === o}
+                                            checked={surveyAnswers[q.id] === o}
                                             onChange={() => handleInputChange(q.id, o)}
                                             className="hidden"
                                         />
                                         <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                                            liverAnswers[q.id] === o ? 'border-teal-600' : 'border-slate-400'
+                                            surveyAnswers[q.id] === o ? 'border-teal-600' : 'border-slate-400'
                                         }`}>
-                                            {liverAnswers[q.id] === o && <div className="h-2.5 w-2.5 rounded-full bg-teal-600" />}
+                                            {surveyAnswers[q.id] === o && <div className="h-2.5 w-2.5 rounded-full bg-teal-600" />}
                                         </div>
-                                        <span className={`font-medium ${liverAnswers[q.id] === o ? 'text-teal-900' : 'text-slate-700'}`}>
+                                        <span className={`font-medium ${surveyAnswers[q.id] === o ? 'text-teal-900' : 'text-slate-700'}`}>
                                             {o}
                                         </span>
                                     </label>
@@ -228,7 +228,7 @@ export default function TakeSurvey() {
                                     <label 
                                         key={o} 
                                         className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                                            (liverAnswers[q.id] || []).includes(o)
+                                            (surveyAnswers[q.id] || []).includes(o)
                                             ? 'border-teal-600 bg-teal-50' 
                                             : 'border-slate-200 hover:border-teal-300 hover:bg-slate-50'
                                         }`}
@@ -236,20 +236,20 @@ export default function TakeSurvey() {
                                         <input 
                                             type="checkbox" 
                                             value={o} 
-                                            checked={(liverAnswers[q.id] || []).includes(o)}
+                                            checked={(surveyAnswers[q.id] || []).includes(o)}
                                             onChange={(e) => {
-                                                const current = liverAnswers[q.id] || [];
+                                                const current = surveyAnswers[q.id] || [];
                                                 const next = e.target.checked ? [...current, o] : current.filter((x: string) => x !== o);
                                                 handleInputChange(q.id, next);
                                             }}
                                             className="hidden"
                                         />
                                         <div className={`h-5 w-5 rounded border-2 flex items-center justify-center transition-colors ${
-                                            (liverAnswers[q.id] || []).includes(o) ? 'bg-teal-600 border-teal-600' : 'border-slate-400'
+                                            (surveyAnswers[q.id] || []).includes(o) ? 'bg-teal-600 border-teal-600' : 'border-slate-400'
                                         }`}>
-                                            {(liverAnswers[q.id] || []).includes(o) && <Check className="h-3 w-3 text-white" />}
+                                            {(surveyAnswers[q.id] || []).includes(o) && <Check className="h-3 w-3 text-white" />}
                                         </div>
-                                        <span className={`font-medium ${(liverAnswers[q.id] || []).includes(o) ? 'text-teal-900' : 'text-slate-700'}`}>
+                                        <span className={`font-medium ${(surveyAnswers[q.id] || []).includes(o) ? 'text-teal-900' : 'text-slate-700'}`}>
                                             {o}
                                         </span>
                                     </label>
@@ -264,7 +264,7 @@ export default function TakeSurvey() {
                                         type="button"
                                         onClick={() => handleInputChange(q.id, r)}
                                         className={`h-12 w-12 rounded-xl font-bold text-lg transition-all ${
-                                            liverAnswers[q.id] === r 
+                                            surveyAnswers[q.id] === r 
                                             ? 'bg-teal-600 text-white' 
                                             : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                                         }`}
@@ -286,6 +286,16 @@ export default function TakeSurvey() {
                 </button>
             </div>
         </motion.div>
+    );
+  }
+
+  if (!dbSurvey && surveyId !== 'miot-registration-survey') {
+    return (
+      <div className="min-h-[80vh] flex items-center justify-center px-4">
+        <div className="max-w-lg w-full text-center py-16 px-8 bg-white rounded-3xl shadow-sm border border-slate-200">
+          <h2 className="text-2xl font-bold text-slate-900 mb-4">Survey Not Found</h2>
+        </div>
+      </div>
     );
   }
 

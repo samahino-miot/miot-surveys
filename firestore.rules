@@ -133,9 +133,10 @@ service cloud.firestore {
     // ===============================================================
 
     match /users {
-      allow read: if isAuthenticated();
+      allow list: if isAuthenticated() && (isAdmin() || isSuperAdmin());
+      allow get: if isAuthenticated();
       match /{userId} {
-        allow read: if isAuthenticated();
+        allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin() || isSuperAdmin());
         
         // A user can create their own pending profile, or a superadmin can create one
         allow create: if isAuthenticated() && isValidUser(request.resource.data) && (
@@ -154,7 +155,8 @@ service cloud.firestore {
     }
 
     match /surveys {
-      allow read: if true; 
+      allow list: if true;
+      allow get: if true;
       match /{surveyId} {
         allow read: if true;
         allow create: if (isAdmin() || isSuperAdmin() || isEditor()) && isValidSurvey(request.resource.data);
@@ -164,7 +166,8 @@ service cloud.firestore {
     }
 
     match /responses {
-      allow read: if isAuthenticated();
+      allow list: if isAuthenticated() && (isAdmin() || isSuperAdmin() || isEditor());
+      allow get: if isAuthenticated();
       match /{responseId} {
         allow create: if isValidResponse(request.resource.data);
         allow update: if false; // Responses cannot be updated
