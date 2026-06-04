@@ -821,7 +821,7 @@ export default function SurveyResults() {
             <div className="flex items-center justify-between bg-slate-50 p-4 rounded-xl border border-slate-100 mb-2">
               <div>
                 <p className="text-sm text-slate-500 font-medium mb-1">Total Responses</p>
-                <p className="text-3xl font-bold text-slate-900">{q.type === 'checkbox' ? sumOfSelections : participantsWhoAnsweredThisQuestion}</p>
+                <p className="text-3xl font-bold text-slate-900">{(id === 'liver-gym-feedback-form' || id === 'miot-registration-survey') ? responses.length : (q.type === 'checkbox' ? sumOfSelections : participantsWhoAnsweredThisQuestion)}</p>
               </div>
               <div className="text-right">
                 <p className="text-sm text-slate-500 font-medium mb-1">Most Popular</p>
@@ -841,7 +841,7 @@ export default function SurveyResults() {
           <div className="flex items-center justify-between bg-slate-50 p-4 rounded-xl border border-slate-100 mb-2">
             <div>
               <p className="text-sm text-slate-500 font-medium mb-1">Total Responses</p>
-              <p className="text-3xl font-bold text-slate-900">{q.type === 'checkbox' ? sumOfSelections : participantsWhoAnsweredThisQuestion}</p>
+              <p className="text-3xl font-bold text-slate-900">{(id === 'liver-gym-feedback-form' || id === 'miot-registration-survey') ? responses.length : (q.type === 'checkbox' ? sumOfSelections : participantsWhoAnsweredThisQuestion)}</p>
             </div>
             <div className="text-right">
               <p className="text-sm text-slate-500 font-medium mb-1">Most Popular</p>
