@@ -9,12 +9,28 @@ export default function PatientHome() {
   const { surveys, loading: surveysLoading } = useSurveys(true, editorId);
   const { responses, loading: responsesLoading } = useResponses(undefined, editorId);
 
-  const copyShareLink = (e: React.MouseEvent, surveyId: string) => {
+  const handleShare = async (e: React.MouseEvent, surveyId: string, title: string) => {
     e.preventDefault();
     const surveyorId = currentUser?.uid || 'anonymous';
     const shareUrl = `${window.location.origin}/public-survey/${surveyId}?surveyorId=${surveyorId}`;
-    navigator.clipboard.writeText(shareUrl);
-    alert('Public survey link copied to clipboard!');
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `Take Survey: ${title}`,
+          text: `Please fill out this survey: ${title}`,
+          url: shareUrl,
+        });
+      } catch (err) {
+        // Fallback to clipboard if share failed or user cancelled
+        navigator.clipboard.writeText(shareUrl);
+        alert('Link copied to clipboard!');
+      }
+    } else {
+      // Fallback
+      navigator.clipboard.writeText(shareUrl);
+      alert('Public survey link copied to clipboard!');
+    }
   };
 
   if (surveysLoading || responsesLoading || authLoading) {
@@ -46,7 +62,7 @@ export default function PatientHome() {
                 </Link>
                 <div className="flex items-center gap-2 ml-4">
                   <button 
-                    onClick={(e) => copyShareLink(e, survey.id)}
+                    onClick={(e) => handleShare(e, survey.id, survey.title)}
                     className="p-2 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
                     title="Copy Share Link"
                   >
