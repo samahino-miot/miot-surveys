@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router';
 import { useResponses, useSurveys } from '../hooks/useFirestore';
+import { useAuth } from '../components/AuthProvider';
 import { LocationHeatmap } from '../components/LocationHeatmap';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { useWindowWidth } from '../hooks/useWindowWidth';
@@ -104,10 +105,12 @@ const SurveyBarChart = ({ data, responseCount }: { data: any[], responseCount: n
 
 export default function SurveyResults() {
   const { id } = useParams();
+  const { currentUser } = useAuth();
   const { responses, loading: responsesLoading } = useResponses(id || '');
   const { surveys, loading: surveysLoading } = useSurveys(false);
   const width = useWindowWidth();
   
+
   const [currentPage, setCurrentPage] = useState(1);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [selectedResponses, setSelectedResponses] = useState<string[]>([]);

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Select from 'react-select';
 import CreatableSelect from 'react-select/creatable';
-import { useNavigate, useParams } from 'react-router';
+import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { CheckCircle2, AlertCircle, ArrowRight, ArrowLeft, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
@@ -48,6 +48,8 @@ const CategoryRatingCard = ({ id, title, subPoints, value, onChange, error, allo
 export default function TakeSurvey() {
   const navigate = useNavigate();
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
+  const surveyorId = searchParams.get('surveyorId');
   const { currentUser, adminUser } = useAuth();
   const surveyId = id || 'miot-registration-survey';
   
@@ -121,8 +123,8 @@ export default function TakeSurvey() {
           surveyTitle: dbSurvey.title,
           answers: liverAnswers,
           submittedAt: serverTimestamp(),
-          editorId: currentUser?.uid || 'unknown',
-          editorName: currentUser?.displayName || currentUser?.email || 'Unknown'
+          editorId: currentUser?.uid || surveyorId || 'unknown',
+          editorName: currentUser?.displayName || currentUser?.email || 'Anonymous'
         });
         setSubmitted(true);
       } catch (err) {
@@ -132,6 +134,7 @@ export default function TakeSurvey() {
         setIsSubmitting(false);
       }
     };
+
 
     if (submitted) {
       return (
@@ -527,8 +530,8 @@ export default function TakeSurvey() {
         surveyTitle: dbSurvey?.title || 'MIOT International Patient Experience Survey',
         answers: formData,
         submittedAt: serverTimestamp(),
-        editorId: currentUser?.uid || 'unknown',
-        editorName: currentUser?.displayName || currentUser?.email || 'Unknown'
+        editorId: currentUser?.uid || surveyorId || 'unknown',
+        editorName: currentUser?.displayName || currentUser?.email || 'Anonymous'
       });
       setSubmitted(true);
     } catch (err) {
