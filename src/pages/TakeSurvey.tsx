@@ -53,11 +53,9 @@ export default function TakeSurvey() {
   const { currentUser, adminUser } = useAuth();
   const surveyId = id || 'miot-registration-survey';
   
-  const { surveys, loading: surveysLoading } = useSurveys(false, surveyorId || undefined);
+  const { surveys, loading: surveysLoading } = useSurveys(false, undefined);
   
-  useEffect(() => {
-    console.log('--- DEBUG: TakeSurvey, surveyId:', surveyId, 'surveyorId from param:', surveyorId);
-  }, [surveyId, surveyorId]);
+  // Removed console.log
   
   const [formData, setFormData] = useState({
     patientName: '',
