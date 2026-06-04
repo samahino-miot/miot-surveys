@@ -47,6 +47,7 @@ export default function App() {
                 <Route path="admin/surveys" element={<AdminSurveys />} />
                 <Route path="admin/surveys/:id/results" element={<SurveyResults />} />
               </Route>
+              <Route path="public/survey/:id" element={<TakeSurvey />} />
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>

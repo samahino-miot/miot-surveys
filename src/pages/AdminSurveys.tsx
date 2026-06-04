@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router';
 import { useSurveys, useResponses } from '../hooks/useFirestore';
-import { BarChart2, CheckCircle2, XCircle } from 'lucide-react';
+import { BarChart2, CheckCircle2, XCircle, Share2, Copy } from 'lucide-react';
 import { saveSurvey, Survey } from '../store';
 import { seedLiverSurvey } from '../lib/seed';
 import ConfirmationModal from '../components/ConfirmationModal';
@@ -13,6 +13,15 @@ export default function AdminSurveys() {
   const [selectedSurveys, setSelectedSurveys] = useState<string[]>([]);
   const [surveyToToggle, setSurveyToToggle] = useState<Survey | null>(null);
   const [bulkToggleStatus, setBulkToggleStatus] = useState<boolean | null>(null);
+  const [copyStatus, setCopyStatus] = useState<string | null>(null);
+
+  const copyToClipboard = (surveyId: string) => {
+    const url = `${window.location.origin}/public/survey/${surveyId}`;
+    navigator.clipboard.writeText(url).then(() => {
+        setCopyStatus(surveyId);
+        setTimeout(() => setCopyStatus(null), 2000);
+    });
+  };
 
   useEffect(() => {
     if (!surveysLoading && !surveys.some(s => s.id === 'liver-gym-feedback-form')) {
@@ -164,7 +173,15 @@ export default function AdminSurveys() {
                         {survey.isActive ? 'Live' : 'Draft'}
                       </button>
                     </td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-6 py-4 text-right flex items-center justify-end gap-2">
+                      <button 
+                         onClick={() => copyToClipboard(survey.id)}
+                         className={`inline-flex items-center gap-2 px-3 py-2 ${copyStatus === survey.id ? 'text-emerald-600' : 'text-slate-600'} hover:bg-slate-100 rounded-lg transition-colors font-medium`}
+                         title="Copy public link"
+                      >
+                         {copyStatus === survey.id ? <Copy className="h-5 w-5" /> : <Share2 className="h-5 w-5" />}
+                         {copyStatus === survey.id ? 'Copied!' : 'Share'}
+                      </button>
                       <Link 
                         to={`/admin/surveys/${survey.id}/results`}
                         className="inline-flex items-center gap-2 px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors font-medium"
@@ -206,6 +223,14 @@ export default function AdminSurveys() {
                         >
                           {survey.isActive ? <CheckCircle2 className="h-3.5 w-3.5" /> : <XCircle className="h-3.5 w-3.5" />}
                           {survey.isActive ? 'Live' : 'Draft'}
+                        </button>
+                        <button
+                          onClick={() => copyToClipboard(survey.id)}
+                          className={`inline-flex items-center gap-1 px-3 py-1.5 ${copyStatus === survey.id ? 'text-emerald-600' : 'text-slate-600'} hover:bg-slate-100 rounded-lg transition-colors font-medium text-sm`}
+                          title="Copy public link"
+                        >
+                            {copyStatus === survey.id ? <Copy className="h-4 w-4" /> : <Share2 className="h-4 w-4" />}
+                            {copyStatus === survey.id ? 'Copied' : 'Share'}
                         </button>
                         <Link 
                           to={`/admin/surveys/${survey.id}/results`}
