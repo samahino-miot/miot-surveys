@@ -6,7 +6,7 @@ import { CheckCircle2, AlertCircle, ArrowRight, ArrowLeft, Check } from 'lucide-
 import { motion, AnimatePresence } from 'motion/react';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
-import { useSurveys } from '../hooks/useFirestore';
+import { useSurvey } from '../hooks/useFirestore';
 import { useAuth } from '../components/AuthProvider';
 import { LocationInput } from '../components/LocationInput';
 import { Country, State, City } from 'country-state-city';
@@ -53,9 +53,7 @@ export default function TakeSurvey() {
   const { currentUser, adminUser } = useAuth();
   const surveyId = id || 'miot-registration-survey';
   
-  const { surveys, loading: surveysLoading } = useSurveys(false, undefined);
-  
-  // Removed console.log
+  const { survey: dbSurvey, loading: surveyLoading } = useSurvey(surveyId);
   
   const [formData, setFormData] = useState({
     patientName: '',
@@ -106,11 +104,9 @@ export default function TakeSurvey() {
   const totalSteps = 5;
   const progressPercentage = Math.round((currentStep / totalSteps) * 100);
 
-  if (surveysLoading) {
+  if (surveyLoading) {
     return <div className="flex items-center justify-center min-h-[60vh]">Loading...</div>;
   }
-
-  const dbSurvey = surveys.find(s => s.id === surveyId);
   
   if (!dbSurvey) {
     return <div className="text-center py-10 text-slate-500">Survey not found.</div>;
