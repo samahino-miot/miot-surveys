@@ -1,39 +1,8 @@
 import { useState, useEffect } from 'react';
-import { collection, onSnapshot, query, where, doc } from 'firebase/firestore';
+import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { Survey, SurveyResponse, User } from '../store';
 import { handleFirestoreError, OperationType } from '../lib/firebaseUtils';
-
-export const useSurvey = (surveyId?: string) => {
-  const [survey, setSurvey] = useState<Survey | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!surveyId) {
-      setLoading(false);
-      return;
-    }
-    const docRef = doc(db, 'surveys', surveyId);
-    
-    const unsubscribe = onSnapshot(docRef, (doc) => {
-      if (doc.exists()) {
-        setSurvey({ id: doc.id, ...doc.data() } as Survey);
-      } else {
-        setSurvey(null);
-      }
-      setLoading(false);
-    }, (error) => {
-      setLoading(false);
-      if (auth.currentUser) {
-        handleFirestoreError(error, OperationType.GET, 'surveys');
-      }
-    });
-    
-    return unsubscribe;
-  }, [surveyId]);
-
-  return { survey, loading };
-};
 
 export const useSurveys = (activeOnly: boolean = false, surveyorId?: string) => {
   const [surveys, setSurveys] = useState<Survey[]>([]);

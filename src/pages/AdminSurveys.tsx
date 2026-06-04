@@ -5,12 +5,10 @@ import { BarChart2, CheckCircle2, XCircle } from 'lucide-react';
 import { saveSurvey, Survey } from '../store';
 import { seedLiverSurvey } from '../lib/seed';
 import ConfirmationModal from '../components/ConfirmationModal';
-import { useAuth } from '../components/AuthProvider';
 
 export default function AdminSurveys() {
   const { surveys, loading: surveysLoading } = useSurveys(false);
   const { responses, loading: responsesLoading } = useResponses();
-  const { currentUser } = useAuth();
   const [toggling, setToggling] = useState<string | null>(null);
   const [selectedSurveys, setSelectedSurveys] = useState<string[]>([]);
   const [surveyToToggle, setSurveyToToggle] = useState<Survey | null>(null);
@@ -167,14 +165,14 @@ export default function AdminSurveys() {
                       </button>
                     </td>
                     <td className="px-6 py-4 text-right">
-                        <Link 
-                          to={`/admin/surveys/${survey.id}/results`}
-                          className="inline-flex items-center gap-2 px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors font-medium"
-                          title="View Results"
-                        >
-                          <BarChart2 className="h-5 w-5" />
-                          View Results
-                        </Link>
+                      <Link 
+                        to={`/admin/surveys/${survey.id}/results`}
+                        className="inline-flex items-center gap-2 px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors font-medium"
+                        title="View Results"
+                      >
+                        <BarChart2 className="h-5 w-5" />
+                        View Results
+                      </Link>
                     </td>
                   </tr>
                 );
