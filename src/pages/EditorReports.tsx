@@ -31,7 +31,7 @@ export default function EditorReports() {
     // Hardcoded fix for the reported issue: normalize 'mithilesh47040@gmail.com' to 'Mithilesh'
     if (response.editorName === 'mithilesh47040@gmail.com') return { id: 'Mithilesh', name: 'Mithilesh' };
     
-    return { id: response.editorId || response.editorName || 'Unknown', name: response.editorName || 'Unknown' };
+    return { id: response.editorId || response.editorName || 'Public Link', name: response.editorName || 'Public Link' };
   };
 
   const filteredResponses = responses;
