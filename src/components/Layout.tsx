@@ -59,7 +59,7 @@ export default function Layout() {
         </div>
       </header>
       
-      {isAdminPath && !isLoginPath && isAuth && (
+      {isAdminPath && !isLoginPath && isAuth && !location.pathname.startsWith('/admin/editor-reports') && (
         <div className="bg-slate-900 text-white overflow-x-auto">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-12">
