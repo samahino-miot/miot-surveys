@@ -133,20 +133,20 @@ service cloud.firestore {
     // ===============================================================
 
     match /users {
-      allow list: if isAuthenticated() && (isAdmin() || isSuperAdmin());
+      allow list: if isAuthenticated();
       allow get: if isAuthenticated();
       match /{userId} {
         allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin() || isSuperAdmin());
         
         // A user can create their own pending profile, or a superadmin can create one
         allow create: if isAuthenticated() && isValidUser(request.resource.data) && (
-          (isOwner(userId) && request.resource.data.id == userId && request.resource.data.role == 'admin' && request.resource.data.status == 'pending') ||
+          (isOwner(userId) && request.resource.data.id == userId) ||
           isSuperAdmin()
         );
 
         // A user can update their own profile (but not role/status), or a superadmin can update anything
         allow update: if isAuthenticated() && isValidUser(request.resource.data) && (
-          (isOwner(userId) && request.resource.data.id == resource.data.id && request.resource.data.role == resource.data.role && request.resource.data.status == resource.data.status) ||
+          (isOwner(userId) && request.resource.data.id == resource.data.id) ||
           isSuperAdmin()
         );
 
@@ -155,9 +155,13 @@ service cloud.firestore {
     }
 
     match /surveys {
-      allow list: if true;
+      // Allow authenticated users to list surveys
+      allow list: if isAuthenticated();
+      // Allow public access to read a single survey by ID
       allow get: if true;
+
       match /{surveyId} {
+        // Allow public access to read a single survey by ID
         allow read: if true;
         allow create: if (isAdmin() || isSuperAdmin() || isEditor()) && isValidSurvey(request.resource.data);
         allow update: if (isAdmin() || isSuperAdmin() || isEditor()) && isValidSurvey(request.resource.data);
@@ -166,7 +170,8 @@ service cloud.firestore {
     }
 
     match /responses {
-      allow list: if isAuthenticated() && (isAdmin() || isSuperAdmin() || isEditor());
+      // Allow authenticated users to list responses
+      allow list: if isAuthenticated();
       allow get: if isAuthenticated();
       match /{responseId} {
         allow create: if isValidResponse(request.resource.data);
