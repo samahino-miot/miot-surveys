@@ -134,6 +134,17 @@ export default function TakeSurvey() {
     };
 
     const submitSurvey = async () => {
+      // Validate
+      for (const q of dbSurvey.questions) {
+        if (q.required) {
+          const answer = surveyAnswers[q.id];
+          if (answer === undefined || answer === null || answer === '' || (Array.isArray(answer) && answer.length === 0)) {
+            setError(`Please answer the required question: "${q.text}".`);
+            return;
+          }
+        }
+      }
+      
       setIsSubmitting(true);
       try {
         await addDoc(collection(db, 'responses'), {
