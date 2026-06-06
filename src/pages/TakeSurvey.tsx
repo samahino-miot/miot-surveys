@@ -232,7 +232,7 @@ export default function TakeSurvey() {
                             <input 
                                 type="date" 
                                 min={q.id === 'q4' && dbSurvey?.id === 'liver-gym-feedback-form' ? "2026-05-01" : undefined}
-                                max={q.id === 'q4' && dbSurvey?.id === 'liver-gym-feedback-form' ? "2026-06-30" : undefined}
+                                max={q.id === 'q4' && dbSurvey?.id === 'liver-gym-feedback-form' ? (new Date().toISOString().split('T')[0] < "2026-06-30" ? new Date().toISOString().split('T')[0] : "2026-06-30") : undefined}
                                 value={surveyAnswers[q.id] || ''}
                                 onChange={(e) => handleInputChange(q.id, e.target.value)}
                                 className="w-full p-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-teal-500" 
