@@ -231,6 +231,8 @@ export default function TakeSurvey() {
                         {q.type === 'date' && (
                             <input 
                                 type="date" 
+                                min={q.id === 'q4' && dbSurvey?.id === 'liver-gym-feedback-form' ? "2026-05-01" : undefined}
+                                max={q.id === 'q4' && dbSurvey?.id === 'liver-gym-feedback-form' ? "2026-06-30" : undefined}
                                 value={surveyAnswers[q.id] || ''}
                                 onChange={(e) => handleInputChange(q.id, e.target.value)}
                                 className="w-full p-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-teal-500" 
