@@ -191,12 +191,14 @@ export default function TakeSurvey() {
             </motion.div>
             <h2 className="text-3xl font-bold text-slate-900 mb-4">Thank You!</h2>
             <p className="text-lg text-slate-600 mb-8">Your feedback is incredibly valuable to us and helps improve patient care at MIOT International.</p>
-            <button 
-              onClick={() => navigate('/')}
-              className="px-8 py-4 bg-teal-600 text-white font-semibold rounded-xl hover:bg-teal-700 transition-colors shadow-sm"
-            >
-              Return to Home
-            </button>
+            {currentUser && (
+              <button 
+                onClick={() => navigate('/')}
+                className="px-8 py-4 bg-teal-600 text-white font-semibold rounded-xl hover:bg-teal-700 transition-colors shadow-sm"
+              >
+                Return to Home
+              </button>
+            )}
           </motion.div>
         </div>
       );
@@ -638,12 +640,14 @@ export default function TakeSurvey() {
           </motion.div>
           <h2 className="text-3xl font-bold text-slate-900 mb-4">Thank You!</h2>
           <p className="text-lg text-slate-600 mb-8">Your feedback is incredibly valuable to us and helps improve patient care at MIOT International.</p>
-          <button 
-            onClick={() => navigate('/')}
-            className="px-8 py-4 bg-teal-600 text-white font-semibold rounded-xl hover:bg-teal-700 transition-colors shadow-sm"
-          >
-            Return to Home
-          </button>
+          {currentUser && (
+            <button 
+              onClick={() => navigate('/')}
+              className="px-8 py-4 bg-teal-600 text-white font-semibold rounded-xl hover:bg-teal-700 transition-colors shadow-sm"
+            >
+              Return to Home
+            </button>
+          )}
         </motion.div>
       </div>
     );
